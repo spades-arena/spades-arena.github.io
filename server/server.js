@@ -9,7 +9,8 @@
  *  - Server-authoritative Spades matches (see server/match.js)
  *  - Player directory persisted to server/data/db.json (override with DATA_DIR)
  *
- * Env: PORT (default 8787), HOST (default 0.0.0.0), DATA_DIR, SPADES_MSG_LIMIT (msgs / 5s / socket),
+ * Env: SPADES_ADMIN_USERNAME + SPADES_ADMIN_PASSWORD (owner account with unlimited Lions & Diamonds),
+ *      PORT (default 8787), HOST (default 0.0.0.0), DATA_DIR, SPADES_MSG_LIMIT (msgs / 5s / socket),
  *      UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN (optional free cloud backup of accounts)
  * ============================================================================
  */
@@ -564,7 +565,7 @@ function attachUser(conn, user, newSession) {
   userConns.get(user.id).add(conn);
 
   sendTo(conn, 'welcome', {
-    user: { id: user.id, username: user.username, avatar: user.avatar },
+    user: { id: user.id, username: user.username, avatar: user.avatar, unlimited: Boolean(user.unlimited) },
     session: newSession
   });
   deliverGiftInbox(user);
@@ -1111,6 +1112,40 @@ setInterval(() => {
   }
 }, 60000).unref();
 
+/**
+ * Owner account with unlimited Lions & Diamonds. Set SPADES_ADMIN_USERNAME (+ SPADES_ADMIN_PASSWORD to create it
+ * if it doesn't exist yet). The password lives only in the server's environment, never in the code.
+ */
+function ensureAdminAccount() {
+  const username = String(process.env.SPADES_ADMIN_USERNAME || '').trim();
+  if (!username || !USERNAME_RE.test(username)) return;
+  let user = getUser(usernameIndex.get(username.toLowerCase()));
+  const password = process.env.SPADES_ADMIN_PASSWORD || '';
+  if (!user && password.length >= PASSWORD_MIN) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    user = {
+      id: `u_${crypto.randomBytes(6).toString('hex')}`,
+      username,
+      passwordSalt: salt,
+      passwordHash: hashPassword(password, salt),
+      sessions: [],
+      avatar: 'free_ace',
+      friends: [],
+      incoming: [],
+      outgoing: [],
+      createdAt: Date.now(),
+      lastSeen: Date.now()
+    };
+    db.users[user.id] = user;
+    usernameIndex.set(username.toLowerCase(), user.id);
+    log(`created owner account ${username}`);
+  }
+  if (user && !user.unlimited) {
+    user.unlimited = true;
+    saveDbSoon();
+  }
+}
+
 async function boot() {
   loadDb();
   if (cloudEnabled) {
@@ -1122,6 +1157,7 @@ async function boot() {
       log('Cloud load failed, using local data:', e.message);
     }
   }
+  ensureAdminAccount();
   httpServer.listen(PORT, HOST, () => {
     log(`Spades Royale server running → http://localhost:${PORT}  (WebSocket: ws://<host>:${PORT}/ws)`);
     log(`${Object.keys(db.users).length} registered players loaded${cloudEnabled ? ' (cloud backup on)' : ` from ${DB_PATH}`}`);

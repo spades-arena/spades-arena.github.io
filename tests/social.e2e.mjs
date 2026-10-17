@@ -17,7 +17,7 @@ let failures = 0;
 const ok = (c, l) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${l}`); if (!c) failures++; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const server = spawn(process.execPath, [path.join(ROOT, 'server/server.js')], { env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', DATA_DIR }, stdio: 'ignore' });
+const server = spawn(process.execPath, [path.join(ROOT, 'server/server.js')], { env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', DATA_DIR, SPADES_ADMIN_USERNAME: 'OwnerTest', SPADES_ADMIN_PASSWORD: 'owner-test-pw' }, stdio: 'ignore' });
 const browser = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true, args: ['--no-first-run'] });
 const errors = [];
 
@@ -146,6 +146,42 @@ try {
   const secs = (Date.now() - shownAt) / 1000;
   ok(secs > 7 && secs < 9.5, `request popup closes by itself after ~8 seconds (${secs.toFixed(1)}s)`);
   ok(await B.evaluate(() => SpadesHadzz.networkAdapter.state.incomingRequests.some(r => r.username === 'Cy')), 'unanswered request is still in Friends → Requests');
+
+  // 6) Owner account (set on the server) has unlimited Lions & Diamonds; sign out → normal balance returns
+  const before = await prof(C);
+  await C.evaluate(() => window.spadesApp.signOut());
+  await waitScreen(C, 'screen-login');
+  await C.evaluate(() => {
+    document.querySelector('[data-auth-mode="login"]')?.click();
+  });
+  await C.evaluate(() => {
+    document.querySelector('#auth-username').value = 'ownertest';
+    document.querySelector('#auth-password').value = 'owner-test-pw';
+    document.querySelector('.auth-submit').click();
+  });
+  await waitScreen(C, 'screen-menu');
+  await C.waitForFunction(() => SpadesHadzz.store.isUnlimited, { timeout: 6000 });
+  const hud = await C.$eval('#app-topbar [data-hud-coins]', el => el.textContent);
+  const hudD = await C.$eval('#app-topbar [data-hud-diamonds]', el => el.textContent);
+  ok(hud === '∞' && hudD === '∞', `owner account shows unlimited Lions ${hud} and Diamonds ${hudD}`);
+  const bought = await C.evaluate(() => SpadesHadzz.store.selectOrBuyAvatar('myth_cat').ok && SpadesHadzz.store.selectOrBuyAvatar('dia_icedragon').ok);
+  const after = await prof(C);
+  ok(bought && after.coins >= 999999999 && after.diamonds >= 999999999, 'buying the priciest items never runs the owner out');
+  await C.evaluate(() => window.spadesApp.signOut());
+  await waitScreen(C, 'screen-login');
+  const back = await prof(C);
+  ok(back.coins === before.coins && back.diamonds === before.diamonds && !(await C.evaluate(() => SpadesHadzz.store.isUnlimited)), `after signing out the normal balance comes back (🦁 ${back.coins}, 💎 ${back.diamonds})`);
+  await C.evaluate(() => {
+    document.querySelector('[data-auth-mode="register"]')?.click();
+  });
+  await C.evaluate(() => {
+    document.querySelector('#auth-username').value = 'OWNERTEST';
+    document.querySelector('#auth-password').value = 'anything1';
+    const p2 = document.querySelector('#auth-password2'); if (p2) p2.value = 'anything1';
+    document.querySelector('.auth-submit').click();
+  });
+  await sleep(1200);
+  ok(await C.evaluate(() => !SpadesHadzz.store.isUnlimited && document.querySelector('.screen-view.active').id === 'screen-login'), 'nobody else can register the owner username');
 
   ok(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(' | ')}` : ''}`);
 } catch (e) {

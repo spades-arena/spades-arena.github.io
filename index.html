@@ -3839,6 +3839,7 @@ body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1rem; }
   const SH = (root.SpadesHadzz = root.SpadesHadzz || {});
   // v2 = fresh start for everyone (new balances: 50 🦁 + 5 💎)
   const STORAGE_KEY = 'spades_royale_state_v2';
+  const UNLIMITED_BALANCE = 999999999;
   const ENTRY_FEE = 2; // 🦁 to play a game; returned when you win
 
   function todayKey(now = new Date()) {
@@ -3921,6 +3922,8 @@ body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1rem; }
     }
 
     save() {
+      const p = this.state.profile;
+      if (p.unlimited) { p.coins = UNLIMITED_BALANCE; p.diamonds = UNLIMITED_BALANCE; } // owner account never runs out
       try {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
@@ -3942,6 +3945,28 @@ body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1rem; }
 
     getSettings() {
       return this.state.settings;
+    }
+
+    /** Owner account (flagged by the server): unlimited Lions & Diamonds while signed in; normal balance comes back after. */
+    setUnlimited(on) {
+      const p = this.state.profile;
+      if (on && !p.unlimited) {
+        p.balanceBeforeUnlimited = { coins: p.coins, diamonds: p.diamonds };
+        p.unlimited = true;
+      } else if (!on && p.unlimited) {
+        const back = p.balanceBeforeUnlimited || { coins: 50, diamonds: 5 };
+        p.unlimited = false;
+        p.coins = back.coins;
+        p.diamonds = back.diamonds;
+        delete p.balanceBeforeUnlimited;
+      } else {
+        return;
+      }
+      this.save();
+    }
+
+    get isUnlimited() {
+      return Boolean(this.state.profile.unlimited);
     }
 
     updateUsername(rawName) {
@@ -6505,6 +6530,7 @@ if (typeof module === 'object' && module.exports) {
         if (await this.hashPassword(acct.salt, password) !== acct.hash) return fail(ERROR_TITLES.bad_credentials, 'Incorrect username or password.', 'bad_credentials');
       }
       const username = accounts[key].username;
+      if (SH.store && SH.store.setUnlimited) SH.store.setUnlimited(false); // only server-verified owner accounts are unlimited
       this.prefs.localSession = username;
       this.prefs.username = username;
       savePrefs(this.prefs);
@@ -6522,6 +6548,7 @@ if (typeof module === 'object' && module.exports) {
     }
 
     clearSession() {
+      if (SH.store && SH.store.setUnlimited) SH.store.setUnlimited(false);
       delete this.prefs.session;
       delete this.prefs.localSession;
       savePrefs(this.prefs);
@@ -6596,6 +6623,7 @@ if (typeof module === 'object' && module.exports) {
             savePrefs(this.prefs);
           }
           this.state.me = msg.user;
+          if (SH.store && SH.store.setUnlimited) SH.store.setUnlimited(Boolean(msg.user.unlimited));
           this.state.identity = 'ok';
           this.state.authBusy = false;
           this.state.authAlert = null;
@@ -7839,8 +7867,8 @@ if (typeof module === 'object' && module.exports) {
       if (typeof document === 'undefined') return;
       const profile = SH.store.getProfile();
       const settings = SH.store.getSettings();
-      document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = String(profile.coins); });
-      document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = String(profile.diamonds || 0); });
+      document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.coins); });
+      document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.diamonds || 0); });
       document.body.setAttribute('data-card-skin', profile.selectedCardSkin || 'classic');
       document.querySelectorAll('[data-hud-username]').forEach(el => { el.textContent = profile.username; });
       document.querySelectorAll('[data-hud-avatar]').forEach(el => { el.innerHTML = SH.renderAvatarSVG(profile.selectedAvatar, 36); });

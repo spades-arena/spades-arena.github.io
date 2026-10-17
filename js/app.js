@@ -278,8 +278,8 @@
       if (typeof document === 'undefined') return;
       const profile = SH.store.getProfile();
       const settings = SH.store.getSettings();
-      document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = String(profile.coins); });
-      document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = String(profile.diamonds || 0); });
+      document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.coins); });
+      document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.diamonds || 0); });
       document.body.setAttribute('data-card-skin', profile.selectedCardSkin || 'classic');
       document.querySelectorAll('[data-hud-username]').forEach(el => { el.textContent = profile.username; });
       document.querySelectorAll('[data-hud-avatar]').forEach(el => { el.innerHTML = SH.renderAvatarSVG(profile.selectedAvatar, 36); });

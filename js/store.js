@@ -8,6 +8,7 @@
   const SH = (root.SpadesHadzz = root.SpadesHadzz || {});
   // v2 = fresh start for everyone (new balances: 50 🦁 + 5 💎)
   const STORAGE_KEY = 'spades_royale_state_v2';
+  const UNLIMITED_BALANCE = 999999999;
   const ENTRY_FEE = 2; // 🦁 to play a game; returned when you win
 
   function todayKey(now = new Date()) {
@@ -90,6 +91,8 @@
     }
 
     save() {
+      const p = this.state.profile;
+      if (p.unlimited) { p.coins = UNLIMITED_BALANCE; p.diamonds = UNLIMITED_BALANCE; } // owner account never runs out
       try {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
@@ -111,6 +114,28 @@
 
     getSettings() {
       return this.state.settings;
+    }
+
+    /** Owner account (flagged by the server): unlimited Lions & Diamonds while signed in; normal balance comes back after. */
+    setUnlimited(on) {
+      const p = this.state.profile;
+      if (on && !p.unlimited) {
+        p.balanceBeforeUnlimited = { coins: p.coins, diamonds: p.diamonds };
+        p.unlimited = true;
+      } else if (!on && p.unlimited) {
+        const back = p.balanceBeforeUnlimited || { coins: 50, diamonds: 5 };
+        p.unlimited = false;
+        p.coins = back.coins;
+        p.diamonds = back.diamonds;
+        delete p.balanceBeforeUnlimited;
+      } else {
+        return;
+      }
+      this.save();
+    }
+
+    get isUnlimited() {
+      return Boolean(this.state.profile.unlimited);
     }
 
     updateUsername(rawName) {

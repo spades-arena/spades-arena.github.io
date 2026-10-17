@@ -459,6 +459,7 @@
         if (await this.hashPassword(acct.salt, password) !== acct.hash) return fail(ERROR_TITLES.bad_credentials, 'Incorrect username or password.', 'bad_credentials');
       }
       const username = accounts[key].username;
+      if (SH.store && SH.store.setUnlimited) SH.store.setUnlimited(false); // only server-verified owner accounts are unlimited
       this.prefs.localSession = username;
       this.prefs.username = username;
       savePrefs(this.prefs);
@@ -476,6 +477,7 @@
     }
 
     clearSession() {
+      if (SH.store && SH.store.setUnlimited) SH.store.setUnlimited(false);
       delete this.prefs.session;
       delete this.prefs.localSession;
       savePrefs(this.prefs);
@@ -550,6 +552,7 @@
             savePrefs(this.prefs);
           }
           this.state.me = msg.user;
+          if (SH.store && SH.store.setUnlimited) SH.store.setUnlimited(Boolean(msg.user.unlimited));
           this.state.identity = 'ok';
           this.state.authBusy = false;
           this.state.authAlert = null;
