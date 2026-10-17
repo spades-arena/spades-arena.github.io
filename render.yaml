@@ -1,0 +1,18 @@
+# Free Render web service for Spades Royale logins, friends, invites and gifts.
+# New → Blueprint on render.com, pick this repo, and it sets everything up.
+services:
+  - type: web
+    name: spades-royale
+    runtime: node
+    plan: free
+    buildCommand: echo "no build needed"
+    startCommand: node server/server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: '20'
+      # Free Upstash Redis (upstash.com) keeps accounts safe when the free server sleeps. Paste the REST URL and token.
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false

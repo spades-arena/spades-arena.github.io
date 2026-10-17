@@ -1,0 +1,12 @@
+{
+  "name": "spades-by-hadzz-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node shuffle.test.mjs && node server.e2e.mjs",
+    "test:ui": "node ui.e2e.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "23.6.0"
+  }
+}
