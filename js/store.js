@@ -9,6 +9,10 @@
   // v2 = fresh start for everyone (new balances: 50 🦁 + 5 💎)
   const STORAGE_KEY = 'spades_royale_state_v2';
   const UNLIMITED_BALANCE = 999999999;
+  const LOGIN_STREAK_REWARDS = [
+    { lions: 10, diamonds: 0 }, { lions: 20, diamonds: 0 }, { lions: 30, diamonds: 0 }, { lions: 40, diamonds: 0 },
+    { lions: 60, diamonds: 0 }, { lions: 80, diamonds: 0 }, { lions: 100, diamonds: 1 }
+  ];
   const ENTRY_FEE = 2; // 🦁 to play a game; returned when you win
 
   function todayKey(now = new Date()) {
@@ -32,6 +36,10 @@
         ownedAvatars: getDefaultFreeIds(),
         ownedCardSkins: ['classic'],
         selectedCardSkin: 'classic',
+        ownedTableThemes: ['emerald'],
+        selectedTableTheme: 'emerald',
+        loginStreak: 0, // consecutive days opened (1–7, then starts a new week)
+        lastLoginDay: todayKey(), // new players start with exactly 50 🦁; the streak begins tomorrow
         lastDailyDiamond: todayKey(), // 'YYYY-MM-DD' of the last daily +1 💎 (new players start at exactly 5 💎)
         winsAt250: 0, // full-game wins at each target (every 2 → diamond bonus)
         winsAt500: 0,
@@ -39,7 +47,12 @@
           roundsPlayed: 0,
           roundsWon: 0,
           gamesPlayed: 0,
-          gamesWon: 0
+          gamesWon: 0,
+          bidsPlayed: 0, // rounds you bid a number (not Nil)
+          bidsMade: 0,
+          nilsTried: 0,
+          nilsMade: 0,
+          tricksWon: 0
         },
         rewardedIds: [] // Prevents duplicate coin awards for the same roundId or gameId
       },
@@ -77,6 +90,7 @@
             ...(parsed.profile || {}),
             ownedAvatars: owned,
             ownedCardSkins: Array.from(new Set(['classic', ...(parsed.profile?.ownedCardSkins || [])])),
+            ownedTableThemes: Array.from(new Set(['emerald', ...(parsed.profile?.ownedTableThemes || [])])),
             stats: { ...def.profile.stats, ...(parsed.profile?.stats || {}) },
             rewardedIds: Array.isArray(parsed.profile?.rewardedIds) ? parsed.profile.rewardedIds.slice(-200) : []
           },
@@ -213,6 +227,65 @@
       p.selectedCardSkin = skinId;
       this.save();
       return { ok: true, action: 'purchased', message: `Unlocked "${skin.name}" cards for ${skin.price} 🦁 Lions!` };
+    }
+
+    /** Table colours (Shop): equip owned ones, buy others with 🦁 Lions. */
+    selectOrBuyTableTheme(themeId) {
+      const theme = (SH.TABLE_THEMES || []).find(t => t.id === themeId);
+      if (!theme) return { ok: false, message: 'Table colour not found.' };
+      const p = this.state.profile;
+      if (p.ownedTableThemes.includes(themeId)) {
+        p.selectedTableTheme = themeId;
+        this.save();
+        return { ok: true, action: 'equipped', message: `Now playing on the ${theme.name} table.` };
+      }
+      if (p.coins < theme.price) {
+        return { ok: false, action: 'insufficient_funds', message: `Not enough 🦁 Lions for "${theme.name}" — you need ${theme.price - p.coins} more (${theme.price} total).` };
+      }
+      p.coins -= theme.price;
+      p.ownedTableThemes.push(themeId);
+      p.selectedTableTheme = themeId;
+      this.save();
+      return { ok: true, action: 'purchased', message: `Unlocked the ${theme.name} table for ${theme.price} 🦁 Lions!` };
+    }
+
+    /**
+     * Daily login streak: day 1 +10 🦁, 2 +20, 3 +30, 4 +40, 5 +60, 6 +80, day 7 +100 🦁 & +1 💎, then a new week.
+     * Missing a day starts again at day 1. Returns today's reward, or null if already claimed today.
+     */
+    claimLoginStreak(now = new Date()) {
+      const p = this.state.profile;
+      const today = todayKey(now);
+      if (p.lastLoginDay === today) return null;
+      const yesterday = todayKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+      const day = p.lastLoginDay === yesterday ? ((p.loginStreak || 0) % 7) + 1 : 1;
+      const reward = LOGIN_STREAK_REWARDS[day - 1];
+      p.loginStreak = day;
+      p.lastLoginDay = today;
+      p.coins += reward.lions;
+      p.diamonds += reward.diamonds;
+      this.save();
+      return { day, ...reward };
+    }
+
+    get loginStreakRewards() {
+      return LOGIN_STREAK_REWARDS;
+    }
+
+    /** Your bid & tricks at the end of a round (for the Stats screen). */
+    recordRoundStats({ bid, tricks }) {
+      if (bid === null || bid === undefined) return;
+      const s = this.state.profile.stats;
+      const t = Math.max(0, Number(tricks) || 0);
+      s.tricksWon += t;
+      if (Number(bid) === 0) {
+        s.nilsTried += 1;
+        if (t === 0) s.nilsMade += 1;
+      } else {
+        s.bidsPlayed += 1;
+        if (t >= Number(bid)) s.bidsMade += 1;
+      }
+      this.save();
     }
 
     /** +1 💎 the first time you open the game each day. Returns true if awarded today. */

@@ -2967,3 +2967,101 @@ body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1rem; }
 .gift-user-status { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--text-muted); min-height: 1.2em; }
 .gift-user-status.good { color: #3ddc84; }
 .gift-user-status.bad { color: #ff7b7b; }
+
+/* ------------------------------------------------------------------
+   Table colours (Shop) — the felt follows body[data-table-theme]
+   ------------------------------------------------------------------ */
+body[data-table-theme="royal"] .felt-arena {
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1.2px) 0 0 / 7px 7px padding-box,
+    radial-gradient(ellipse at center, #1d4ed8 0%, #163a9e 42%, #0b1a4a 78%, #050b22 100%) padding-box,
+    linear-gradient(135deg, #fff1b8 0%, #c9971c 22%, #fff1b8 42%, #9a7209 62%, #f3d67a 82%, #b8860b 100%) border-box;
+}
+body[data-table-theme="velvet"] .felt-arena {
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1.2px) 0 0 / 6px 6px padding-box,
+    radial-gradient(ellipse at center, #b0173f 0%, #8a1030 42%, #4a0718 78%, #22030b 100%) padding-box,
+    linear-gradient(135deg, #fff1b8 0%, #c9971c 22%, #fff1b8 42%, #9a7209 62%, #f3d67a 82%, #b8860b 100%) border-box;
+}
+body[data-table-theme="marble"] .felt-arena {
+  background:
+    linear-gradient(115deg, transparent 0 30%, rgba(220, 220, 230, 0.10) 31%, transparent 33% 62%, rgba(220, 220, 230, 0.08) 63%, transparent 65%) padding-box,
+    linear-gradient(35deg, transparent 0 45%, rgba(255, 255, 255, 0.06) 46%, transparent 48%) padding-box,
+    radial-gradient(ellipse at center, #3a3a40 0%, #232328 45%, #121215 80%, #070708 100%) padding-box,
+    linear-gradient(135deg, #f5f5f7 0%, #9ca3af 25%, #f5f5f7 50%, #6b7280 75%, #e5e7eb 100%) border-box;
+}
+body[data-table-theme="goldleaf"] .felt-arena {
+  background:
+    radial-gradient(rgba(250, 204, 21, 0.10) 1px, transparent 1.4px) 0 0 / 9px 9px padding-box,
+    radial-gradient(ellipse at center, #2a1f08 0%, #1c1405 50%, #0b0803 100%) padding-box,
+    linear-gradient(135deg, #fff7d1 0%, #eab308 20%, #fff1b8 40%, #a16207 60%, #fde68a 80%, #ca8a04 100%) border-box;
+  box-shadow:
+    inset 0 0 0 3px #0b0b0d,
+    inset 0 0 0 4.5px rgba(250, 204, 21, 0.85),
+    inset 0 0 60px rgba(0, 0, 0, 0.75),
+    0 0 26px rgba(250, 204, 21, 0.25),
+    0 12px 30px rgba(0, 0, 0, 0.65);
+}
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.7rem; }
+.theme-card {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-align: center;
+  padding: 0.7rem 0.6rem; border-radius: 14px; cursor: pointer;
+  background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(232, 196, 104, 0.25); color: inherit;
+}
+.theme-card.in-use { border-color: var(--accent-gold); box-shadow: 0 0 0 2px rgba(245, 200, 92, 0.35); }
+.theme-card.unaffordable { opacity: 0.6; }
+.theme-swatch {
+  width: 100%; height: 64px; border-radius: 12px; display: grid; place-items: center;
+  background: radial-gradient(ellipse at center, var(--sw1) 0%, var(--sw2) 100%);
+  border: 3px solid #c9971c; color: rgba(255, 255, 255, 0.35); font-size: 1.4rem;
+}
+
+/* 🔥 Login streak */
+.streak-card { max-width: 440px; text-align: center; }
+.streak-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.3rem; margin: 0.6rem 0; }
+.streak-day {
+  position: relative; display: flex; flex-direction: column; gap: 0.2rem; align-items: center;
+  padding: 0.4rem 0.1rem; border-radius: 10px; font-size: 0.68rem;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(232, 196, 104, 0.2); color: var(--text-muted);
+}
+.streak-day.done { opacity: 0.55; }
+.streak-day.today { border-color: var(--accent-gold); background: rgba(245, 200, 92, 0.15); color: #fff; box-shadow: 0 0 12px rgba(245, 200, 92, 0.35); }
+.sd-label { font-weight: 700; color: var(--accent-gold); }
+.sd-prize { line-height: 1.25; }
+.sd-tick { position: absolute; top: -6px; right: -4px; background: #1e9e55; color: #fff; border-radius: 50%; width: 16px; height: 16px; font-size: 0.65rem; display: grid; place-items: center; }
+.streak-won { color: #f4ecd8 !important; }
+
+/* 📊 Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.6rem; margin-top: 0.6rem; }
+.stat-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.7rem 0.4rem; text-align: center;
+  border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(232, 196, 104, 0.22);
+}
+.st-icon { font-size: 1.2rem; }
+.st-value { font-size: 1.35rem; font-weight: 800; color: var(--accent-gold); }
+.st-label { font-size: 0.78rem; font-weight: 700; }
+.st-sub { font-size: 0.68rem; color: var(--text-muted); }
+
+/* 🏆 Leaderboard */
+.leaderboard-card { max-width: 460px; width: calc(100vw - 32px); }
+.lb-tabs { display: flex; gap: 0.4rem; margin: 0.4rem 0 0.6rem; }
+.lb-tab {
+  flex: 1; padding: 0.5rem; border-radius: 999px; cursor: pointer; font-weight: 700;
+  background: transparent; color: var(--accent-gold); border: 1px solid rgba(232, 196, 104, 0.5);
+}
+.lb-tab.active { background: var(--gold-metal, linear-gradient(180deg, #fff1c1, #e8c468 45%, #a8792a)); color: #1a1405; }
+.lb-body { max-height: 52vh; overflow-y: auto; }
+.lb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.lb-row {
+  display: grid; grid-template-columns: 2rem 32px 1fr auto; align-items: center; gap: 0.5rem;
+  padding: 0.45rem 0.6rem; border-radius: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(232, 196, 104, 0.15);
+}
+.lb-row.me { border-color: var(--accent-gold); background: rgba(245, 200, 92, 0.1); }
+.lb-rank { font-weight: 800; text-align: center; color: var(--accent-gold); }
+.lb-avatar { display: flex; }
+.lb-avatar svg, .lb-avatar img { border-radius: 50%; }
+.lb-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-name small { color: var(--text-muted); font-weight: 400; }
+.lb-wins { font-size: 0.82rem; white-space: nowrap; }
+.lb-wins small { color: var(--text-muted); }
+.lb-note { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin: 0.6rem 0 0; }

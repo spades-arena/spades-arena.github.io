@@ -612,6 +612,7 @@
           if (this.state.lobbyAlert && this.state.lobbyAlert.title === ERROR_TITLES.offline) this.state.lobbyAlert = null;
           if (this.state.friendsAlert && this.state.friendsAlert.title === ERROR_TITLES.offline) this.state.friendsAlert = null;
           this.emit();
+          this.reportStats();
           this.fire('signed_in', { user: msg.user, freshLogin });
           break;
         }
@@ -715,6 +716,16 @@
                 ? `🎁 Gift of ${parts} sent to ${msg.toName}! They’ll get it next time they open Spades Royale.`
                 : `🎁 Gift of ${parts} sent to ${msg.toName}!`
             });
+          }
+          break;
+        }
+
+        case 'leaderboard': {
+          const waiting = this.pendingLeaderboard;
+          this.pendingLeaderboard = null;
+          if (waiting) {
+            clearTimeout(waiting.timer);
+            waiting.resolve({ ok: true, top: msg.top || [], friends: msg.friends || [], myRank: msg.myRank || 0, total: msg.total || 0 });
           }
           break;
         }
@@ -1430,6 +1441,27 @@
       const timer = setTimeout(() => this.refundGift(giftId, 'The gift couldn’t be delivered — returned to you.'), 15000);
       this.pendingGifts.set(giftId, { lions, diamonds, timer });
       return { ok: true };
+    }
+
+    /** Sends your games / wins / best streak to the leaderboard (online accounts only). */
+    reportStats() {
+      if (!this.isOnlineReady() || !SH.store) return;
+      const p = SH.store.getProfile();
+      this.send('stats:report', { gamesPlayed: p.stats.gamesPlayed, gamesWon: p.stats.gamesWon, bestStreak: p.bestStreak || 0 });
+    }
+
+    /** Resolves { ok, top, friends, myRank, total } or { ok: false, message }. */
+    getLeaderboard() {
+      if (!this.isOnlineReady()) {
+        return Promise.resolve({ ok: false, message: this.isOnlineAccount() ? 'Connecting to the server — try again in a moment.' : 'The leaderboard needs an online account.' });
+      }
+      if (this.pendingLeaderboard) { clearTimeout(this.pendingLeaderboard.timer); this.pendingLeaderboard.resolve({ ok: false, message: 'Cancelled.' }); }
+      this.reportStats();
+      return new Promise((resolve) => {
+        const timer = setTimeout(() => { this.pendingLeaderboard = null; resolve({ ok: false, message: 'The server didn’t answer — try again.' }); }, 10000);
+        this.pendingLeaderboard = { resolve, timer };
+        this.send('leaderboard:get');
+      });
     }
 
     /** Checks that a username is a real Spades Royale player. Resolves { ok, found, self, user } or { ok: false, message }. */

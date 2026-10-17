@@ -209,6 +209,15 @@
     { id: 'vip', name: 'VIP Black Gold', price: 1000, desc: 'Pure black, gold symbols & letters — VIP only' }
   ];
 
+  /** Table colours: the classic green felt is free, the rest are sold in the Shop for 🦁 Lions. */
+  const TABLE_THEMES = [
+    { id: 'emerald', name: 'Emerald Felt', price: 0, desc: 'The classic dark green casino table', swatch: ['#11603a', '#062c19'] },
+    { id: 'royal', name: 'Royal Blue', price: 150, desc: 'Deep sapphire felt fit for a king', swatch: ['#1d4ed8', '#0b1a4a'] },
+    { id: 'velvet', name: 'Red Velvet', price: 250, desc: 'Rich crimson velvet, high-roller style', swatch: ['#9f1239', '#3b0614'] },
+    { id: 'marble', name: 'Black Marble', price: 400, desc: 'Polished black stone with silver veins', swatch: ['#3a3a40', '#0b0b0d'] },
+    { id: 'goldleaf', name: 'Gold Leaf', price: 600, desc: 'Black table edged in shimmering gold leaf', swatch: ['#a16207', '#1c1405'] }
+  ];
+
   function validateCardPlay(card, hand, currentTrick, spadesBroken) {
     if (!card) {
       return { valid: false, reason: 'No card selected.' };
@@ -444,6 +453,7 @@
     renderModernCardInnerHTML,
     renderSuitVector,
     CARD_SKINS,
+    TABLE_THEMES,
     validateCardPlay,
     getLegalCards,
     resolveTrickWinner,

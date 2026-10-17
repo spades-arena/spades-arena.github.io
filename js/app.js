@@ -133,6 +133,7 @@
         if (freshLogin) this.showToast(`Welcome, ${user.username}! You're logged in.`, 'success');
         if (this.currentScreen === 'login') this.navigateTo(this.afterLoginScreen || 'menu');
         this.afterLoginScreen = null;
+        setTimeout(() => this.maybeShowLoginStreak(), 700);
         if (this.currentScreen === 'profile') this.renderProfileScreen();
       });
       net.on('auth_required', () => {
@@ -201,6 +202,7 @@
         }, LOADING_SCREEN_MS);
       }
       setTimeout(() => this.checkForUpdate(), LOADING_SCREEN_MS + 1500);
+      setTimeout(() => this.maybeShowLoginStreak(), LOADING_SCREEN_MS + 600);
     }
 
     /** Which installed app this is: 'android' | 'windows' | 'mac' | null (website — always up to date). */
@@ -250,6 +252,12 @@
           ? e.target
           : (e.target && e.target.parentElement);
         if (!el || typeof el.closest !== 'function') return;
+
+        if (el.closest('[data-leaderboard]')) {
+          SH.audio.uiClick();
+          this.showLeaderboard();
+          return;
+        }
 
         const seatEl = el.closest('.table-edge-seat[data-seat]');
         if (seatEl && this.game && this.game.online) {
@@ -325,6 +333,7 @@
       document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.coins); });
       document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.diamonds || 0); });
       document.body.setAttribute('data-card-skin', profile.selectedCardSkin || 'classic');
+      document.body.setAttribute('data-table-theme', profile.selectedTableTheme || 'emerald');
       document.querySelectorAll('[data-hud-username]').forEach(el => { el.textContent = profile.username; });
       document.querySelectorAll('[data-hud-avatar]').forEach(el => { el.innerHTML = SH.renderAvatarSVG(profile.selectedAvatar, 36); });
       document.querySelectorAll('[data-hud-difficulty]').forEach(el => { el.textContent = settings.botDifficulty; });
@@ -1394,7 +1403,8 @@
       const wonMatch = matchFinished && leaders[0] === 0;
       const reward = this.planRewards({
         roundKey: `round_${g.roundId}`, wonRound, matchKey: `match_${g.matchId}`,
-        matchFinished, wonMatch, target: g.targetScore, feeRefund: g.feePaid ? SH.store.entryFee : 0
+        matchFinished, wonMatch, target: g.targetScore, feeRefund: g.feePaid ? SH.store.entryFee : 0,
+        myBid: g.players[0].bid, myTricks: g.players[0].tricks
       });
       const roundCoinsAwarded = reward.roundCoins;
       const matchCoinsAwarded = reward.matchCoins;
@@ -1458,7 +1468,8 @@
       }
       const reward = this.planRewards({
         roundKey: `round_${g.roundId}`, wonRound, matchKey: `match_${g.matchId}`,
-        matchFinished, wonMatch, target, feeRefund: g.feePaid ? SH.store.entryFee : 0
+        matchFinished, wonMatch, target, feeRefund: g.feePaid ? SH.store.entryFee : 0,
+        myBid: g.players[0].bid, myTricks: g.players[0].tricks
       });
       const roundCoinsAwarded = reward.roundCoins;
       const matchCoinsAwarded = reward.matchCoins;
@@ -1948,7 +1959,9 @@
       const reward = this.planRewards({
         roundKey: s.roundKey, wonRound: s.roundWinnerTeam === myTeam, matchKey: s.matchKey,
         matchFinished: s.matchFinished, wonMatch: s.matchWinnerTeam === myTeam,
-        target: s.targetScore, feeRefund: feePaid ? SH.store.entryFee : 0
+        target: s.targetScore, feeRefund: feePaid ? SH.store.entryFee : 0,
+        myBid: snap.players[ownerSeat] ? snap.players[ownerSeat].bid : null,
+        myTricks: snap.players[ownerSeat] ? snap.players[ownerSeat].tricks : 0
       });
       this.onlineRewardLedger[s.roundKey] = { roundCoins: reward.roundCoins, matchCoins: reward.matchCoins, matchDiamonds: 0, reward };
       this.lastRewardRef = reward;
@@ -1958,11 +1971,13 @@
      * Works out a round's rewards (stats & win streak update now). The Lions are paid when the
      * player taps "Collect" (or automatically when they move on), exactly once.
      */
-    planRewards({ roundKey, wonRound, matchKey, matchFinished, wonMatch, target, feeRefund = 0 }) {
+    planRewards({ roundKey, wonRound, matchKey, matchFinished, wonMatch, target, feeRefund = 0, myBid = null, myTricks = 0 }) {
       SH.store.claimReward(null, 0, { roundsPlayed: 1, roundsWon: wonRound ? 1 : 0 });
+      SH.store.recordRoundStats({ bid: myBid, tricks: myTricks });
       if (matchFinished) {
         SH.store.claimReward(null, 0, { gamesPlayed: 1, gamesWon: wonMatch ? 1 : 0 });
         SH.store.recordGameResult(wonMatch);
+        SH.networkAdapter.reportStats();
       }
       const roundCoins = wonRound ? 10 : 0;
       const matchCoins = matchFinished && wonMatch ? SH.store.gameWinLions(target) + feeRefund : 0;
@@ -2429,6 +2444,16 @@
           this.startNextRound();
         });
       }
+      const rematchBtn = container.querySelector('#rematch-btn');
+      if (rematchBtn) {
+        rematchBtn.addEventListener('click', () => {
+          SH.audio.uiClick();
+          this.autoCollect();
+          const net = SH.networkAdapter;
+          if (!net.state.isReady) net.roomAction('room:ready', { ready: true });
+          this.showToast('🔁 Rematch requested — it starts as soon as everyone taps Rematch.', 'info');
+        });
+      }
       const playAgainBtn = container.querySelector('#play-again-match-btn');
       if (playAgainBtn) {
         playAgainBtn.addEventListener('click', () => {
@@ -2517,6 +2542,11 @@
 
           <div class="summary-actions">
             ${s.online && !s.local ? (s.matchFinished ? `
+              ${SH.networkAdapter.state.room ? (SH.networkAdapter.state.isReady ? `
+                <button type="button" class="btn-secondary" disabled>🔁 Waiting for rematch… (${this.rematchReadyCount()})</button>
+              ` : `
+                <button type="button" class="btn-yes" id="rematch-btn">🔁 Rematch <small>(${this.rematchReadyCount()})</small></button>
+              `) : ''}
               <button type="button" class="btn-primary" id="play-again-match-btn">Back to Lobby</button>
               <button type="button" class="btn-secondary" data-nav="menu">Main Menu</button>
             ` : s.acked ? `
@@ -3376,6 +3406,115 @@
       pop._timer = setTimeout(done, 8000);
     }
 
+    rematchReadyCount() {
+      const humans = (SH.networkAdapter.state.seats || []).filter(s => s.role === 'human' || s.role === 'human_self');
+      return `${humans.filter(s => s.ready).length}/${humans.length} ready`;
+    }
+
+    /** 🔥 Daily login streak popup (once a day, after logging in). */
+    maybeShowLoginStreak() {
+      if (typeof document === 'undefined' || !SH.networkAdapter.isSignedIn()) return;
+      if (this.currentScreen === 'loading' || this.currentScreen === 'login' || this.currentScreen === 'game') return;
+      const reward = SH.store.claimLoginStreak();
+      if (!reward) return;
+      const rewards = SH.store.loginStreakRewards;
+      const host = document.querySelector('.android-device-shell') || document.body;
+      host.querySelectorAll('.streak-overlay').forEach(el => el.remove());
+      const overlay = document.createElement('div');
+      overlay.className = 'choice-overlay streak-overlay';
+      overlay.innerHTML = `
+        <div class="choice-card streak-card" role="dialog" aria-modal="true" aria-label="Daily login streak">
+          <h3>🔥 Day ${reward.day} login streak!</h3>
+          <p>Come back every day for bigger rewards. Miss a day and it starts again.</p>
+          <div class="streak-days">
+            ${rewards.map((r, i) => `
+              <div class="streak-day ${i + 1 < reward.day ? 'done' : i + 1 === reward.day ? 'today' : ''}">
+                <span class="sd-label">Day ${i + 1}</span>
+                <span class="sd-prize">🦁 ${r.lions}${r.diamonds ? `<br>💎 ${r.diamonds}` : ''}</span>
+                ${i + 1 < reward.day ? '<span class="sd-tick">✓</span>' : ''}
+              </div>
+            `).join('')}
+          </div>
+          <p class="streak-won">You got <strong>🦁 ${reward.lions} Lions${reward.diamonds ? ` + 💎 ${reward.diamonds} Diamond` : ''}</strong> today!</p>
+          <div class="choice-actions"><button type="button" class="btn-yes" data-streak-close>Collect</button></div>
+        </div>
+      `;
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay || e.target.closest('[data-streak-close]')) {
+          SH.audio.coinReward();
+          overlay.remove();
+        }
+      });
+      host.appendChild(overlay);
+    }
+
+    /** 📊 Stats card on the Profile screen. */
+    renderStatsCard(profile) {
+      const s = profile.stats || {};
+      const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '–');
+      const tile = (icon, label, value, sub) => `
+        <div class="stat-tile"><span class="st-icon">${icon}</span><span class="st-value">${value}</span><span class="st-label">${label}</span>${sub ? `<span class="st-sub">${sub}</span>` : ''}</div>`;
+      return `
+        <div class="mp-card stats-card">
+          <div class="section-head"><h3>📊 Your Stats</h3><span>${s.gamesPlayed || 0} games played</span></div>
+          <div class="stats-grid">
+            ${tile('🏆', 'Win rate', pct(s.gamesWon || 0, s.gamesPlayed || 0), `${s.gamesWon || 0} of ${s.gamesPlayed || 0} games`)}
+            ${tile('🎯', 'Bids made', pct(s.bidsMade || 0, s.bidsPlayed || 0), `${s.bidsMade || 0} of ${s.bidsPlayed || 0} bids`)}
+            ${tile('🚫', 'Nil success', pct(s.nilsMade || 0, s.nilsTried || 0), `${s.nilsMade || 0} of ${s.nilsTried || 0} Nils`)}
+            ${tile('🃏', 'Tricks won', (s.tricksWon || 0).toLocaleString('en-US'), `${s.roundsPlayed || 0} rounds`)}
+            ${tile('🔥', 'Best streak', profile.bestStreak || 0, `Now: ${profile.winStreak || 0} in a row`)}
+            ${tile('📅', 'Login streak', `Day ${profile.loginStreak || 0}`, 'Come back tomorrow')}
+          </div>
+        </div>
+      `;
+    }
+
+    /** 🏆 Leaderboard: top players worldwide & among your friends. */
+    showLeaderboard(tab = 'all') {
+      if (typeof document === 'undefined') return;
+      const host = document.querySelector('.android-device-shell') || document.body;
+      host.querySelectorAll('.leaderboard-overlay').forEach(el => el.remove());
+      const overlay = document.createElement('div');
+      overlay.className = 'choice-overlay leaderboard-overlay';
+      overlay.innerHTML = `
+        <div class="choice-card leaderboard-card" role="dialog" aria-modal="true" aria-label="Leaderboard">
+          <h3>🏆 Leaderboard</h3>
+          <div class="lb-tabs">
+            <button type="button" class="lb-tab ${tab === 'all' ? 'active' : ''}" data-lb-tab="all">🌍 Everyone</button>
+            <button type="button" class="lb-tab ${tab === 'friends' ? 'active' : ''}" data-lb-tab="friends">👥 Friends</button>
+          </div>
+          <div class="lb-body"><p class="lb-note">Loading…</p></div>
+          <div class="choice-actions"><button type="button" class="btn-no" data-lb-close>Close</button></div>
+        </div>
+      `;
+      const body = overlay.querySelector('.lb-body');
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay || e.target.closest('[data-lb-close]')) { overlay.remove(); return; }
+        const t = e.target.closest('[data-lb-tab]');
+        if (t) { SH.audio.uiClick(); overlay.remove(); this.showLeaderboard(t.getAttribute('data-lb-tab')); }
+      });
+      host.appendChild(overlay);
+      SH.networkAdapter.getLeaderboard().then((res) => {
+        if (!overlay.isConnected) return;
+        if (!res.ok) { body.innerHTML = `<p class="lb-note">${esc(res.message)}</p>`; return; }
+        const rows = tab === 'friends' ? res.friends : res.top;
+        const medal = (i) => ['🥇', '🥈', '🥉'][i] || `${i + 1}`;
+        body.innerHTML = rows.length ? `
+          <ol class="lb-list">
+            ${rows.map((r, i) => `
+              <li class="lb-row ${r.me ? 'me' : ''}">
+                <span class="lb-rank">${medal(i)}</span>
+                <span class="lb-avatar">${SH.renderAvatarArt(r.avatar === 'photo' ? 'free_ace' : (r.avatar || 'free_ace'), 30)}</span>
+                <span class="lb-name">${esc(r.username)}${r.me ? ' <small>(you)</small>' : ''}</span>
+                <span class="lb-wins"><strong>${r.gamesWon}</strong> win${r.gamesWon === 1 ? '' : 's'}<small>${r.gamesPlayed ? ` · ${Math.round((r.gamesWon / r.gamesPlayed) * 100)}%` : ''}</small></span>
+              </li>`).join('')}
+          </ol>
+          ${tab === 'all' && res.myRank ? `<p class="lb-note">You are <strong>#${res.myRank}</strong> of ${res.total} players.</p>` : ''}
+          ${tab === 'friends' && rows.length < 2 ? '<p class="lb-note">Add friends to compare scores!</p>' : ''}
+        ` : '<p class="lb-note">No games played yet — win a game to get on the board!</p>';
+      });
+    }
+
     showGiftDialog({ via, to, name }) {
       if (typeof document === 'undefined') return;
       const host = document.querySelector('.android-device-shell') || document.body;
@@ -3467,6 +3606,8 @@
             ${profile.photo ? '<button type="button" class="chip-btn" id="photo-remove-btn">Remove photo</button>' : '<p class="field-help">Tap 📷 to use a photo from your gallery.</p>'}
           </div>
         </div>
+
+        ${this.renderStatsCard(profile)}
 
         <div class="mp-card">
           <form id="username-form" class="username-form">
@@ -3705,6 +3846,27 @@
           <button type="button" class="btn-secondary btn-sm" data-nav="profile">👑 My Profile</button>
         </div>
 
+        <div class="avatar-section table-theme-section">
+          <div class="section-head">
+            <h3>🎨 Table Colours</h3>
+            <span>Change the felt on every table you play</span>
+          </div>
+          <div class="theme-grid">
+            ${SH.TABLE_THEMES.map(t => {
+              const owned = profile.ownedTableThemes.includes(t.id);
+              const inUse = (profile.selectedTableTheme || 'emerald') === t.id;
+              return `
+                <button type="button" class="theme-card ${inUse ? 'in-use' : ''} ${owned ? 'owned-item' : profile.coins < t.price ? 'unaffordable' : ''}" data-shop-theme="${t.id}">
+                  <span class="theme-swatch" data-table-swatch="${t.id}" style="--sw1:${t.swatch[0]};--sw2:${t.swatch[1]}"><span>♠</span></span>
+                  <span class="skin-name">${esc(t.name)}</span>
+                  <span class="skin-desc">${esc(t.desc)}</span>
+                  <span class="skin-price ${owned ? 'owned' : ''}">${inUse ? '✓ In use' : owned ? 'Owned — tap to use' : `${t.price.toLocaleString('en-US')} 🦁`}</span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
         <div class="avatar-section card-skin-section">
           <div class="section-head">
             <h3>🃏 Card Designs</h3>
@@ -3783,11 +3945,12 @@
         });
       }
 
+      const pick = (kind, id) => (kind === 'avatar' ? SH.store.selectOrBuyAvatar(id) : kind === 'theme' ? SH.store.selectOrBuyTableTheme(id) : SH.store.selectOrBuyCardSkin(id));
       const buy = (kind, id) => {
-        const item = kind === 'avatar' ? SH.AVATARS.find(a => a.id === id) : SH.CARD_SKINS.find(s => s.id === id);
-        const owned = kind === 'avatar' ? profile.ownedAvatars.includes(id) : profile.ownedCardSkins.includes(id);
+        const item = kind === 'avatar' ? SH.AVATARS.find(a => a.id === id) : kind === 'theme' ? SH.TABLE_THEMES.find(t => t.id === id) : SH.CARD_SKINS.find(s => s.id === id);
+        const owned = kind === 'avatar' ? profile.ownedAvatars.includes(id) : kind === 'theme' ? profile.ownedTableThemes.includes(id) : profile.ownedCardSkins.includes(id);
         if (owned) {
-          const res = kind === 'avatar' ? SH.store.selectOrBuyAvatar(id) : SH.store.selectOrBuyCardSkin(id);
+          const res = pick(kind, id);
           SH.audio.uiClick();
           this.showToast(res.message, 'success');
           return;
@@ -3807,7 +3970,7 @@
               label: `Yes, buy for ${item.price} ${unit}`,
               tone: 'yes',
               onClick: () => {
-                const res = kind === 'avatar' ? SH.store.selectOrBuyAvatar(id) : SH.store.selectOrBuyCardSkin(id);
+                const res = pick(kind, id);
                 if (res.ok) SH.audio.coinReward(); else SH.audio.notEnoughFunds();
                 this.showToast(res.message, res.ok ? 'success' : 'error');
               }
@@ -3818,6 +3981,7 @@
       };
       mount.querySelectorAll('[data-shop-avatar]').forEach(btn => btn.addEventListener('click', () => buy('avatar', btn.getAttribute('data-shop-avatar'))));
       mount.querySelectorAll('[data-shop-skin]').forEach(btn => btn.addEventListener('click', () => buy('skin', btn.getAttribute('data-shop-skin'))));
+      mount.querySelectorAll('[data-shop-theme]').forEach(btn => btn.addEventListener('click', () => buy('theme', btn.getAttribute('data-shop-theme'))));
     }
 
     renderSettingsScreen() {

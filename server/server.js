@@ -798,6 +798,46 @@ const handlers = {
     if (me.giftInbox.length !== before) saveDbSoon();
   },
 
+  'stats:report'(conn, msg) {
+    // Leaderboard numbers come from the player's own app (balances & stats live on devices)
+    const me = getUser(conn.userId);
+    const n = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
+    const gamesPlayed = n(msg.gamesPlayed, 1e6);
+    const stats = {
+      gamesPlayed,
+      gamesWon: Math.min(gamesPlayed, n(msg.gamesWon, 1e6)),
+      bestStreak: n(msg.bestStreak, 1e5),
+      updatedAt: Date.now()
+    };
+    const old = me.stats || {};
+    if (old.gamesPlayed === stats.gamesPlayed && old.gamesWon === stats.gamesWon && old.bestStreak === stats.bestStreak) return;
+    me.stats = stats;
+    saveDbSoon();
+  },
+
+  'leaderboard:get'(conn) {
+    const me = getUser(conn.userId);
+    const row = (u) => {
+      const st = u.stats || {};
+      return {
+        username: u.username,
+        avatar: u.avatar || 'free_ace',
+        gamesWon: st.gamesWon || 0,
+        gamesPlayed: st.gamesPlayed || 0,
+        bestStreak: st.bestStreak || 0,
+        me: u.id === me.id
+      };
+    };
+    const rank = (a, b) => b.gamesWon - a.gamesWon
+      || (b.gamesPlayed ? b.gamesWon / b.gamesPlayed : 0) - (a.gamesPlayed ? a.gamesWon / a.gamesPlayed : 0)
+      || b.bestStreak - a.bestStreak
+      || a.username.localeCompare(b.username);
+    const everyone = Object.values(db.users).filter(u => (u.stats && u.stats.gamesPlayed) || u.id === me.id).map(row).sort(rank);
+    const myRank = everyone.findIndex(r => r.me) + 1;
+    const friends = [me, ...me.friends.map(getUser).filter(Boolean)].map(row).sort(rank);
+    sendTo(conn, 'leaderboard', { top: everyone.slice(0, 25), friends, myRank, total: everyone.length });
+  },
+
   'user:lookup'(conn, msg) {
     // Exact username check (Shop → Send a gift)
     const query = String(msg.username || '').trim().slice(0, 24);

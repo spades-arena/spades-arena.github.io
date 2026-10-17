@@ -287,6 +287,7 @@
         return m ? { userId: id, name: m.name, avatar: m.avatar, account: m.account || null } : { userId: null, avatar: avatars[seat] };
       });
       this.status = 'playing';
+      this.rematchOpen = false;
       this.match = new SH.OnlineMatch({
         seats,
         targetScore: this.settings.targetScore,
@@ -303,6 +304,7 @@
       if (this.match) this.match.destroy();
       this.match = null;
       this.status = 'lobby';
+      this.rematchOpen = true; // Ready again from the results screen = 🔁 Rematch
       for (const [id, m] of [...this.members]) {
         m.ready = false;
         if (!m.connected && id !== this.hostId) this.members.delete(id);
@@ -372,6 +374,7 @@
         case 'room:ready':
           if (this.status !== 'lobby') return;
           m.ready = Boolean(msg.ready);
+          if (m.ready && this.rematchOpen) this.notifyOthers(id, `🔁 ${m.name} wants a rematch! Tap Rematch to play again.`);
           this.broadcastRoom();
           this.tryAutoStart();
           break;
