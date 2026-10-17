@@ -440,11 +440,15 @@
 
   /** 3-player seat colours (individual play). */
   const SOLO_COLORS = ['blue', 'red', 'yellow'];
+  /** Team ids stay 'blue'/'red' inside the game; on screen your side (South/North, seat 0) is shown as RED. */
+  const TEAM_DISPLAY = { blue: 'Red', red: 'Blue', yellow: 'Yellow' };
+  function teamDisplayName(id) { return TEAM_DISPLAY[id] || String(id || ''); }
 
   Object.assign(SH, {
     dealHands,
     computeSoloRoundScore,
     SOLO_COLORS,
+    teamDisplayName,
     pickBotNames,
     GAME_SPEEDS,
     getGameSpeed,

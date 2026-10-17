@@ -30,8 +30,8 @@
   --text-muted: #b3cebe;
   --accent-gold: #f5c85c;
   --accent-emerald: #2ec486;
-  --team-blue: #38bdf8;
-  --team-red: #fb7185;
+  --team-blue: #fb7185; /* South/North team shows as RED (your team) */
+  --team-red: #38bdf8;
   --danger: #f43f5e;
   --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.55);
   --transition-fast: 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -643,8 +643,8 @@ body[data-device-frame="laptop"] .android-device-shell {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
-.team-score-pill.blue-pill { background: #1877f2; }
-.team-score-pill.red-pill  { background: #e3242b; }
+.team-score-pill.blue-pill { background: #e3242b; } /* your team = red */
+.team-score-pill.red-pill  { background: #1877f2; }
 .team-score-pill.yellow-pill { background: #f2b600; }
 .team-score-pill.yellow-pill .tsp-pts { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); }
 
@@ -666,8 +666,8 @@ body[data-device-frame="laptop"] .android-device-shell {
   vertical-align: middle;
   box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.7);
 }
-.dot-blue { background: #1877f2; }
-.dot-red { background: #e3242b; }
+.dot-blue { background: #e3242b; }
+.dot-red { background: #1877f2; }
 .dot-yellow { background: #f2b600; }
 
 .tsp-pts {
@@ -1679,8 +1679,8 @@ body[data-device-frame="phone"] .rules-grid {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
-.bid-fs-chip.chip-partner, .bid-fs-chip.chip-blue { border-color: #1877f2; background: rgba(24, 119, 242, 0.25); }
-.bid-fs-chip.chip-foe, .bid-fs-chip.chip-red { border-color: #e3242b; background: rgba(227, 36, 43, 0.25); }
+.bid-fs-chip.chip-partner, .bid-fs-chip.chip-blue { border-color: #e3242b; background: rgba(227, 36, 43, 0.25); } /* your side = red */
+.bid-fs-chip.chip-foe, .bid-fs-chip.chip-red { border-color: #1877f2; background: rgba(24, 119, 242, 0.25); }
 .bid-fs-chip.chip-yellow { border-color: #f2b600; background: rgba(242, 182, 0, 0.25); }
 .felt-arena .tbs-buttons.bid-fs-grid {
   display: grid;
@@ -1759,8 +1759,8 @@ body[data-device-frame="phone"] .bid-fs-grid .tbs-btn.tbs-nil { grid-column: spa
 
 /* 3-player round summary */
 .summary-columns.solo-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.sum-col.sum-blue { border-top: 3px solid #1877f2; }
-.sum-col.sum-red { border-top: 3px solid #e3242b; }
+.sum-col.sum-blue { border-top: 3px solid #e3242b; }
+.sum-col.sum-red { border-top: 3px solid #1877f2; }
 .sum-col.sum-yellow { border-top: 3px solid #f2b600; }
 .sum-col.sum-me { box-shadow: inset 0 0 0 1.5px rgba(245, 200, 92, 0.6); }
 body[data-device-frame="phone"] .solo-columns .sum-col { padding: 0.4rem; font-size: 0.92em; }
@@ -2699,8 +2699,8 @@ body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1rem; }
 .chat-to .seg-btn.active { color: var(--gold-ink); }
 .chat-unread { box-shadow: 0 0 0 1.5px #fff; }
 /* Selected team buttons keep their team colour, framed in gold */
-.team-select-btn.team-blue.selected { background: linear-gradient(180deg, #2b6fe0, #123d8c); color: #fff; border-color: #fff1b8; }
-.team-select-btn.team-red.selected { background: linear-gradient(180deg, #e3343b, #8a1218); color: #fff; border-color: #fff1b8; }
+.team-select-btn.team-blue.selected { background: linear-gradient(180deg, #e3343b, #8a1218); color: #fff; border-color: #fff1b8; }
+.team-select-btn.team-red.selected { background: linear-gradient(180deg, #2b6fe0, #123d8c); color: #fff; border-color: #fff1b8; }
 .diff-option.selected { background: var(--gold-bright); color: var(--gold-ink); border-color: #fff1b8; }
 .diff-option.selected .diff-name,
 .diff-option.selected .diff-desc { color: var(--gold-ink); }
@@ -3152,8 +3152,8 @@ body[data-table-theme="blackgold"] .felt-arena {
 .team-spots { font-size: 0.7rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: rgba(0, 0, 0, 0.35); color: #d1fae5; }
 .team-spots.full { color: #fecaca; }
 .team-hint { font-size: 0.82rem; margin: 0 0 0.5rem; color: var(--text-muted); }
-.team-hint .hint-blue { color: #60a5fa; }
-.team-hint .hint-red { color: #f87171; }
+.team-hint .hint-blue { color: #f87171; }
+.team-hint .hint-red { color: #60a5fa; }
 
 /* Forgot password link & Profile security card */
 .auth-link {
@@ -3223,6 +3223,79 @@ body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: 42px; heig
 }
 .legal-hint-badge { background: #ffd54a; color: #1a1405; font-weight: 800; }
 
+/* 2-player rooms: Play Together / Play Against Each Other */
+.pairing-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.4rem 0; }
+.pairing-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 0.2rem; text-align: center;
+  padding: 0.8rem 0.6rem; border-radius: 14px; cursor: pointer; color: #f4ecd8;
+  background: rgba(255, 255, 255, 0.04); border: 2px solid rgba(232, 196, 104, 0.3);
+}
+.pairing-btn .pairing-icon { font-size: 1.6rem; }
+.pairing-btn small { color: var(--text-muted); font-size: 0.74rem; }
+.pairing-btn.selected { border-color: #ffd54a; background: linear-gradient(180deg, rgba(227, 36, 43, 0.35), rgba(138, 18, 24, 0.35)); box-shadow: 0 0 14px rgba(255, 213, 74, 0.35); }
+.pairing-btn.selected small { color: #fde68a; }
+.pairing-btn:disabled { cursor: default; opacity: 0.85; }
+.pairing-btn:disabled:not(.selected) { opacity: 0.45; }
+@media (max-width: 420px) { .pairing-row { grid-template-columns: 1fr; } }
+
+/* Cards played on the table pop off the felt */
+.trick-slot .playing-card {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 8px 18px rgba(0, 0, 0, 0.65), 0 0 14px rgba(255, 213, 74, 0.25);
+}
+.trick-slot .playing-card .pc-rank { font-weight: 900; }
+.hand-card { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85), 0 6px 14px rgba(0, 0, 0, 0.55); }
+
+/* Small phones: keep the whole top bar on screen */
+@media (max-width: 400px) {
+  .app-topbar .sig-sm { display: none; }
+  .app-topbar .brand-text { font-size: 0.82rem; line-height: 1.05; }
+  .app-topbar .hud-cluster { gap: 0.25rem; }
+  .app-topbar .hud-pill { padding-left: 0.45rem; padding-right: 0.45rem; }
+  .app-topbar .hud-shop-pill span:last-child { display: none; } /* 🛍 icon only */
+}
+
+/* Tablets & laptops: bigger cards in the middle of the table */
+body[data-device-frame="tablet"] .trick-mat,
+body[data-device-frame="laptop"] .trick-mat,
+body[data-device-frame="full"] .trick-mat { width: min(400px, 100%); height: min(330px, 100%); }
+body[data-device-frame="tablet"] .trick-slot .table-card,
+body[data-device-frame="laptop"] .trick-slot .table-card,
+body[data-device-frame="full"] .trick-slot .table-card { width: 82px; height: 116px; }
+body[data-device-frame="tablet"] .trick-slot .table-card .pc-rank,
+body[data-device-frame="laptop"] .trick-slot .table-card .pc-rank,
+body[data-device-frame="full"] .trick-slot .table-card .pc-rank { font-size: 1.3rem; }
+body[data-device-frame="tablet"] .trick-slot .table-card .pc-index-suit,
+body[data-device-frame="laptop"] .trick-slot .table-card .pc-index-suit,
+body[data-device-frame="full"] .trick-slot .table-card .pc-index-suit { width: 16px; height: 16px; }
+body[data-device-frame="tablet"] .trick-slot .table-card .pc-pip .pc-pip-lg,
+body[data-device-frame="laptop"] .trick-slot .table-card .pc-pip .pc-pip-lg,
+body[data-device-frame="full"] .trick-slot .table-card .pc-pip .pc-pip-lg { width: 40px; height: 40px; }
+
+/* 👑 VIP welcome on Home */
+.vip-welcome {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin: 0 0 0.8rem; padding: 0.75rem 0.9rem; border-radius: 16px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 213, 74, 0.22), transparent 55%),
+    linear-gradient(135deg, #1d1609 0%, #0d0b07 60%, #1a1208 100%);
+  border: 1.5px solid #e8c468;
+  box-shadow: 0 0 22px rgba(232, 196, 104, 0.18), inset 0 1px 0 rgba(255, 241, 184, 0.25);
+}
+.vip-welcome:empty { display: none; }
+.vip-avatar { flex: none; display: flex; border-radius: 50%; box-shadow: 0 0 0 2px #e8c468, 0 0 12px rgba(232, 196, 104, 0.5); }
+.vip-avatar svg, .vip-avatar img { border-radius: 50%; }
+.vip-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.vip-greet { font-size: 0.78rem; color: #c9b98f; }
+.vip-name {
+  font-size: 1.35rem; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: linear-gradient(180deg, #fff1c1, #e8c468 55%, #a8792a); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.vip-sub { font-size: 0.72rem; color: #a89f8a; }
+.vip-badge {
+  flex: none; padding: 0.3rem 0.65rem; border-radius: 999px; font-weight: 900; font-size: 0.78rem; color: #1a1405;
+  background: linear-gradient(180deg, #fff1c1, #e8c468 45%, #a8792a); box-shadow: 0 0 12px rgba(232, 196, 104, 0.45);
+}
+
   </style>
 </head>
 <body data-device-frame="full">
@@ -3281,6 +3354,7 @@ body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: 42px; heig
 
         <!-- 2. MAIN MENU SCREEN -->
         <section id="screen-menu" class="screen-view" aria-label="Main Menu">
+          <div class="vip-welcome" data-vip-welcome aria-live="polite"></div>
           <div class="menu-hero">
             <div class="royale-logo menu-logo" role="img" aria-label="Spades Royale — Play. Win. Rule."></div>
             <h1 class="visually-hidden">Spades Royale: Offline Multiplayer</h1>
@@ -3305,7 +3379,7 @@ body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: 42px; heig
             <button type="button" class="menu-tile tile-solo" data-nav="game" data-fresh-match="true" data-offline-seats="3">
               <span class="tile-icon tile-icon-text" aria-hidden="true">3♠</span>
               <span class="tile-title">3-Player Offline</span>
-              <span class="tile-desc">Every player for themselves — you vs 2 bots, 17 cards each. Blue vs Red vs Yellow.</span>
+              <span class="tile-desc">Every player for themselves — you vs 2 bots, 17 cards each. Red vs Blue vs Yellow.</span>
               <span class="tile-badge">New · Solo</span>
             </button>
 
@@ -3319,7 +3393,7 @@ body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: 42px; heig
             <button type="button" class="menu-tile" data-nav="multiplayer">
               <span class="tile-icon" aria-hidden="true">🌐</span>
               <span class="tile-title">Multiplayer</span>
-              <span class="tile-desc">2-Human (+2 Bots) or 4-Human lobbies, Team Blue vs Red, room codes &amp; invites.</span>
+              <span class="tile-desc">2-Human (+2 Bots) or 4-Human lobbies, Team Red vs Blue, room codes &amp; invites.</span>
               <span class="tile-badge">Live Online</span>
             </button>
 
@@ -5154,11 +5228,15 @@ body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: 42px; heig
 
   /** 3-player seat colours (individual play). */
   const SOLO_COLORS = ['blue', 'red', 'yellow'];
+  /** Team ids stay 'blue'/'red' inside the game; on screen your side (South/North, seat 0) is shown as RED. */
+  const TEAM_DISPLAY = { blue: 'Red', red: 'Blue', yellow: 'Yellow' };
+  function teamDisplayName(id) { return TEAM_DISPLAY[id] || String(id || ''); }
 
   Object.assign(SH, {
     dealHands,
     computeSoloRoundScore,
     SOLO_COLORS,
+    teamDisplayName,
     pickBotNames,
     GAME_SPEEDS,
     getGameSpeed,
@@ -6105,7 +6183,9 @@ if (typeof module === 'object' && module.exports) {
     return {
       targetScore: Number(raw.targetScore) === 250 ? 250 : 500,
       difficulty: DIFFICULTIES.includes(raw.difficulty) ? raw.difficulty : 'Medium',
-      speed: ['relaxed', 'normal', 'fast'].includes(raw.speed) ? raw.speed : 'normal'
+      speed: ['relaxed', 'normal', 'fast'].includes(raw.speed) ? raw.speed : 'normal',
+      // 2-player rooms: 'team' = both friends are partners vs 2 bots · 'versus' = friend vs friend, each with a bot partner
+      pairing: raw.pairing === 'versus' ? 'versus' : 'team'
     };
   }
 
@@ -6128,6 +6208,7 @@ if (typeof module === 'object' && module.exports) {
       this.match = null;
       this.lastChatAt = new Map();
       this.addMember(host, host.team);
+      this.arrangeDuo();
     }
 
     // ---------------------------------------------------------------- seats
@@ -6139,6 +6220,17 @@ if (typeof module === 'object' && module.exports) {
     seatTakenBy(seat) {
       for (const [id, m] of this.members) if (m.seat === seat) return id;
       return null;
+    }
+
+    /** 2-player rooms: the host's choice decides the teams — host sits South, the friend North (together) or West (against). */
+    arrangeDuo() {
+      if (this.mode !== 2) return;
+      const host = this.members.get(this.hostId);
+      if (host) host.seat = 0;
+      const friendSeat = this.settings.pairing === 'versus' ? 1 : 2;
+      for (const m of this.members.values()) {
+        if (m.id !== this.hostId && m.seat !== friendSeat) { m.seat = friendSeat; m.ready = false; }
+      }
     }
 
     freeSeat(team) {
@@ -6263,6 +6355,7 @@ if (typeof module === 'object' && module.exports) {
       if (this.status === 'playing') return 'in_progress';
       if (this.members.size >= this.mode) return 'full_room';
       if (!this.addMember({ id, name, avatar, account }, team)) return 'full_room';
+      this.arrangeDuo();
       this.broadcastRoom();
       this.notifyOthers(id, `${this.members.get(id).name} joined the room.`, 'success');
       return null;
@@ -6387,6 +6480,7 @@ if (typeof module === 'object' && module.exports) {
           for (const mem of this.members.values()) {
             if (mem.seat === undefined) mem.seat = [0, 1, 2, 3].find(x => x < this.seatCount() && !this.seatTakenBy(x));
           }
+          this.arrangeDuo();
           this.broadcastRoom();
           break;
         }
@@ -6399,7 +6493,12 @@ if (typeof module === 'object' && module.exports) {
 
         case 'room:settings':
           if (isHost && this.status === 'lobby') {
+            const before = this.settings.pairing;
             this.settings = sanitizeSettings(msg.settings);
+            if (before !== this.settings.pairing) {
+              this.arrangeDuo();
+              this.notifyOthers(id, this.settings.pairing === 'versus' ? '⚔️ The host set this game to: Play Against Each Other.' : '🤝 The host set this game to: Play Together (same team).');
+            }
             this.broadcastRoom();
           }
           break;
@@ -6407,10 +6506,11 @@ if (typeof module === 'object' && module.exports) {
         case 'room:team': {
           if (this.status !== 'lobby') return this.error(id, 'in_progress', 'Teams are locked once the match starts.');
           if (this.mode === 3) return this.broadcastRoom();
+          if (this.mode === 2) return this.error(id, 'team_locked', 'In 2-player rooms the host picks “Play Together” or “Play Against Each Other”, and the teams are set automatically.');
           const team = msg.team === 'red' ? 'red' : 'blue';
           if (this.seatTeam(m.seat) === team) return this.broadcastRoom();
           const free = this.freeSeat(team);
-          if (free === undefined) return this.error(id, 'team_full', `Team ${team === 'blue' ? 'Blue' : 'Red'} already has 2 players.`);
+          if (free === undefined) return this.error(id, 'team_full', `Team ${team === 'blue' ? 'Red' : 'Blue'} already has 2 players.`);
           m.seat = free;
           m.ready = false;
           this.broadcastRoom();
@@ -6572,7 +6672,7 @@ if (typeof module === 'object' && module.exports) {
  * ============================================================================
  * Connects to the Spades by Hadzz WebSocket server (`server/server.js`).
  *
- *  - Lobbies: 2-Human (+2 bots) or 4-Human rooms, Team Blue (S/N) vs Team Red (W/E)
+ *  - Lobbies: 2-Human (+2 bots) or 4-Human rooms, Team Red (S/N) vs Team Blue (W/E)
  *  - Server-authoritative matches: the server shuffles, deals, validates every bid
  *    and card, runs bots, and only ever sends each player their own hand.
  *  - Friends: username search, requests, presence (online / in_match / offline), invites
@@ -6617,6 +6717,7 @@ if (typeof module === 'object' && module.exports) {
     taken_username: 'Username Already Taken Online',
     invalid_username: 'Username Not Allowed Online',
     team_full: 'Team Is Full',
+    team_locked: 'Teams Are Set Automatically',
     not_host: 'Host Only',
     not_ready: 'Not Everyone Is Ready',
     in_progress: 'Match In Progress',
@@ -6781,7 +6882,7 @@ if (typeof module === 'object' && module.exports) {
           if (this.state.isHost && this.state.room && this.state.room.status === 'lobby') {
             const s = SH.store.getSettings();
             const rs = this.state.room.settings || {};
-            if (rs.targetScore !== s.targetScore || rs.difficulty !== s.botDifficulty || rs.speed !== (s.gameSpeed || 'normal')) {
+            if (rs.targetScore !== s.targetScore || rs.difficulty !== s.botDifficulty || rs.speed !== (s.gameSpeed || 'normal') || (rs.pairing || 'team') !== (this.prefs.pairing === 'versus' ? 'versus' : 'team')) {
               this.roomSend('room:settings', { settings: this.localSettings() });
             }
           }
@@ -7173,7 +7274,7 @@ if (typeof module === 'object' && module.exports) {
 
     localSettings() {
       const s = SH.store ? SH.store.getSettings() : { targetScore: 500, botDifficulty: 'Medium' };
-      return { targetScore: s.targetScore, difficulty: s.botDifficulty, speed: s.gameSpeed || 'normal' };
+      return { targetScore: s.targetScore, difficulty: s.botDifficulty, speed: s.gameSpeed || 'normal', pairing: this.prefs.pairing === 'versus' ? 'versus' : 'team' };
     }
 
     setAlert(scope, alert) {
@@ -7479,7 +7580,7 @@ if (typeof module === 'object' && module.exports) {
       if (s.kind === 'open_or_bot') {
         return { ...base, role: 'human_slot', name: 'Open Seat', ready: true, avatar: 'free_knight', status: 'AI Bot if no 2nd human sits here' };
       }
-      const colour = `${s.team.charAt(0).toUpperCase()}${s.team.slice(1)}`;
+      const colour = SH.teamDisplayName(s.team);
       return { ...base, role: 'human_slot', name: `Open Seat (${this.state.humanCountMode === 3 ? colour : `Team ${colour}`})`, ready: false, avatar: 'free_knight', status: 'Waiting for player' };
     }
 
@@ -7531,13 +7632,13 @@ if (typeof module === 'object' && module.exports) {
         title: validCount === 2
           ? '2-Human Mode Selected (2 Humans + 2 Bots)'
           : validCount === 3
-          ? '3-Player Mode Selected (Blue vs Red vs Yellow)'
-          : '4-Human Team Mode Selected (Team Blue vs Team Red)',
+          ? '3-Player Mode Selected (Red vs Blue vs Yellow)'
+          : '4-Human Team Mode Selected (Team Red vs Team Blue)',
         detail: validCount === 3
           ? 'Every player for themselves with 17 cards each. Create a room and share the code with 2 friends.'
           : validCount === 2
           ? 'The two seats not taken by humans are automatically assigned to AI Bots so the game always has 4 seats.'
-          : 'All 4 seats are reserved for human players. Teammates sit opposite each other (South & North = Team Blue; West & East = Team Red).'
+          : 'All 4 seats are reserved for human players. Teammates sit opposite each other (South & North = Team Red; West & East = Team Blue).'
       };
       this.emit();
     }
@@ -7565,7 +7666,7 @@ if (typeof module === 'object' && module.exports) {
         if (count === 2) {
           return { seat, compass: labels[seat], team, role: 'human_slot', name: 'Open Seat', ready: true, avatar: defaults[seat], status: '2nd human or AI Bot' };
         }
-        return { seat, compass: labels[seat], team, role: 'human_slot', name: solo ? `Open Seat (${team.charAt(0).toUpperCase()}${team.slice(1)})` : `Open Human Seat (Team ${team === 'blue' ? 'Blue' : 'Red'})`, ready: false, avatar: defaults[seat], status: 'Waiting for player' };
+        return { seat, compass: labels[seat], team, role: 'human_slot', name: solo ? `Open Seat (${SH.teamDisplayName(team)})` : `Open Human Seat (Team ${team === 'blue' ? 'Red' : 'Blue'})`, ready: false, avatar: defaults[seat], status: 'Waiting for player' };
       });
     }
 
@@ -7579,9 +7680,17 @@ if (typeof module === 'object' && module.exports) {
       this.syncSeatsForMode(this.state.humanCountMode, localUsername, localAvatar);
       this.state.lobbyAlert = {
         type: 'info',
-        title: `Team ${t === 'blue' ? 'Blue (South/North)' : 'Red (West/East)'} Selected`,
+        title: `Team ${t === 'blue' ? 'Red (South/North)' : 'Blue (West/East)'} Selected`,
         detail: 'Teammates always sit directly opposite each other. Create or join a room to claim your seat.'
       };
+      this.emit();
+    }
+
+    /** Host of a 2-player room: 'team' (play together) or 'versus' (play against each other). */
+    setPairing(pairing) {
+      this.prefs.pairing = pairing === 'versus' ? 'versus' : 'team';
+      savePrefs(this.prefs);
+      if (this.state.isHost && this.state.room && this.state.room.status === 'lobby') this.roomSend('room:settings', { settings: this.localSettings() });
       this.emit();
     }
 
@@ -8280,7 +8389,7 @@ if (typeof module === 'object' && module.exports) {
   // Shown by the cat in the hat while each new game is shuffled & dealt (one at random)
   const INTRO_FACTS = [
     'Spades Royale is the first ever game made by Hadzz — and one of the best Spades games out there! ♠',
-    'This is the first Spades game made with 3 players! 🔵🔴🟡',
+    'This is the first Spades game made with 3 players! 🔴🔵🟡',
     'Spades is known as one of the 10 hardest card games. 🧠',
     'Spades is known for intelligent minds — so if you’re playing, you’re very intelligent! 😎',
     'The strongest card is the Ace — in Urdu it’s called “Ikka” (یکّا), known for 1. ♠️',
@@ -8392,7 +8501,7 @@ if (typeof module === 'object' && module.exports) {
         if (this.currentScreen === 'menu') this.renderMenuResume();
       });
       net.on('signed_in', ({ user, freshLogin }) => {
-        if (freshLogin) this.showToast(`Welcome, ${user.username}! You're logged in.`, 'success');
+        if (freshLogin) this.showToast(`👑 Welcome, ${user.username}! You're a Spades Royale VIP.`, 'success');
         if (this.currentScreen === 'login') this.navigateTo(this.afterLoginScreen || 'menu');
         this.afterLoginScreen = null;
         setTimeout(() => this.maybeShowLoginStreak(), 700);
@@ -8611,6 +8720,18 @@ if (typeof module === 'object' && module.exports) {
       document.body.setAttribute('data-card-skin', profile.selectedCardSkin || 'classic');
       document.body.setAttribute('data-table-theme', profile.selectedTableTheme || 'emerald');
       document.querySelectorAll('[data-hud-username]').forEach(el => { el.textContent = profile.username; });
+      // 👑 Every player is treated like a VIP: personal welcome on Home
+      const hour = new Date().getHours();
+      const greet = hour < 5 ? 'Good night' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+      const welcomeHtml = `
+        <div class="vip-avatar">${SH.renderAvatarSVG(profile.selectedAvatar, 46)}</div>
+        <div class="vip-text">
+          <span class="vip-greet">${greet},</span>
+          <strong class="vip-name">${esc(profile.username)}</strong>
+          <span class="vip-sub">Welcome to your table — the royal treatment, every game.</span>
+        </div>
+        <span class="vip-badge">👑 VIP</span>`;
+      document.querySelectorAll('[data-vip-welcome]').forEach(el => { if (el._html !== welcomeHtml) { el._html = welcomeHtml; el.innerHTML = welcomeHtml; } });
       document.querySelectorAll('[data-hud-avatar]').forEach(el => { el.innerHTML = SH.renderAvatarSVG(profile.selectedAvatar, 36); });
       document.querySelectorAll('[data-hud-difficulty]').forEach(el => { el.textContent = settings.botDifficulty; });
       document.querySelectorAll('[data-hud-target]').forEach(el => { el.textContent = `${settings.targetScore} pts`; });
@@ -8837,7 +8958,7 @@ if (typeof module === 'object' && module.exports) {
         } else if (rs.matchFinished) {
           const winTeam = snap.roundSummary.matchWinnerTeam;
           const names = m.players.filter(p => p.team === winTeam).map(p => p.name).join(' & ');
-          rs.customTitle = `🏆 Team ${winTeam === 0 ? 'Blue' : 'Red'} Wins! (${names})`;
+          rs.customTitle = `🏆 Team ${winTeam === 0 ? 'Red' : 'Blue'} Wins! (${names})`;
           rs.wonMatch = winTeam === this.localCfg.ownerSeat % 2;
         } else {
           rs.customTitle = `Round ${rs.roundNumber} Summary`;
@@ -8942,8 +9063,8 @@ if (typeof module === 'object' && module.exports) {
       const cfg = this.passPlayDraft || (this.passPlayDraft = { mode: 2, arrangement: 'partners', names: [profile.username, 'Player 2', 'Player 3', 'Player 4'] });
       const humanSeats = cfg.mode === 4 ? [0, 1, 2, 3] : cfg.mode === 3 ? [0, 1, 2] : cfg.arrangement === 'rivals' ? [0, 1] : [0, 2];
       const seatLabel = cfg.mode === 3
-        ? ['South · 🔵 Blue', 'West · 🔴 Red', 'East · 🟡 Yellow']
-        : ['South · Team Blue', 'West · Team Red', 'North · Team Blue', 'East · Team Red'];
+        ? ['South · 🔴 Red', 'West · 🔵 Blue', 'East · 🟡 Yellow']
+        : ['South · Team Red', 'West · Team Blue', 'North · Team Red', 'East · Team Blue'];
       const seatColorClass = (seat) => (cfg.mode === 3 ? SH.SOLO_COLORS[seat] : (seat % 2 === 0 ? 'blue' : 'red'));
       const saved = this.getResumableLocalGame();
 
@@ -8952,7 +9073,7 @@ if (typeof module === 'object' && module.exports) {
           <div class="resume-card resume-local">
             <div class="resume-info">
               <strong>👥 Unfinished Pass &amp; Play</strong>
-              <span>${saved.names.map(esc).join(', ')} · Round ${saved.roundNumber} · Blue ${saved.teamScores[0]} – Red ${saved.teamScores[1]}</span>
+              <span>${saved.names.map(esc).join(', ')} · Round ${saved.roundNumber} · Red ${saved.teamScores[0]} – Blue ${saved.teamScores[1]}</span>
             </div>
             <div class="resume-actions">
               <button type="button" class="btn-primary btn-sm" data-pp-resume>▶ Resume</button>
@@ -8978,8 +9099,8 @@ if (typeof module === 'object' && module.exports) {
               <button type="button" class="seg-btn ${cfg.arrangement === 'rivals' ? 'active' : ''}" data-pp-arr="rivals">Rivals (each + Bot partner)</button>
             </div>
           ` : cfg.mode === 3
-            ? '<p class="field-help pp-note">Every player for themselves — 🔵 Blue vs 🔴 Red vs 🟡 Yellow. The 2♣ is removed so everyone gets 17 cards.</p>'
-            : '<p class="field-help pp-note">Team Blue = South &amp; North · Team Red = West &amp; East (partners sit opposite).</p>'}
+            ? '<p class="field-help pp-note">Every player for themselves — 🔴 Red vs 🔵 Blue vs 🟡 Yellow. The 2♣ is removed so everyone gets 17 cards.</p>'
+            : '<p class="field-help pp-note">Team Red = South &amp; North · Team Blue = West &amp; East (partners sit opposite).</p>'}
 
           <h4>Game name</h4>
           <input type="text" class="pp-game-name" id="pp-game-name" maxlength="24" autocomplete="off" placeholder="Name your game (optional) — e.g. Family Night" value="${esc(cfg.gameName || '')}" />
@@ -9382,7 +9503,7 @@ if (typeof module === 'object' && module.exports) {
 
     /**
      * New offline game. numSeats 4 = classic partnerships (you + North vs West & East);
-     * numSeats 3 = cutthroat, every player for themselves (Blue / Red / Yellow).
+     * numSeats 3 = cutthroat, every player for themselves (Red / Blue / Yellow).
      */
     startNewMatch(numSeats) {
       clearTimeout(this.botTimer);
@@ -9402,7 +9523,7 @@ if (typeof module === 'object' && module.exports) {
         difficulty: settings.botDifficulty,
         roundNumber: 0,
         dealerSeat: n - 2, // Advances once in Round 1 so Seat 0 (Human South) bids and leads first
-        teamScores: n === 3 ? [0, 0, 0] : [0, 0], // 4p: [Blue (0 & 2), Red (1 & 3)] · 3p: one per player
+        teamScores: n === 3 ? [0, 0, 0] : [0, 0], // 4p: [Red (0 & 2), Blue (1 & 3)] · 3p: one per player
         teamBags: n === 3 ? [0, 0, 0] : [0, 0],
         players: n === 3 ? [
           you,
@@ -10027,7 +10148,7 @@ if (typeof module === 'object' && module.exports) {
       const foeTeam = solo ? null : 1 - myTeam;
       const toView = (s) => (s - me + n) % n;
       const fromView = (v) => (v + me) % n;
-      const teamName = (t) => (t === 0 ? 'Blue' : 'Red');
+      const teamName = (t) => (t === 0 ? 'Red' : 'Blue');
 
       const players = Array.from({ length: n }, (_, v) => {
         const p = snap.players[fromView(v)];
@@ -10146,8 +10267,8 @@ if (typeof module === 'object' && module.exports) {
         turnDeadline: typeof snap.turnMsLeft === 'number' && toView(snap.turnSeat) === 0 ? Date.now() + snap.turnMsLeft : null,
         roundSummary,
         sideLabels: solo ? null : {
-          mine: myTeam === 0 ? 'BLUE' : 'RED',
-          foe: myTeam === 0 ? 'RED' : 'BLUE',
+          mine: myTeam === 0 ? 'RED' : 'BLUE',
+          foe: myTeam === 0 ? 'BLUE' : 'RED',
           mineClass: myTeam === 0 ? 'blue-pill' : 'red-pill',
           foeClass: myTeam === 0 ? 'red-pill' : 'blue-pill'
         }
@@ -10374,7 +10495,7 @@ if (typeof module === 'object' && module.exports) {
           ` : `
           <div class="score-strip-row">
             <div class="team-score-col">
-              <div class="team-score-pill ${g.sideLabels ? g.sideLabels.mineClass : 'blue-pill'}" title="Team ${g.sideLabels ? g.sideLabels.mine : 'BLUE'} score">
+              <div class="team-score-pill ${g.sideLabels ? g.sideLabels.mineClass : 'blue-pill'}" title="Team ${g.sideLabels ? g.sideLabels.mine : 'RED'} score">
                 <strong class="tsp-pts">${g.teamScores[0]}/${g.targetScore}</strong>
               </div>
               <span class="tsp-bid" title="Tricks won / team bid">${blueTricks}/${teamBidText(g.players[0], g.players[2])}</span>
@@ -10388,7 +10509,7 @@ if (typeof module === 'object' && module.exports) {
             </div>
 
             <div class="team-score-col">
-              <div class="team-score-pill ${g.sideLabels ? g.sideLabels.foeClass : 'red-pill'}" title="Team ${g.sideLabels ? g.sideLabels.foe : 'RED'} score">
+              <div class="team-score-pill ${g.sideLabels ? g.sideLabels.foeClass : 'red-pill'}" title="Team ${g.sideLabels ? g.sideLabels.foe : 'BLUE'} score">
                 <strong class="tsp-pts">${g.teamScores[1]}/${g.targetScore}</strong>
               </div>
               <span class="tsp-bid" title="Tricks won / team bid">${redTricks}/${teamBidText(g.players[1], g.players[3])}</span>
@@ -10726,7 +10847,7 @@ if (typeof module === 'object' && module.exports) {
     }
 
     renderRoundSummaryModal(s) {
-      const foeName = s.foeName || 'Team Red';
+      const foeName = s.foeName || 'Team Blue';
       const title = s.customTitle || (s.matchFinished
         ? (s.wonMatch ? '🏆 Victory! You Won the Game!' : `Match Complete — ${foeName} Wins`)
         : (s.wonRound ? `Round ${s.roundNumber} Won!` : `Round ${s.roundNumber} Summary`));
@@ -10772,7 +10893,7 @@ if (typeof module === 'object' && module.exports) {
           ` : `
           <div class="summary-columns">
             <div class="sum-col ${s.mineClass || 'sum-blue'}">
-              <h4>${s.mineHeading ? esc(s.mineHeading) : 'Team Blue (You &amp; North)'}</h4>
+              <h4>${s.mineHeading ? esc(s.mineHeading) : 'Team Red (You &amp; North)'}</h4>
               <p class="sum-line">${s.blue.contractNote}</p>
               ${s.blue.nilNotes.map(n => `<p class="sum-line">${esc(n)}</p>`).join('')}
               ${s.blue.bagPenalty < 0 ? `<p class="sum-line penalty-text">10-Bag Penalty: ${s.blue.bagPenalty} pts</p>` : ''}
@@ -10781,7 +10902,7 @@ if (typeof module === 'object' && module.exports) {
             </div>
 
             <div class="sum-col ${s.foeClass || 'sum-red'}">
-              <h4>${s.foeHeading ? esc(s.foeHeading) : 'Team Red (West &amp; East)'}</h4>
+              <h4>${s.foeHeading ? esc(s.foeHeading) : 'Team Blue (West &amp; East)'}</h4>
               <p class="sum-line">${s.red.contractNote}</p>
               ${s.red.nilNotes.map(n => `<p class="sum-line">${esc(n)}</p>`).join('')}
               ${s.red.bagPenalty < 0 ? `<p class="sum-line penalty-text">10-Bag Penalty: ${s.red.bagPenalty} pts</p>` : ''}
@@ -11116,7 +11237,7 @@ if (typeof module === 'object' && module.exports) {
         <div class="mp-grid">
           <div class="mp-card">
             <h3>1. Lobby Configuration</h3>
-            <p class="field-help">Pick <strong>2 Humans</strong> (+2 AI bots, teams), <strong>3 Players</strong> (every player for themselves) or <strong>4 Humans</strong> (Team Blue vs Team Red).</p>
+            <p class="field-help">Pick <strong>2 Humans</strong> (+2 AI bots, teams), <strong>3 Players</strong> (every player for themselves) or <strong>4 Humans</strong> (Team Red vs Team Blue).</p>
 
             <div class="segmented-control" role="group" aria-label="Human player count">
               <button type="button" class="seg-btn ${net.humanCountMode === 2 ? 'active' : ''}" data-mp-mode="2" ${canEditMode ? '' : 'disabled'}>
@@ -11132,14 +11253,30 @@ if (typeof module === 'object' && module.exports) {
 
             <div class="mode-explainer-box">
               ${net.humanCountMode === 3
-                ? '<strong>3-Player Mode:</strong> Cutthroat Spades — no teams. 🔵 Blue (South), 🔴 Red (West) and 🟡 Yellow (East) each bid and score on their own. The 2♣ is removed so everyone gets 17 cards.'
+                ? '<strong>3-Player Mode:</strong> Cutthroat Spades — no teams. 🔴 Red (South), 🔵 Blue (West) and 🟡 Yellow (East) each bid and score on their own. The 2♣ is removed so everyone gets 17 cards.'
                 : net.humanCountMode === 2
-                ? '<strong>2-Human Mode:</strong> The remaining 2 seats are automatically filled by AI Bots so the game has all 4 seats. Pick the same team to play as partners, or opposite teams to play head-to-head.'
-                : '<strong>4-Human Mode:</strong> Choose <strong>Team Blue</strong> (South/North) or <strong>Team Red</strong> (West/East). Teammates always sit opposite each other.'}
+                ? '<strong>2-Human Mode:</strong> You and a friend + 2 AI bots. The host picks <strong>Play Together</strong> (you two are partners) or <strong>Play Against Each Other</strong> (each of you gets a bot partner) — teams are set automatically.'
+                : '<strong>4-Human Mode:</strong> Choose <strong>Team Red</strong> (South/North) or <strong>Team Blue</strong> (West/East). Teammates always sit opposite each other.'}
               ${inRoom && !net.isHost && room.status === 'lobby' ? '<br/><em>Only the host can change the mode.</em>' : ''}
             </div>
 
-            ${net.humanCountMode === 3 ? '' : `
+            ${net.humanCountMode === 2 ? (() => {
+              const pairing = inRoom ? ((room.settings && room.settings.pairing) || 'team') : (adapter.prefs.pairing === 'versus' ? 'versus' : 'team');
+              const canPick = !inRoom || (net.isHost && room.status === 'lobby');
+              const friend = (net.seats || []).find(x => x.role === 'human');
+              const fname = friend ? esc(friend.plainName || friend.name) : 'your friend';
+              return `
+            <h4>How do you want to play?</h4>
+            <div class="pairing-row" role="group" aria-label="Play together or against each other">
+              <button type="button" class="pairing-btn ${pairing === 'team' ? 'selected' : ''}" data-mp-pairing="team" ${canPick ? '' : 'disabled'}>
+                <span class="pairing-icon">🤝</span><strong>Play Together</strong><small>You &amp; ${fname} are partners (Team Blue) vs 2 bots</small>
+              </button>
+              <button type="button" class="pairing-btn ${pairing === 'versus' ? 'selected' : ''}" data-mp-pairing="versus" ${canPick ? '' : 'disabled'}>
+                <span class="pairing-icon">⚔️</span><strong>Play Against Each Other</strong><small>You vs ${fname} — each with a bot partner</small>
+              </button>
+            </div>
+            <p class="field-help">${canPick ? 'Teams are set automatically from this choice — nobody needs to pick a team.' : `The host chose <strong>${pairing === 'versus' ? 'Play Against Each Other' : 'Play Together'}</strong> — your team is set automatically.`}</p>`;
+            })() : net.humanCountMode === 3 ? '' : `
             <h4>Choose Your Team &amp; Seat</h4>
             ${(() => {
               // Who's already on each team, so you can join your friend's team (or play against them)
@@ -11158,15 +11295,15 @@ if (typeof module === 'object' && module.exports) {
               };
               const friendsTeams = ['blue', 'red'].filter(t => onTeam(t).some(x => x.role === 'human'));
               return `
-            ${inRoom && friendsTeams.length ? `<p class="team-hint">${friendsTeams.map(t => `${onTeam(t).filter(x => x.role === 'human').map(x => `<strong>${esc(x.plainName || x.name)}</strong>`).join(' & ')} ${onTeam(t).filter(x => x.role === 'human').length > 1 ? 'are' : 'is'} on <strong class="hint-${t}">Team ${t === 'blue' ? 'Blue' : 'Red'}</strong>`).join(' · ')} — join them to play as partners, or pick the other team to play against them.</p>` : ''}
+            ${inRoom && friendsTeams.length ? `<p class="team-hint">${friendsTeams.map(t => `${onTeam(t).filter(x => x.role === 'human').map(x => `<strong>${esc(x.plainName || x.name)}</strong>`).join(' & ')} ${onTeam(t).filter(x => x.role === 'human').length > 1 ? 'are' : 'is'} on <strong class="hint-${t}">Team ${t === 'blue' ? 'Red' : 'Blue'}</strong>`).join(' · ')} — join them to play as partners, or pick the other team to play against them.</p>` : ''}
             <div class="team-pick-row">
               <button type="button" class="team-select-btn team-blue ${net.selectedTeam === 'blue' ? 'selected' : ''}" data-mp-team="blue" ${playing ? 'disabled' : ''}>
-                <span class="team-badge">TEAM BLUE</span>
+                <span class="team-badge">TEAM RED</span>
                 <small>Seats: South &amp; North (Opposite)</small>
                 ${inRoom ? people('blue') : ''}
               </button>
               <button type="button" class="team-select-btn team-red ${net.selectedTeam === 'red' ? 'selected' : ''}" data-mp-team="red" ${playing ? 'disabled' : ''}>
-                <span class="team-badge">TEAM RED</span>
+                <span class="team-badge">TEAM BLUE</span>
                 <small>Seats: West &amp; East (Opposite)</small>
                 ${inRoom ? people('red') : ''}
               </button>
@@ -11257,7 +11394,7 @@ if (typeof module === 'object' && module.exports) {
                   <div class="slot-info">
                     <div class="slot-top">
                       <span class="slot-compass">${s.compass}</span>
-                      <span class="slot-team-badge ${s.team}">${net.humanCountMode === 3 ? '' : 'Team '}${s.team.charAt(0).toUpperCase()}${s.team.slice(1)}</span>
+                      <span class="slot-team-badge ${s.team}">${net.humanCountMode === 3 ? '' : 'Team '}${SH.teamDisplayName(s.team)}</span>
                     </div>
                     <div class="slot-name">${s.role === 'bot' ? '🤖 ' : ''}${esc(s.name)}</div>
                     <div class="slot-meta">
@@ -11324,6 +11461,12 @@ if (typeof module === 'object' && module.exports) {
         });
       });
 
+      mount.querySelectorAll('[data-mp-pairing]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          SH.audio.uiClick();
+          adapter.setPairing(btn.getAttribute('data-mp-pairing'));
+        });
+      });
       mount.querySelectorAll('[data-mp-team]').forEach(btn => {
         btn.addEventListener('click', () => {
           SH.audio.uiClick();
@@ -12690,7 +12833,7 @@ if (typeof module === 'object' && module.exports) {
           <div class="mp-card">
             <h3>♠ Seating, Deal &amp; Legal Play</h3>
             <ul class="rules-list">
-              <li><strong>Four Seats &amp; Partnerships:</strong> You sit South paired with North (<strong>Team Blue</strong>). Your opponents sit West and East (<strong>Team Red</strong>). Partners always sit opposite each other.</li>
+              <li><strong>Four Seats &amp; Partnerships:</strong> You sit South paired with North (<strong>Team Red</strong>). Your opponents sit West and East (<strong>Team Blue</strong>). Partners always sit opposite each other.</li>
               <li><strong>The Deal:</strong> All 52 cards are dealt evenly—<strong>13 cards</strong> to each player.</li>
               <li><strong>Following Suit:</strong> Players must follow the led suit if they hold a card of that suit. If void in the led suit, a player may play any card, including a trump Spade.</li>
               <li><strong>Spades Are Trump:</strong> Spades outrank all other suits. However, <strong>Spades cannot be led until broken</strong> (played on a previous trick), unless a player holds <em>only</em> Spades in their hand.</li>
@@ -12714,8 +12857,8 @@ if (typeof module === 'object' && module.exports) {
             <h3>🦁 Lions, 💎 Diamonds &amp; Fair Bot AI</h3>
             <ul class="rules-list">
               <li><strong>Starting Balance:</strong> Every player starts with <strong>60 🦁 Lions</strong> (the game’s coins).</li>
-              <li><strong>What is a Round?</strong> A <em>Round</em> is one complete 13-trick hand. If Team Blue scores more net points than Team Red (with a positive round score), you earn <strong>+10 🦁 Lions</strong>.</li>
-              <li><strong>Full Game Victory:</strong> Reaching the target score ahead of Team Red awards <strong>+50 🦁</strong> in a 250-point game or <strong>+80 🦁</strong> in a 500-point game.</li><li><strong>💎 Diamonds:</strong> +1 every day you open the game, +2 for every 2 wins at 250 points and +5 for every 2 wins at 500 points. Spend them on Diamond avatars. Each round and match has a unique ID so duplicate rewards are prevented.</li>
+              <li><strong>What is a Round?</strong> A <em>Round</em> is one complete 13-trick hand. If Team Red scores more net points than Team Blue (with a positive round score), you earn <strong>+10 🦁 Lions</strong>.</li>
+              <li><strong>Full Game Victory:</strong> Reaching the target score ahead of Team Blue awards <strong>+50 🦁</strong> in a 250-point game or <strong>+80 🦁</strong> in a 500-point game.</li><li><strong>💎 Diamonds:</strong> +1 every day you open the game, +2 for every 2 wins at 250 points and +5 for every 2 wins at 500 points. Spend them on Diamond avatars. Each round and match has a unique ID so duplicate rewards are prevented.</li>
               <li><strong>Fair Bot Difficulty:</strong> Choose <em>Beginner, Easy, Medium, Hard,</em> or <em>Impossible</em>. Bots only know their own hand, bids, and cards already played—they never peek at hidden hands.</li>
             </ul>
           </div>

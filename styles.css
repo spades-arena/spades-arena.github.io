@@ -16,8 +16,8 @@
   --text-muted: #b3cebe;
   --accent-gold: #f5c85c;
   --accent-emerald: #2ec486;
-  --team-blue: #38bdf8;
-  --team-red: #fb7185;
+  --team-blue: #fb7185; /* South/North team shows as RED (your team) */
+  --team-red: #38bdf8;
   --danger: #f43f5e;
   --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.55);
   --transition-fast: 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -629,8 +629,8 @@ body[data-device-frame="laptop"] .android-device-shell {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
-.team-score-pill.blue-pill { background: #1877f2; }
-.team-score-pill.red-pill  { background: #e3242b; }
+.team-score-pill.blue-pill { background: #e3242b; } /* your team = red */
+.team-score-pill.red-pill  { background: #1877f2; }
 .team-score-pill.yellow-pill { background: #f2b600; }
 .team-score-pill.yellow-pill .tsp-pts { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); }
 
@@ -652,8 +652,8 @@ body[data-device-frame="laptop"] .android-device-shell {
   vertical-align: middle;
   box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.7);
 }
-.dot-blue { background: #1877f2; }
-.dot-red { background: #e3242b; }
+.dot-blue { background: #e3242b; }
+.dot-red { background: #1877f2; }
 .dot-yellow { background: #f2b600; }
 
 .tsp-pts {
@@ -1665,8 +1665,8 @@ body[data-device-frame="phone"] .rules-grid {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
-.bid-fs-chip.chip-partner, .bid-fs-chip.chip-blue { border-color: #1877f2; background: rgba(24, 119, 242, 0.25); }
-.bid-fs-chip.chip-foe, .bid-fs-chip.chip-red { border-color: #e3242b; background: rgba(227, 36, 43, 0.25); }
+.bid-fs-chip.chip-partner, .bid-fs-chip.chip-blue { border-color: #e3242b; background: rgba(227, 36, 43, 0.25); } /* your side = red */
+.bid-fs-chip.chip-foe, .bid-fs-chip.chip-red { border-color: #1877f2; background: rgba(24, 119, 242, 0.25); }
 .bid-fs-chip.chip-yellow { border-color: #f2b600; background: rgba(242, 182, 0, 0.25); }
 .felt-arena .tbs-buttons.bid-fs-grid {
   display: grid;
@@ -1745,8 +1745,8 @@ body[data-device-frame="phone"] .bid-fs-grid .tbs-btn.tbs-nil { grid-column: spa
 
 /* 3-player round summary */
 .summary-columns.solo-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.sum-col.sum-blue { border-top: 3px solid #1877f2; }
-.sum-col.sum-red { border-top: 3px solid #e3242b; }
+.sum-col.sum-blue { border-top: 3px solid #e3242b; }
+.sum-col.sum-red { border-top: 3px solid #1877f2; }
 .sum-col.sum-yellow { border-top: 3px solid #f2b600; }
 .sum-col.sum-me { box-shadow: inset 0 0 0 1.5px rgba(245, 200, 92, 0.6); }
 body[data-device-frame="phone"] .solo-columns .sum-col { padding: 0.4rem; font-size: 0.92em; }
@@ -2685,8 +2685,8 @@ body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1rem; }
 .chat-to .seg-btn.active { color: var(--gold-ink); }
 .chat-unread { box-shadow: 0 0 0 1.5px #fff; }
 /* Selected team buttons keep their team colour, framed in gold */
-.team-select-btn.team-blue.selected { background: linear-gradient(180deg, #2b6fe0, #123d8c); color: #fff; border-color: #fff1b8; }
-.team-select-btn.team-red.selected { background: linear-gradient(180deg, #e3343b, #8a1218); color: #fff; border-color: #fff1b8; }
+.team-select-btn.team-blue.selected { background: linear-gradient(180deg, #e3343b, #8a1218); color: #fff; border-color: #fff1b8; }
+.team-select-btn.team-red.selected { background: linear-gradient(180deg, #2b6fe0, #123d8c); color: #fff; border-color: #fff1b8; }
 .diff-option.selected { background: var(--gold-bright); color: var(--gold-ink); border-color: #fff1b8; }
 .diff-option.selected .diff-name,
 .diff-option.selected .diff-desc { color: var(--gold-ink); }
@@ -3138,8 +3138,8 @@ body[data-table-theme="blackgold"] .felt-arena {
 .team-spots { font-size: 0.7rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: rgba(0, 0, 0, 0.35); color: #d1fae5; }
 .team-spots.full { color: #fecaca; }
 .team-hint { font-size: 0.82rem; margin: 0 0 0.5rem; color: var(--text-muted); }
-.team-hint .hint-blue { color: #60a5fa; }
-.team-hint .hint-red { color: #f87171; }
+.team-hint .hint-blue { color: #f87171; }
+.team-hint .hint-red { color: #60a5fa; }
 
 /* Forgot password link & Profile security card */
 .auth-link {
@@ -3208,3 +3208,76 @@ body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: 42px; heig
   transform: translateY(4px);
 }
 .legal-hint-badge { background: #ffd54a; color: #1a1405; font-weight: 800; }
+
+/* 2-player rooms: Play Together / Play Against Each Other */
+.pairing-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.4rem 0; }
+.pairing-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 0.2rem; text-align: center;
+  padding: 0.8rem 0.6rem; border-radius: 14px; cursor: pointer; color: #f4ecd8;
+  background: rgba(255, 255, 255, 0.04); border: 2px solid rgba(232, 196, 104, 0.3);
+}
+.pairing-btn .pairing-icon { font-size: 1.6rem; }
+.pairing-btn small { color: var(--text-muted); font-size: 0.74rem; }
+.pairing-btn.selected { border-color: #ffd54a; background: linear-gradient(180deg, rgba(227, 36, 43, 0.35), rgba(138, 18, 24, 0.35)); box-shadow: 0 0 14px rgba(255, 213, 74, 0.35); }
+.pairing-btn.selected small { color: #fde68a; }
+.pairing-btn:disabled { cursor: default; opacity: 0.85; }
+.pairing-btn:disabled:not(.selected) { opacity: 0.45; }
+@media (max-width: 420px) { .pairing-row { grid-template-columns: 1fr; } }
+
+/* Cards played on the table pop off the felt */
+.trick-slot .playing-card {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 8px 18px rgba(0, 0, 0, 0.65), 0 0 14px rgba(255, 213, 74, 0.25);
+}
+.trick-slot .playing-card .pc-rank { font-weight: 900; }
+.hand-card { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85), 0 6px 14px rgba(0, 0, 0, 0.55); }
+
+/* Small phones: keep the whole top bar on screen */
+@media (max-width: 400px) {
+  .app-topbar .sig-sm { display: none; }
+  .app-topbar .brand-text { font-size: 0.82rem; line-height: 1.05; }
+  .app-topbar .hud-cluster { gap: 0.25rem; }
+  .app-topbar .hud-pill { padding-left: 0.45rem; padding-right: 0.45rem; }
+  .app-topbar .hud-shop-pill span:last-child { display: none; } /* 🛍 icon only */
+}
+
+/* Tablets & laptops: bigger cards in the middle of the table */
+body[data-device-frame="tablet"] .trick-mat,
+body[data-device-frame="laptop"] .trick-mat,
+body[data-device-frame="full"] .trick-mat { width: min(400px, 100%); height: min(330px, 100%); }
+body[data-device-frame="tablet"] .trick-slot .table-card,
+body[data-device-frame="laptop"] .trick-slot .table-card,
+body[data-device-frame="full"] .trick-slot .table-card { width: 82px; height: 116px; }
+body[data-device-frame="tablet"] .trick-slot .table-card .pc-rank,
+body[data-device-frame="laptop"] .trick-slot .table-card .pc-rank,
+body[data-device-frame="full"] .trick-slot .table-card .pc-rank { font-size: 1.3rem; }
+body[data-device-frame="tablet"] .trick-slot .table-card .pc-index-suit,
+body[data-device-frame="laptop"] .trick-slot .table-card .pc-index-suit,
+body[data-device-frame="full"] .trick-slot .table-card .pc-index-suit { width: 16px; height: 16px; }
+body[data-device-frame="tablet"] .trick-slot .table-card .pc-pip .pc-pip-lg,
+body[data-device-frame="laptop"] .trick-slot .table-card .pc-pip .pc-pip-lg,
+body[data-device-frame="full"] .trick-slot .table-card .pc-pip .pc-pip-lg { width: 40px; height: 40px; }
+
+/* 👑 VIP welcome on Home */
+.vip-welcome {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin: 0 0 0.8rem; padding: 0.75rem 0.9rem; border-radius: 16px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 213, 74, 0.22), transparent 55%),
+    linear-gradient(135deg, #1d1609 0%, #0d0b07 60%, #1a1208 100%);
+  border: 1.5px solid #e8c468;
+  box-shadow: 0 0 22px rgba(232, 196, 104, 0.18), inset 0 1px 0 rgba(255, 241, 184, 0.25);
+}
+.vip-welcome:empty { display: none; }
+.vip-avatar { flex: none; display: flex; border-radius: 50%; box-shadow: 0 0 0 2px #e8c468, 0 0 12px rgba(232, 196, 104, 0.5); }
+.vip-avatar svg, .vip-avatar img { border-radius: 50%; }
+.vip-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.vip-greet { font-size: 0.78rem; color: #c9b98f; }
+.vip-name {
+  font-size: 1.35rem; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: linear-gradient(180deg, #fff1c1, #e8c468 55%, #a8792a); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.vip-sub { font-size: 0.72rem; color: #a89f8a; }
+.vip-badge {
+  flex: none; padding: 0.3rem 0.65rem; border-radius: 999px; font-weight: 900; font-size: 0.78rem; color: #1a1405;
+  background: linear-gradient(180deg, #fff1c1, #e8c468 45%, #a8792a); box-shadow: 0 0 12px rgba(232, 196, 104, 0.45);
+}

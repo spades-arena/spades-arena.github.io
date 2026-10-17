@@ -3,7 +3,7 @@
  * ============================================================================
  * Connects to the Spades by Hadzz WebSocket server (`server/server.js`).
  *
- *  - Lobbies: 2-Human (+2 bots) or 4-Human rooms, Team Blue (S/N) vs Team Red (W/E)
+ *  - Lobbies: 2-Human (+2 bots) or 4-Human rooms, Team Red (S/N) vs Team Blue (W/E)
  *  - Server-authoritative matches: the server shuffles, deals, validates every bid
  *    and card, runs bots, and only ever sends each player their own hand.
  *  - Friends: username search, requests, presence (online / in_match / offline), invites
@@ -48,6 +48,7 @@
     taken_username: 'Username Already Taken Online',
     invalid_username: 'Username Not Allowed Online',
     team_full: 'Team Is Full',
+    team_locked: 'Teams Are Set Automatically',
     not_host: 'Host Only',
     not_ready: 'Not Everyone Is Ready',
     in_progress: 'Match In Progress',
@@ -212,7 +213,7 @@
           if (this.state.isHost && this.state.room && this.state.room.status === 'lobby') {
             const s = SH.store.getSettings();
             const rs = this.state.room.settings || {};
-            if (rs.targetScore !== s.targetScore || rs.difficulty !== s.botDifficulty || rs.speed !== (s.gameSpeed || 'normal')) {
+            if (rs.targetScore !== s.targetScore || rs.difficulty !== s.botDifficulty || rs.speed !== (s.gameSpeed || 'normal') || (rs.pairing || 'team') !== (this.prefs.pairing === 'versus' ? 'versus' : 'team')) {
               this.roomSend('room:settings', { settings: this.localSettings() });
             }
           }
@@ -604,7 +605,7 @@
 
     localSettings() {
       const s = SH.store ? SH.store.getSettings() : { targetScore: 500, botDifficulty: 'Medium' };
-      return { targetScore: s.targetScore, difficulty: s.botDifficulty, speed: s.gameSpeed || 'normal' };
+      return { targetScore: s.targetScore, difficulty: s.botDifficulty, speed: s.gameSpeed || 'normal', pairing: this.prefs.pairing === 'versus' ? 'versus' : 'team' };
     }
 
     setAlert(scope, alert) {
@@ -910,7 +911,7 @@
       if (s.kind === 'open_or_bot') {
         return { ...base, role: 'human_slot', name: 'Open Seat', ready: true, avatar: 'free_knight', status: 'AI Bot if no 2nd human sits here' };
       }
-      const colour = `${s.team.charAt(0).toUpperCase()}${s.team.slice(1)}`;
+      const colour = SH.teamDisplayName(s.team);
       return { ...base, role: 'human_slot', name: `Open Seat (${this.state.humanCountMode === 3 ? colour : `Team ${colour}`})`, ready: false, avatar: 'free_knight', status: 'Waiting for player' };
     }
 
@@ -962,13 +963,13 @@
         title: validCount === 2
           ? '2-Human Mode Selected (2 Humans + 2 Bots)'
           : validCount === 3
-          ? '3-Player Mode Selected (Blue vs Red vs Yellow)'
-          : '4-Human Team Mode Selected (Team Blue vs Team Red)',
+          ? '3-Player Mode Selected (Red vs Blue vs Yellow)'
+          : '4-Human Team Mode Selected (Team Red vs Team Blue)',
         detail: validCount === 3
           ? 'Every player for themselves with 17 cards each. Create a room and share the code with 2 friends.'
           : validCount === 2
           ? 'The two seats not taken by humans are automatically assigned to AI Bots so the game always has 4 seats.'
-          : 'All 4 seats are reserved for human players. Teammates sit opposite each other (South & North = Team Blue; West & East = Team Red).'
+          : 'All 4 seats are reserved for human players. Teammates sit opposite each other (South & North = Team Red; West & East = Team Blue).'
       };
       this.emit();
     }
@@ -996,7 +997,7 @@
         if (count === 2) {
           return { seat, compass: labels[seat], team, role: 'human_slot', name: 'Open Seat', ready: true, avatar: defaults[seat], status: '2nd human or AI Bot' };
         }
-        return { seat, compass: labels[seat], team, role: 'human_slot', name: solo ? `Open Seat (${team.charAt(0).toUpperCase()}${team.slice(1)})` : `Open Human Seat (Team ${team === 'blue' ? 'Blue' : 'Red'})`, ready: false, avatar: defaults[seat], status: 'Waiting for player' };
+        return { seat, compass: labels[seat], team, role: 'human_slot', name: solo ? `Open Seat (${SH.teamDisplayName(team)})` : `Open Human Seat (Team ${team === 'blue' ? 'Red' : 'Blue'})`, ready: false, avatar: defaults[seat], status: 'Waiting for player' };
       });
     }
 
@@ -1010,9 +1011,17 @@
       this.syncSeatsForMode(this.state.humanCountMode, localUsername, localAvatar);
       this.state.lobbyAlert = {
         type: 'info',
-        title: `Team ${t === 'blue' ? 'Blue (South/North)' : 'Red (West/East)'} Selected`,
+        title: `Team ${t === 'blue' ? 'Red (South/North)' : 'Blue (West/East)'} Selected`,
         detail: 'Teammates always sit directly opposite each other. Create or join a room to claim your seat.'
       };
+      this.emit();
+    }
+
+    /** Host of a 2-player room: 'team' (play together) or 'versus' (play against each other). */
+    setPairing(pairing) {
+      this.prefs.pairing = pairing === 'versus' ? 'versus' : 'team';
+      savePrefs(this.prefs);
+      if (this.state.isHost && this.state.room && this.state.room.status === 'lobby') this.roomSend('room:settings', { settings: this.localSettings() });
       this.emit();
     }
 

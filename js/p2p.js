@@ -59,7 +59,9 @@
     return {
       targetScore: Number(raw.targetScore) === 250 ? 250 : 500,
       difficulty: DIFFICULTIES.includes(raw.difficulty) ? raw.difficulty : 'Medium',
-      speed: ['relaxed', 'normal', 'fast'].includes(raw.speed) ? raw.speed : 'normal'
+      speed: ['relaxed', 'normal', 'fast'].includes(raw.speed) ? raw.speed : 'normal',
+      // 2-player rooms: 'team' = both friends are partners vs 2 bots · 'versus' = friend vs friend, each with a bot partner
+      pairing: raw.pairing === 'versus' ? 'versus' : 'team'
     };
   }
 
@@ -82,6 +84,7 @@
       this.match = null;
       this.lastChatAt = new Map();
       this.addMember(host, host.team);
+      this.arrangeDuo();
     }
 
     // ---------------------------------------------------------------- seats
@@ -93,6 +96,17 @@
     seatTakenBy(seat) {
       for (const [id, m] of this.members) if (m.seat === seat) return id;
       return null;
+    }
+
+    /** 2-player rooms: the host's choice decides the teams — host sits South, the friend North (together) or West (against). */
+    arrangeDuo() {
+      if (this.mode !== 2) return;
+      const host = this.members.get(this.hostId);
+      if (host) host.seat = 0;
+      const friendSeat = this.settings.pairing === 'versus' ? 1 : 2;
+      for (const m of this.members.values()) {
+        if (m.id !== this.hostId && m.seat !== friendSeat) { m.seat = friendSeat; m.ready = false; }
+      }
     }
 
     freeSeat(team) {
@@ -217,6 +231,7 @@
       if (this.status === 'playing') return 'in_progress';
       if (this.members.size >= this.mode) return 'full_room';
       if (!this.addMember({ id, name, avatar, account }, team)) return 'full_room';
+      this.arrangeDuo();
       this.broadcastRoom();
       this.notifyOthers(id, `${this.members.get(id).name} joined the room.`, 'success');
       return null;
@@ -341,6 +356,7 @@
           for (const mem of this.members.values()) {
             if (mem.seat === undefined) mem.seat = [0, 1, 2, 3].find(x => x < this.seatCount() && !this.seatTakenBy(x));
           }
+          this.arrangeDuo();
           this.broadcastRoom();
           break;
         }
@@ -353,7 +369,12 @@
 
         case 'room:settings':
           if (isHost && this.status === 'lobby') {
+            const before = this.settings.pairing;
             this.settings = sanitizeSettings(msg.settings);
+            if (before !== this.settings.pairing) {
+              this.arrangeDuo();
+              this.notifyOthers(id, this.settings.pairing === 'versus' ? '⚔️ The host set this game to: Play Against Each Other.' : '🤝 The host set this game to: Play Together (same team).');
+            }
             this.broadcastRoom();
           }
           break;
@@ -361,10 +382,11 @@
         case 'room:team': {
           if (this.status !== 'lobby') return this.error(id, 'in_progress', 'Teams are locked once the match starts.');
           if (this.mode === 3) return this.broadcastRoom();
+          if (this.mode === 2) return this.error(id, 'team_locked', 'In 2-player rooms the host picks “Play Together” or “Play Against Each Other”, and the teams are set automatically.');
           const team = msg.team === 'red' ? 'red' : 'blue';
           if (this.seatTeam(m.seat) === team) return this.broadcastRoom();
           const free = this.freeSeat(team);
-          if (free === undefined) return this.error(id, 'team_full', `Team ${team === 'blue' ? 'Blue' : 'Red'} already has 2 players.`);
+          if (free === undefined) return this.error(id, 'team_full', `Team ${team === 'blue' ? 'Red' : 'Blue'} already has 2 players.`);
           m.seat = free;
           m.ready = false;
           this.broadcastRoom();
