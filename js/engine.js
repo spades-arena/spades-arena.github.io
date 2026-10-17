@@ -215,7 +215,14 @@
     { id: 'royal', name: 'Royal Blue', price: 150, desc: 'Deep sapphire felt fit for a king', swatch: ['#1d4ed8', '#0b1a4a'] },
     { id: 'velvet', name: 'Red Velvet', price: 250, desc: 'Rich crimson velvet, high-roller style', swatch: ['#9f1239', '#3b0614'] },
     { id: 'marble', name: 'Black Marble', price: 400, desc: 'Polished black stone with silver veins', swatch: ['#3a3a40', '#0b0b0d'] },
-    { id: 'goldleaf', name: 'Gold Leaf', price: 600, desc: 'Black table edged in shimmering gold leaf', swatch: ['#a16207', '#1c1405'] }
+    { id: 'goldleaf', name: 'Gold Leaf', price: 600, desc: 'Black table edged in shimmering gold leaf', swatch: ['#a16207', '#1c1405'] },
+    // 💎 VIP tables — bought with Diamonds
+    { id: 'galaxy', name: 'Galaxy Night', price: 5, currency: 'diamonds', vip: true, desc: 'Deep-space purple with twinkling stars', swatch: ['#6d28d9', '#0b0420'] },
+    { id: 'icediamond', name: 'Diamond Ice', price: 8, currency: 'diamonds', vip: true, desc: 'Frozen cyan crystal with a diamond sparkle', swatch: ['#22d3ee', '#062a3a'] },
+    { id: 'ruby', name: 'Ruby Royale', price: 10, currency: 'diamonds', vip: true, desc: 'Blood-red ruby felt with a gold crown rail', swatch: ['#e11d48', '#2a0410'] },
+    { id: 'aurora', name: 'Northern Aurora', price: 12, currency: 'diamonds', vip: true, desc: 'Glowing green, teal & violet sky lights', swatch: ['#10b981', '#4c1d95'] },
+    { id: 'platinum', name: 'Platinum VIP', price: 15, currency: 'diamonds', vip: true, desc: 'Brushed platinum with a silver glow', swatch: ['#94a3b8', '#1e293b'] },
+    { id: 'blackgold', name: 'Black Gold Throne', price: 25, currency: 'diamonds', vip: true, desc: 'The ultimate: black velvet, glowing gold rail', swatch: ['#facc15', '#000000'] }
   ];
 
   function validateCardPlay(card, hand, currentTrick, spadesBroken) {

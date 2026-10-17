@@ -146,6 +146,15 @@
       net.on('chat', (msg) => this.handleOnlineChat(msg));
       net.on('notice', (n) => this.showToast(n.message, n.tone));
       net.on('friend_request', (req) => this.showFriendRequestPopup(req));
+      net.on('account_renamed', ({ username }) => {
+        let paid = 0;
+        if (this.pendingRename) {
+          this.pendingRename = false;
+          paid = SH.store.recordNameChange();
+        }
+        this.showToast(`Your name is now ${username}.${paid ? ` (−💎 ${paid})` : ''}`, 'success');
+        if (this.currentScreen === 'profile') this.renderProfileScreen();
+      });
       net.on('gift_received', () => SH.audio.coinReward());
       net.on('game_error', (err) => {
         if (this.currentScreen === 'game' && this.isOnlineGame()) {
@@ -3616,6 +3625,7 @@
               <input id="username-input" type="text" maxlength="18" value="${esc(profile.username)}" required />
               <button type="submit" class="btn-primary btn-sm">Save</button>
             </div>
+            <p class="field-help name-cost">${SH.store.nameChangeCost ? `✏️ Changing your name costs <strong>💎 ${SH.store.nameChangeCost}</strong>` : '✏️ Your first name change is <strong>free</strong> — after that it costs 💎 50'}</p>
             <div id="profile-feedback" class="profile-feedback" role="status" aria-live="polite"></div>
           </form>
         </div>
@@ -3730,18 +3740,46 @@
           e.preventDefault();
           SH.audio.uiClick();
           const input = mount.querySelector('#username-input');
-          const value = input ? input.value : '';
-          if (SH.networkAdapter.isOnlineAccount()) {
-            // Online accounts own their username; the server checks it isn't taken.
-            if (SH.networkAdapter.renameAccount(value)) {
-              const fb = mount.querySelector('#profile-feedback');
-              if (fb) fb.textContent = 'Checking username with the server…';
-            }
+          const value = (input ? input.value : '').trim();
+          if (!value || value.toLowerCase() === String(SH.store.getProfile().username).toLowerCase()) {
+            this.showToast('That’s already your name.', 'info');
             return;
           }
-          const res = SH.store.updateUsername(value);
-          if (res.ok) SH.networkAdapter.renameLocalAccount(SH.store.getProfile().username);
-          this.showToast(res.message, res.ok ? 'success' : 'error');
+          const cost = SH.store.nameChangeCost;
+          const diamonds = SH.store.getProfile().diamonds || 0;
+          if (cost > diamonds) {
+            SH.audio.notEnoughFunds();
+            this.showToast(`Changing your name costs 💎 ${cost} — you have ${diamonds}. Earn Diamonds daily and from win streaks.`, 'error');
+            return;
+          }
+          const doRename = () => {
+            if (SH.networkAdapter.isOnlineAccount()) {
+              // Online accounts own their username; the server checks it isn't taken (💎 only taken once it's accepted)
+              if (SH.networkAdapter.renameAccount(value)) {
+                this.pendingRename = true;
+                const fb = mount.querySelector('#profile-feedback');
+                if (fb) fb.textContent = 'Checking username with the server…';
+              }
+              return;
+            }
+            const res = SH.store.updateUsername(value);
+            if (res.ok) {
+              SH.networkAdapter.renameLocalAccount(SH.store.getProfile().username);
+              const paid = SH.store.recordNameChange();
+              this.showToast(`${res.message}${paid ? ` (−💎 ${paid})` : ' (free change used)'}`, 'success');
+            } else {
+              this.showToast(res.message, 'error');
+            }
+          };
+          if (!cost) return doRename();
+          this.showChoiceDialog({
+            title: `Change name to “${value}”?`,
+            message: `Name changes cost 💎 ${cost}. You have 💎 ${diamonds}.`,
+            actions: [
+              { label: `Yes, pay 💎 ${cost}`, tone: 'yes', onClick: doRename },
+              { label: 'No', tone: 'no' }
+            ]
+          });
         });
       }
 
@@ -3846,26 +3884,34 @@
           <button type="button" class="btn-secondary btn-sm" data-nav="profile">👑 My Profile</button>
         </div>
 
-        <div class="avatar-section table-theme-section">
+        ${[
+          { title: '🎨 Table Colours', note: 'Change the felt on every table you play', list: SH.TABLE_THEMES.filter(t => !t.vip) },
+          { title: '💎 VIP Tables', note: 'Luxury tables bought with Diamonds', list: SH.TABLE_THEMES.filter(t => t.vip), vip: true }
+        ].map(sec => `
+        <div class="avatar-section table-theme-section ${sec.vip ? 'vip-theme-section' : ''}">
           <div class="section-head">
-            <h3>🎨 Table Colours</h3>
-            <span>Change the felt on every table you play</span>
+            <h3>${sec.title}</h3>
+            <span>${sec.note}</span>
           </div>
           <div class="theme-grid">
-            ${SH.TABLE_THEMES.map(t => {
+            ${sec.list.map(t => {
               const owned = profile.ownedTableThemes.includes(t.id);
               const inUse = (profile.selectedTableTheme || 'emerald') === t.id;
+              const dia = t.currency === 'diamonds';
+              const balance = dia ? (profile.diamonds || 0) : profile.coins;
               return `
-                <button type="button" class="theme-card ${inUse ? 'in-use' : ''} ${owned ? 'owned-item' : profile.coins < t.price ? 'unaffordable' : ''}" data-shop-theme="${t.id}">
+                <button type="button" class="theme-card ${t.vip ? 'vip-theme' : ''} ${inUse ? 'in-use' : ''} ${owned ? 'owned-item' : balance < t.price ? 'unaffordable' : ''}" data-shop-theme="${t.id}">
+                  ${t.vip ? '<span class="leg-ribbon vip-ribbon">VIP</span>' : ''}
                   <span class="theme-swatch" data-table-swatch="${t.id}" style="--sw1:${t.swatch[0]};--sw2:${t.swatch[1]}"><span>♠</span></span>
                   <span class="skin-name">${esc(t.name)}</span>
                   <span class="skin-desc">${esc(t.desc)}</span>
-                  <span class="skin-price ${owned ? 'owned' : ''}">${inUse ? '✓ In use' : owned ? 'Owned — tap to use' : `${t.price.toLocaleString('en-US')} 🦁`}</span>
+                  <span class="skin-price ${owned ? 'owned' : ''}">${inUse ? '✓ In use' : owned ? 'Owned — tap to use' : `${t.price.toLocaleString('en-US')} ${dia ? '💎' : '🦁'}`}</span>
                 </button>
               `;
             }).join('')}
           </div>
         </div>
+        `).join('')}
 
         <div class="avatar-section card-skin-section">
           <div class="section-head">
@@ -3955,7 +4001,7 @@
           this.showToast(res.message, 'success');
           return;
         }
-        const unit = kind === 'avatar' && item.currency === 'diamonds' ? '💎' : '🦁';
+        const unit = item.currency === 'diamonds' ? '💎' : '🦁';
         const balance = unit === '💎' ? (profile.diamonds || 0) : profile.coins;
         if (balance < item.price) {
           SH.audio.notEnoughFunds();

@@ -3080,6 +3080,72 @@ body[data-table-theme="goldleaf"] .felt-arena {
 .lb-wins small { color: var(--text-muted); }
 .lb-note { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin: 0.6rem 0 0; }
 
+/* 💎 VIP tables (bought with Diamonds) */
+body[data-table-theme="galaxy"] .felt-arena {
+  background:
+    radial-gradient(1.2px 1.2px at 12% 18%, #fff 50%, transparent 51%) padding-box,
+    radial-gradient(1px 1px at 72% 32%, #e9d5ff 50%, transparent 51%) padding-box,
+    radial-gradient(1.4px 1.4px at 38% 76%, #fff 50%, transparent 51%) padding-box,
+    radial-gradient(1px 1px at 86% 82%, #c4b5fd 50%, transparent 51%) padding-box,
+    radial-gradient(1px 1px at 55% 12%, #fff 50%, transparent 51%) padding-box,
+    radial-gradient(1.2px 1.2px at 22% 58%, #ddd6fe 50%, transparent 51%) padding-box,
+    radial-gradient(ellipse at 30% 30%, rgba(236, 72, 153, 0.25) 0%, transparent 45%) padding-box,
+    radial-gradient(ellipse at 70% 70%, rgba(59, 130, 246, 0.25) 0%, transparent 45%) padding-box,
+    radial-gradient(ellipse at center, #4c1d95 0%, #2e1065 45%, #0b0420 100%) padding-box,
+    linear-gradient(135deg, #e9d5ff 0%, #7c3aed 25%, #f5d0fe 50%, #6d28d9 75%, #c4b5fd 100%) border-box;
+}
+body[data-table-theme="icediamond"] .felt-arena {
+  background:
+    linear-gradient(120deg, transparent 0 40%, rgba(255, 255, 255, 0.10) 42%, transparent 46%) padding-box,
+    linear-gradient(60deg, transparent 0 62%, rgba(255, 255, 255, 0.07) 64%, transparent 67%) padding-box,
+    radial-gradient(ellipse at center, #0e7490 0%, #0b4f63 45%, #062a3a 80%, #031620 100%) padding-box,
+    linear-gradient(135deg, #ecfeff 0%, #67e8f9 25%, #ffffff 50%, #22d3ee 75%, #cffafe 100%) border-box;
+  box-shadow: inset 0 0 0 3px #0b0b0d, inset 0 0 0 4.5px rgba(103, 232, 249, 0.85), inset 0 0 60px rgba(0, 0, 0, 0.6), 0 0 24px rgba(34, 211, 238, 0.35), 0 12px 30px rgba(0, 0, 0, 0.65);
+}
+body[data-table-theme="ruby"] .felt-arena {
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1.2px) 0 0 / 6px 6px padding-box,
+    radial-gradient(ellipse at center, #e11d48 0%, #9f1239 40%, #4c0519 78%, #2a0410 100%) padding-box,
+    linear-gradient(135deg, #fff7d1 0%, #eab308 20%, #fff1b8 40%, #a16207 60%, #fde68a 80%, #ca8a04 100%) border-box;
+  box-shadow: inset 0 0 0 3px #0b0b0d, inset 0 0 0 4.5px rgba(250, 204, 21, 0.85), inset 0 0 60px rgba(0, 0, 0, 0.7), 0 0 22px rgba(225, 29, 72, 0.35), 0 12px 30px rgba(0, 0, 0, 0.65);
+}
+body[data-table-theme="aurora"] .felt-arena {
+  background:
+    radial-gradient(ellipse 80% 40% at 30% 20%, rgba(16, 185, 129, 0.55) 0%, transparent 60%) padding-box,
+    radial-gradient(ellipse 70% 40% at 75% 35%, rgba(45, 212, 191, 0.45) 0%, transparent 60%) padding-box,
+    radial-gradient(ellipse 80% 50% at 50% 85%, rgba(139, 92, 246, 0.5) 0%, transparent 60%) padding-box,
+    radial-gradient(ellipse at center, #0f2a2a 0%, #0a1a24 50%, #060912 100%) padding-box,
+    linear-gradient(135deg, #a7f3d0 0%, #10b981 25%, #c4b5fd 50%, #7c3aed 75%, #5eead4 100%) border-box;
+  animation: aurora-glow 6s ease-in-out infinite alternate;
+}
+@keyframes aurora-glow { from { filter: hue-rotate(0deg) saturate(1); } to { filter: hue-rotate(25deg) saturate(1.2); } }
+body[data-table-theme="platinum"] .felt-arena {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 5px) padding-box,
+    radial-gradient(ellipse at center, #64748b 0%, #334155 45%, #1e293b 80%, #0f172a 100%) padding-box,
+    linear-gradient(135deg, #ffffff 0%, #cbd5e1 20%, #f8fafc 40%, #94a3b8 60%, #e2e8f0 80%, #64748b 100%) border-box;
+  box-shadow: inset 0 0 0 3px #0b0b0d, inset 0 0 0 4.5px rgba(226, 232, 240, 0.9), inset 0 0 60px rgba(0, 0, 0, 0.6), 0 0 22px rgba(226, 232, 240, 0.3), 0 12px 30px rgba(0, 0, 0, 0.65);
+}
+body[data-table-theme="blackgold"] .felt-arena {
+  background:
+    radial-gradient(rgba(250, 204, 21, 0.08) 1px, transparent 1.3px) 0 0 / 8px 8px padding-box,
+    radial-gradient(ellipse at center, #141008 0%, #050403 60%, #000 100%) padding-box,
+    linear-gradient(135deg, #fffbeb 0%, #facc15 15%, #fff7d1 30%, #a16207 45%, #fde047 60%, #ca8a04 75%, #fffbeb 90%, #eab308 100%) border-box;
+  animation: throne-glow 2.4s ease-in-out infinite alternate;
+}
+@keyframes throne-glow {
+  from { box-shadow: inset 0 0 0 3px #000, inset 0 0 0 4.5px rgba(250, 204, 21, 0.9), inset 0 0 60px rgba(0, 0, 0, 0.8), 0 0 14px rgba(250, 204, 21, 0.3), 0 12px 30px rgba(0, 0, 0, 0.65); }
+  to { box-shadow: inset 0 0 0 3px #000, inset 0 0 0 4.5px rgba(253, 224, 71, 1), inset 0 0 60px rgba(0, 0, 0, 0.8), 0 0 34px rgba(250, 204, 21, 0.6), 0 12px 30px rgba(0, 0, 0, 0.65); }
+}
+.reduced-motion .felt-arena { animation: none !important; }
+.theme-card { position: relative; }
+.theme-card.vip-theme { border-color: rgba(125, 211, 252, 0.45); background: linear-gradient(180deg, rgba(56, 189, 248, 0.07), rgba(255, 255, 255, 0.02)); }
+.vip-theme .theme-swatch { border-color: #7dd3fc; box-shadow: 0 0 12px rgba(125, 211, 252, 0.35); }
+.vip-ribbon { background: linear-gradient(90deg, #38bdf8, #a78bfa) !important; color: #fff !important; }
+.theme-swatch[data-table-swatch="galaxy"] { background: radial-gradient(1px 1px at 25% 30%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 70% 60%, #fff 50%, transparent 51%), radial-gradient(ellipse at center, #6d28d9, #0b0420); }
+.theme-swatch[data-table-swatch="aurora"] { background: radial-gradient(ellipse at 30% 30%, #10b981, transparent 60%), radial-gradient(ellipse at 70% 80%, #8b5cf6, transparent 60%), #0a1a24; }
+.theme-swatch[data-table-swatch="blackgold"] { border-color: #facc15; box-shadow: 0 0 14px rgba(250, 204, 21, 0.5); }
+
   </style>
 </head>
 <body data-device-frame="full">
@@ -3945,6 +4011,7 @@ body[data-table-theme="goldleaf"] .felt-arena {
   // v2 = fresh start for everyone (new balances: 50 🦁 + 5 💎)
   const STORAGE_KEY = 'spades_royale_state_v2';
   const UNLIMITED_BALANCE = 999999999;
+  const NAME_CHANGE_DIAMONDS = 50;
   const LOGIN_STREAK_REWARDS = [
     { lions: 10, diamonds: 0 }, { lions: 20, diamonds: 0 }, { lions: 30, diamonds: 0 }, { lions: 40, diamonds: 0 },
     { lions: 60, diamonds: 0 }, { lions: 80, diamonds: 0 }, { lions: 100, diamonds: 1 }
@@ -3974,6 +4041,7 @@ body[data-table-theme="goldleaf"] .felt-arena {
         selectedCardSkin: 'classic',
         ownedTableThemes: ['emerald'],
         selectedTableTheme: 'emerald',
+        nameChanges: 0, // first name change is free, then 💎 NAME_CHANGE_DIAMONDS each
         loginStreak: 0, // consecutive days opened (1–7, then starts a new week)
         lastLoginDay: todayKey(), // new players start with exactly 50 🦁; the streak begins tomorrow
         lastDailyDiamond: todayKey(), // 'YYYY-MM-DD' of the last daily +1 💎 (new players start at exactly 5 💎)
@@ -4088,6 +4156,21 @@ body[data-table-theme="goldleaf"] .felt-arena {
       return Boolean(this.state.profile.unlimited);
     }
 
+    /** 💎 cost of your next name change (0 for the first one). */
+    get nameChangeCost() {
+      return (this.state.profile.nameChanges || 0) > 0 ? NAME_CHANGE_DIAMONDS : 0;
+    }
+
+    /** Call after a name change went through: counts it and takes the 💎 if it wasn't the free one. */
+    recordNameChange() {
+      const p = this.state.profile;
+      const cost = this.nameChangeCost;
+      if (cost > 0) p.diamonds = Math.max(0, (p.diamonds || 0) - cost);
+      p.nameChanges = (p.nameChanges || 0) + 1;
+      this.save();
+      return cost;
+    }
+
     updateUsername(rawName) {
       const cleaned = String(rawName || '').trim().replace(/\s+/g, '_').slice(0, 18);
       if (cleaned.length < 2) {
@@ -4175,14 +4258,17 @@ body[data-table-theme="goldleaf"] .felt-arena {
         this.save();
         return { ok: true, action: 'equipped', message: `Now playing on the ${theme.name} table.` };
       }
-      if (p.coins < theme.price) {
-        return { ok: false, action: 'insufficient_funds', message: `Not enough 🦁 Lions for "${theme.name}" — you need ${theme.price - p.coins} more (${theme.price} total).` };
+      const diamonds = theme.currency === 'diamonds';
+      const balance = diamonds ? (p.diamonds || 0) : p.coins;
+      if (balance < theme.price) {
+        return { ok: false, action: 'insufficient_funds', message: `Not enough ${diamonds ? '💎 Diamonds' : '🦁 Lions'} for "${theme.name}" — you need ${theme.price - balance} more (${theme.price} total).` };
       }
-      p.coins -= theme.price;
+      if (diamonds) p.diamonds -= theme.price;
+      else p.coins -= theme.price;
       p.ownedTableThemes.push(themeId);
       p.selectedTableTheme = themeId;
       this.save();
-      return { ok: true, action: 'purchased', message: `Unlocked the ${theme.name} table for ${theme.price} 🦁 Lions!` };
+      return { ok: true, action: 'purchased', message: `Unlocked the ${theme.name} table for ${theme.price} ${diamonds ? '💎 Diamonds' : '🦁 Lions'}!` };
     }
 
     /**
@@ -4629,7 +4715,14 @@ body[data-table-theme="goldleaf"] .felt-arena {
     { id: 'royal', name: 'Royal Blue', price: 150, desc: 'Deep sapphire felt fit for a king', swatch: ['#1d4ed8', '#0b1a4a'] },
     { id: 'velvet', name: 'Red Velvet', price: 250, desc: 'Rich crimson velvet, high-roller style', swatch: ['#9f1239', '#3b0614'] },
     { id: 'marble', name: 'Black Marble', price: 400, desc: 'Polished black stone with silver veins', swatch: ['#3a3a40', '#0b0b0d'] },
-    { id: 'goldleaf', name: 'Gold Leaf', price: 600, desc: 'Black table edged in shimmering gold leaf', swatch: ['#a16207', '#1c1405'] }
+    { id: 'goldleaf', name: 'Gold Leaf', price: 600, desc: 'Black table edged in shimmering gold leaf', swatch: ['#a16207', '#1c1405'] },
+    // 💎 VIP tables — bought with Diamonds
+    { id: 'galaxy', name: 'Galaxy Night', price: 5, currency: 'diamonds', vip: true, desc: 'Deep-space purple with twinkling stars', swatch: ['#6d28d9', '#0b0420'] },
+    { id: 'icediamond', name: 'Diamond Ice', price: 8, currency: 'diamonds', vip: true, desc: 'Frozen cyan crystal with a diamond sparkle', swatch: ['#22d3ee', '#062a3a'] },
+    { id: 'ruby', name: 'Ruby Royale', price: 10, currency: 'diamonds', vip: true, desc: 'Blood-red ruby felt with a gold crown rail', swatch: ['#e11d48', '#2a0410'] },
+    { id: 'aurora', name: 'Northern Aurora', price: 12, currency: 'diamonds', vip: true, desc: 'Glowing green, teal & violet sky lights', swatch: ['#10b981', '#4c1d95'] },
+    { id: 'platinum', name: 'Platinum VIP', price: 15, currency: 'diamonds', vip: true, desc: 'Brushed platinum with a silver glow', swatch: ['#94a3b8', '#1e293b'] },
+    { id: 'blackgold', name: 'Black Gold Throne', price: 25, currency: 'diamonds', vip: true, desc: 'The ultimate: black velvet, glowing gold rail', swatch: ['#facc15', '#000000'] }
   ];
 
   function validateCardPlay(card, hand, currentTrick, spadesBroken) {
@@ -6884,7 +6977,7 @@ if (typeof module === 'object' && module.exports) {
           this.prefs.username = msg.user.username;
           savePrefs(this.prefs);
           this.syncStoreUsername(msg.user);
-          this.fire('notice', { tone: 'success', message: `Online username is now ${msg.user.username}.` });
+          this.fire('account_renamed', { username: msg.user.username });
           this.emit();
           break;
 
@@ -8009,6 +8102,15 @@ if (typeof module === 'object' && module.exports) {
       net.on('chat', (msg) => this.handleOnlineChat(msg));
       net.on('notice', (n) => this.showToast(n.message, n.tone));
       net.on('friend_request', (req) => this.showFriendRequestPopup(req));
+      net.on('account_renamed', ({ username }) => {
+        let paid = 0;
+        if (this.pendingRename) {
+          this.pendingRename = false;
+          paid = SH.store.recordNameChange();
+        }
+        this.showToast(`Your name is now ${username}.${paid ? ` (−💎 ${paid})` : ''}`, 'success');
+        if (this.currentScreen === 'profile') this.renderProfileScreen();
+      });
       net.on('gift_received', () => SH.audio.coinReward());
       net.on('game_error', (err) => {
         if (this.currentScreen === 'game' && this.isOnlineGame()) {
@@ -11479,6 +11581,7 @@ if (typeof module === 'object' && module.exports) {
               <input id="username-input" type="text" maxlength="18" value="${esc(profile.username)}" required />
               <button type="submit" class="btn-primary btn-sm">Save</button>
             </div>
+            <p class="field-help name-cost">${SH.store.nameChangeCost ? `✏️ Changing your name costs <strong>💎 ${SH.store.nameChangeCost}</strong>` : '✏️ Your first name change is <strong>free</strong> — after that it costs 💎 50'}</p>
             <div id="profile-feedback" class="profile-feedback" role="status" aria-live="polite"></div>
           </form>
         </div>
@@ -11593,18 +11696,46 @@ if (typeof module === 'object' && module.exports) {
           e.preventDefault();
           SH.audio.uiClick();
           const input = mount.querySelector('#username-input');
-          const value = input ? input.value : '';
-          if (SH.networkAdapter.isOnlineAccount()) {
-            // Online accounts own their username; the server checks it isn't taken.
-            if (SH.networkAdapter.renameAccount(value)) {
-              const fb = mount.querySelector('#profile-feedback');
-              if (fb) fb.textContent = 'Checking username with the server…';
-            }
+          const value = (input ? input.value : '').trim();
+          if (!value || value.toLowerCase() === String(SH.store.getProfile().username).toLowerCase()) {
+            this.showToast('That’s already your name.', 'info');
             return;
           }
-          const res = SH.store.updateUsername(value);
-          if (res.ok) SH.networkAdapter.renameLocalAccount(SH.store.getProfile().username);
-          this.showToast(res.message, res.ok ? 'success' : 'error');
+          const cost = SH.store.nameChangeCost;
+          const diamonds = SH.store.getProfile().diamonds || 0;
+          if (cost > diamonds) {
+            SH.audio.notEnoughFunds();
+            this.showToast(`Changing your name costs 💎 ${cost} — you have ${diamonds}. Earn Diamonds daily and from win streaks.`, 'error');
+            return;
+          }
+          const doRename = () => {
+            if (SH.networkAdapter.isOnlineAccount()) {
+              // Online accounts own their username; the server checks it isn't taken (💎 only taken once it's accepted)
+              if (SH.networkAdapter.renameAccount(value)) {
+                this.pendingRename = true;
+                const fb = mount.querySelector('#profile-feedback');
+                if (fb) fb.textContent = 'Checking username with the server…';
+              }
+              return;
+            }
+            const res = SH.store.updateUsername(value);
+            if (res.ok) {
+              SH.networkAdapter.renameLocalAccount(SH.store.getProfile().username);
+              const paid = SH.store.recordNameChange();
+              this.showToast(`${res.message}${paid ? ` (−💎 ${paid})` : ' (free change used)'}`, 'success');
+            } else {
+              this.showToast(res.message, 'error');
+            }
+          };
+          if (!cost) return doRename();
+          this.showChoiceDialog({
+            title: `Change name to “${value}”?`,
+            message: `Name changes cost 💎 ${cost}. You have 💎 ${diamonds}.`,
+            actions: [
+              { label: `Yes, pay 💎 ${cost}`, tone: 'yes', onClick: doRename },
+              { label: 'No', tone: 'no' }
+            ]
+          });
         });
       }
 
@@ -11709,26 +11840,34 @@ if (typeof module === 'object' && module.exports) {
           <button type="button" class="btn-secondary btn-sm" data-nav="profile">👑 My Profile</button>
         </div>
 
-        <div class="avatar-section table-theme-section">
+        ${[
+          { title: '🎨 Table Colours', note: 'Change the felt on every table you play', list: SH.TABLE_THEMES.filter(t => !t.vip) },
+          { title: '💎 VIP Tables', note: 'Luxury tables bought with Diamonds', list: SH.TABLE_THEMES.filter(t => t.vip), vip: true }
+        ].map(sec => `
+        <div class="avatar-section table-theme-section ${sec.vip ? 'vip-theme-section' : ''}">
           <div class="section-head">
-            <h3>🎨 Table Colours</h3>
-            <span>Change the felt on every table you play</span>
+            <h3>${sec.title}</h3>
+            <span>${sec.note}</span>
           </div>
           <div class="theme-grid">
-            ${SH.TABLE_THEMES.map(t => {
+            ${sec.list.map(t => {
               const owned = profile.ownedTableThemes.includes(t.id);
               const inUse = (profile.selectedTableTheme || 'emerald') === t.id;
+              const dia = t.currency === 'diamonds';
+              const balance = dia ? (profile.diamonds || 0) : profile.coins;
               return `
-                <button type="button" class="theme-card ${inUse ? 'in-use' : ''} ${owned ? 'owned-item' : profile.coins < t.price ? 'unaffordable' : ''}" data-shop-theme="${t.id}">
+                <button type="button" class="theme-card ${t.vip ? 'vip-theme' : ''} ${inUse ? 'in-use' : ''} ${owned ? 'owned-item' : balance < t.price ? 'unaffordable' : ''}" data-shop-theme="${t.id}">
+                  ${t.vip ? '<span class="leg-ribbon vip-ribbon">VIP</span>' : ''}
                   <span class="theme-swatch" data-table-swatch="${t.id}" style="--sw1:${t.swatch[0]};--sw2:${t.swatch[1]}"><span>♠</span></span>
                   <span class="skin-name">${esc(t.name)}</span>
                   <span class="skin-desc">${esc(t.desc)}</span>
-                  <span class="skin-price ${owned ? 'owned' : ''}">${inUse ? '✓ In use' : owned ? 'Owned — tap to use' : `${t.price.toLocaleString('en-US')} 🦁`}</span>
+                  <span class="skin-price ${owned ? 'owned' : ''}">${inUse ? '✓ In use' : owned ? 'Owned — tap to use' : `${t.price.toLocaleString('en-US')} ${dia ? '💎' : '🦁'}`}</span>
                 </button>
               `;
             }).join('')}
           </div>
         </div>
+        `).join('')}
 
         <div class="avatar-section card-skin-section">
           <div class="section-head">
@@ -11818,7 +11957,7 @@ if (typeof module === 'object' && module.exports) {
           this.showToast(res.message, 'success');
           return;
         }
-        const unit = kind === 'avatar' && item.currency === 'diamonds' ? '💎' : '🦁';
+        const unit = item.currency === 'diamonds' ? '💎' : '🦁';
         const balance = unit === '💎' ? (profile.diamonds || 0) : profile.coins;
         if (balance < item.price) {
           SH.audio.notEnoughFunds();

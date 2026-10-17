@@ -105,7 +105,8 @@ try {
   // 2) 🎨 Table colours in the Shop
   await A.evaluate(() => window.spadesApp.navigateTo('shop'));
   await waitScreen(A, 'screen-shop');
-  ok(await A.$$eval('[data-shop-theme]', els => els.length) === 5, 'Shop shows 5 table colours');
+  ok(await A.$$eval('.table-theme-section:not(.vip-theme-section) [data-shop-theme]', els => els.length) === 5, 'Shop shows 5 table colours for Lions');
+  ok(await A.$$eval('.vip-theme-section [data-shop-theme]', els => els.length) === 6, 'Shop shows 6 💎 VIP tables');
   await A.$eval('[data-shop-theme="royal"]', el => el.click());
   await A.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());
   await sleep(200);
@@ -118,6 +119,27 @@ try {
   ok(/29, 78, 216/.test(bg), 'the game table is now royal blue');
   await sleep(6500); // past the 5-second "cat in a hat" intro
   await shot(A, '03-blue-table');
+
+  // 2b) 💎 VIP table bought with Diamonds (Ali has 6 💎 from the streak)
+  await A.evaluate(() => window.spadesApp.navigateTo('shop'));
+  await waitScreen(A, 'screen-shop');
+  const d0 = (await prof(A)).diamonds;
+  await A.$eval('[data-shop-theme="galaxy"]', el => el.click());
+  const vipMsg = await A.$eval('.choice-overlay p', el => el.textContent);
+  await A.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());
+  await sleep(200);
+  const d1 = (await prof(A)).diamonds;
+  ok(/💎/.test(vipMsg) && d1 === d0 - 5 && await A.evaluate(() => document.body.getAttribute('data-table-theme')) === 'galaxy', `bought Galaxy Night for 5 💎 (${d0} → ${d1}) and it's in use`);
+  await A.$eval('.vip-theme-section', el => el.scrollIntoView());
+  await sleep(300);
+  await shot(A, '03b-vip-tables');
+  await A.$eval('[data-shop-theme="blackgold"]', el => el.click());
+  ok(await A.evaluate(() => !document.querySelector('.choice-overlay')) && d1 < 25, 'can’t afford Black Gold Throne (25 💎) → no purchase');
+  await A.evaluate(() => window.spadesApp.navigateTo('game', true));
+  await waitScreen(A, 'screen-game');
+  await A.waitForSelector('.felt-arena', { timeout: 8000 });
+  ok(/109, 40, 217|76, 29, 149/.test(await A.$eval('.felt-arena', el => getComputedStyle(el).backgroundImage)), 'the game table is now Galaxy Night');
+  await A.evaluate(() => { window.spadesApp.game = null; });
 
   // 3) 📊 Stats
   await A.evaluate(() => {
@@ -149,6 +171,36 @@ try {
   await A.waitForSelector('.lb-row', { timeout: 8000 });
   const fr = await A.$$eval('.lb-row', els => els.length);
   ok(fr === 1, 'friends tab shows just you until you add friends');
+
+  // 5) ✏️ Name change: first free, then 💎 50
+  await A.evaluate(() => { document.querySelectorAll('.choice-overlay').forEach(el => el.remove()); window.spadesApp.navigateTo('profile'); });
+  await waitScreen(A, 'screen-profile');
+  ok(/first name change is free/.test(await A.$eval('.name-cost', el => el.textContent)), 'Profile says the first name change is free');
+  const rename = async (name) => {
+    await A.evaluate((n) => { document.querySelector('#username-input').value = n; document.querySelector('#username-form').requestSubmit(); }, name);
+    await sleep(150);
+  };
+  const dia = async () => (await prof(A)).diamonds;
+  await A.evaluate(() => { SpadesHadzz.store.getProfile().diamonds = 80; SpadesHadzz.store.save(); });
+  await rename('AliKing');
+  await A.waitForFunction(() => SpadesHadzz.store.getProfile().username === 'AliKing', { timeout: 6000 });
+  ok(await dia() === 80, 'first rename (Ali → AliKing) is free: still 💎 80');
+  await A.waitForFunction(() => /costs/.test(document.querySelector('.name-cost')?.textContent || ''), { timeout: 4000 });
+  await rename('Bea'); // taken by the other player
+  const confirmTaken = await A.$eval('.choice-overlay p', el => el.textContent);
+  await A.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());
+  await sleep(1200);
+  ok(/💎 50/.test(confirmTaken) && await dia() === 80 && (await prof(A)) && await A.evaluate(() => SpadesHadzz.store.getProfile().username) === 'AliKing', 'second rename asks to pay 💎 50; a taken name charges nothing');
+  await A.evaluate(() => window.spadesApp.navigateTo('profile'));
+  await rename('AliTheGreat');
+  await A.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());
+  await A.waitForFunction(() => SpadesHadzz.store.getProfile().username === 'AliTheGreat', { timeout: 6000 });
+  ok(await dia() === 30, `paid rename (AliKing → AliTheGreat) took 💎 50 (now 💎 ${await dia()})`);
+  await A.evaluate(() => window.spadesApp.navigateTo('profile'));
+  await waitScreen(A, 'screen-profile');
+  await A.evaluate(() => { SpadesHadzz.store.getProfile().diamonds = 10; SpadesHadzz.store.save(); });
+  await rename('AliAgain');
+  ok(!(await A.$('.choice-overlay')) && await dia() === 10 && /costs 💎 50/.test(await A.$eval('#app-toast', el => el.textContent)), 'with only 💎 10 the next rename is blocked');
 
   ok(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(' | ')}` : ''}`);
 } catch (e) {

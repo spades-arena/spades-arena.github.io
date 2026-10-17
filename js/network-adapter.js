@@ -622,7 +622,7 @@
           this.prefs.username = msg.user.username;
           savePrefs(this.prefs);
           this.syncStoreUsername(msg.user);
-          this.fire('notice', { tone: 'success', message: `Online username is now ${msg.user.username}.` });
+          this.fire('account_renamed', { username: msg.user.username });
           this.emit();
           break;
 

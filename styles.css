@@ -3065,3 +3065,69 @@ body[data-table-theme="goldleaf"] .felt-arena {
 .lb-wins { font-size: 0.82rem; white-space: nowrap; }
 .lb-wins small { color: var(--text-muted); }
 .lb-note { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin: 0.6rem 0 0; }
+
+/* 💎 VIP tables (bought with Diamonds) */
+body[data-table-theme="galaxy"] .felt-arena {
+  background:
+    radial-gradient(1.2px 1.2px at 12% 18%, #fff 50%, transparent 51%) padding-box,
+    radial-gradient(1px 1px at 72% 32%, #e9d5ff 50%, transparent 51%) padding-box,
+    radial-gradient(1.4px 1.4px at 38% 76%, #fff 50%, transparent 51%) padding-box,
+    radial-gradient(1px 1px at 86% 82%, #c4b5fd 50%, transparent 51%) padding-box,
+    radial-gradient(1px 1px at 55% 12%, #fff 50%, transparent 51%) padding-box,
+    radial-gradient(1.2px 1.2px at 22% 58%, #ddd6fe 50%, transparent 51%) padding-box,
+    radial-gradient(ellipse at 30% 30%, rgba(236, 72, 153, 0.25) 0%, transparent 45%) padding-box,
+    radial-gradient(ellipse at 70% 70%, rgba(59, 130, 246, 0.25) 0%, transparent 45%) padding-box,
+    radial-gradient(ellipse at center, #4c1d95 0%, #2e1065 45%, #0b0420 100%) padding-box,
+    linear-gradient(135deg, #e9d5ff 0%, #7c3aed 25%, #f5d0fe 50%, #6d28d9 75%, #c4b5fd 100%) border-box;
+}
+body[data-table-theme="icediamond"] .felt-arena {
+  background:
+    linear-gradient(120deg, transparent 0 40%, rgba(255, 255, 255, 0.10) 42%, transparent 46%) padding-box,
+    linear-gradient(60deg, transparent 0 62%, rgba(255, 255, 255, 0.07) 64%, transparent 67%) padding-box,
+    radial-gradient(ellipse at center, #0e7490 0%, #0b4f63 45%, #062a3a 80%, #031620 100%) padding-box,
+    linear-gradient(135deg, #ecfeff 0%, #67e8f9 25%, #ffffff 50%, #22d3ee 75%, #cffafe 100%) border-box;
+  box-shadow: inset 0 0 0 3px #0b0b0d, inset 0 0 0 4.5px rgba(103, 232, 249, 0.85), inset 0 0 60px rgba(0, 0, 0, 0.6), 0 0 24px rgba(34, 211, 238, 0.35), 0 12px 30px rgba(0, 0, 0, 0.65);
+}
+body[data-table-theme="ruby"] .felt-arena {
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1.2px) 0 0 / 6px 6px padding-box,
+    radial-gradient(ellipse at center, #e11d48 0%, #9f1239 40%, #4c0519 78%, #2a0410 100%) padding-box,
+    linear-gradient(135deg, #fff7d1 0%, #eab308 20%, #fff1b8 40%, #a16207 60%, #fde68a 80%, #ca8a04 100%) border-box;
+  box-shadow: inset 0 0 0 3px #0b0b0d, inset 0 0 0 4.5px rgba(250, 204, 21, 0.85), inset 0 0 60px rgba(0, 0, 0, 0.7), 0 0 22px rgba(225, 29, 72, 0.35), 0 12px 30px rgba(0, 0, 0, 0.65);
+}
+body[data-table-theme="aurora"] .felt-arena {
+  background:
+    radial-gradient(ellipse 80% 40% at 30% 20%, rgba(16, 185, 129, 0.55) 0%, transparent 60%) padding-box,
+    radial-gradient(ellipse 70% 40% at 75% 35%, rgba(45, 212, 191, 0.45) 0%, transparent 60%) padding-box,
+    radial-gradient(ellipse 80% 50% at 50% 85%, rgba(139, 92, 246, 0.5) 0%, transparent 60%) padding-box,
+    radial-gradient(ellipse at center, #0f2a2a 0%, #0a1a24 50%, #060912 100%) padding-box,
+    linear-gradient(135deg, #a7f3d0 0%, #10b981 25%, #c4b5fd 50%, #7c3aed 75%, #5eead4 100%) border-box;
+  animation: aurora-glow 6s ease-in-out infinite alternate;
+}
+@keyframes aurora-glow { from { filter: hue-rotate(0deg) saturate(1); } to { filter: hue-rotate(25deg) saturate(1.2); } }
+body[data-table-theme="platinum"] .felt-arena {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 5px) padding-box,
+    radial-gradient(ellipse at center, #64748b 0%, #334155 45%, #1e293b 80%, #0f172a 100%) padding-box,
+    linear-gradient(135deg, #ffffff 0%, #cbd5e1 20%, #f8fafc 40%, #94a3b8 60%, #e2e8f0 80%, #64748b 100%) border-box;
+  box-shadow: inset 0 0 0 3px #0b0b0d, inset 0 0 0 4.5px rgba(226, 232, 240, 0.9), inset 0 0 60px rgba(0, 0, 0, 0.6), 0 0 22px rgba(226, 232, 240, 0.3), 0 12px 30px rgba(0, 0, 0, 0.65);
+}
+body[data-table-theme="blackgold"] .felt-arena {
+  background:
+    radial-gradient(rgba(250, 204, 21, 0.08) 1px, transparent 1.3px) 0 0 / 8px 8px padding-box,
+    radial-gradient(ellipse at center, #141008 0%, #050403 60%, #000 100%) padding-box,
+    linear-gradient(135deg, #fffbeb 0%, #facc15 15%, #fff7d1 30%, #a16207 45%, #fde047 60%, #ca8a04 75%, #fffbeb 90%, #eab308 100%) border-box;
+  animation: throne-glow 2.4s ease-in-out infinite alternate;
+}
+@keyframes throne-glow {
+  from { box-shadow: inset 0 0 0 3px #000, inset 0 0 0 4.5px rgba(250, 204, 21, 0.9), inset 0 0 60px rgba(0, 0, 0, 0.8), 0 0 14px rgba(250, 204, 21, 0.3), 0 12px 30px rgba(0, 0, 0, 0.65); }
+  to { box-shadow: inset 0 0 0 3px #000, inset 0 0 0 4.5px rgba(253, 224, 71, 1), inset 0 0 60px rgba(0, 0, 0, 0.8), 0 0 34px rgba(250, 204, 21, 0.6), 0 12px 30px rgba(0, 0, 0, 0.65); }
+}
+.reduced-motion .felt-arena { animation: none !important; }
+.theme-card { position: relative; }
+.theme-card.vip-theme { border-color: rgba(125, 211, 252, 0.45); background: linear-gradient(180deg, rgba(56, 189, 248, 0.07), rgba(255, 255, 255, 0.02)); }
+.vip-theme .theme-swatch { border-color: #7dd3fc; box-shadow: 0 0 12px rgba(125, 211, 252, 0.35); }
+.vip-ribbon { background: linear-gradient(90deg, #38bdf8, #a78bfa) !important; color: #fff !important; }
+.theme-swatch[data-table-swatch="galaxy"] { background: radial-gradient(1px 1px at 25% 30%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 70% 60%, #fff 50%, transparent 51%), radial-gradient(ellipse at center, #6d28d9, #0b0420); }
+.theme-swatch[data-table-swatch="aurora"] { background: radial-gradient(ellipse at 30% 30%, #10b981, transparent 60%), radial-gradient(ellipse at 70% 80%, #8b5cf6, transparent 60%), #0a1a24; }
+.theme-swatch[data-table-swatch="blackgold"] { border-color: #facc15; box-shadow: 0 0 14px rgba(250, 204, 21, 0.5); }

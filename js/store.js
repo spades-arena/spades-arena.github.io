@@ -9,6 +9,7 @@
   // v2 = fresh start for everyone (new balances: 50 🦁 + 5 💎)
   const STORAGE_KEY = 'spades_royale_state_v2';
   const UNLIMITED_BALANCE = 999999999;
+  const NAME_CHANGE_DIAMONDS = 50;
   const LOGIN_STREAK_REWARDS = [
     { lions: 10, diamonds: 0 }, { lions: 20, diamonds: 0 }, { lions: 30, diamonds: 0 }, { lions: 40, diamonds: 0 },
     { lions: 60, diamonds: 0 }, { lions: 80, diamonds: 0 }, { lions: 100, diamonds: 1 }
@@ -38,6 +39,7 @@
         selectedCardSkin: 'classic',
         ownedTableThemes: ['emerald'],
         selectedTableTheme: 'emerald',
+        nameChanges: 0, // first name change is free, then 💎 NAME_CHANGE_DIAMONDS each
         loginStreak: 0, // consecutive days opened (1–7, then starts a new week)
         lastLoginDay: todayKey(), // new players start with exactly 50 🦁; the streak begins tomorrow
         lastDailyDiamond: todayKey(), // 'YYYY-MM-DD' of the last daily +1 💎 (new players start at exactly 5 💎)
@@ -152,6 +154,21 @@
       return Boolean(this.state.profile.unlimited);
     }
 
+    /** 💎 cost of your next name change (0 for the first one). */
+    get nameChangeCost() {
+      return (this.state.profile.nameChanges || 0) > 0 ? NAME_CHANGE_DIAMONDS : 0;
+    }
+
+    /** Call after a name change went through: counts it and takes the 💎 if it wasn't the free one. */
+    recordNameChange() {
+      const p = this.state.profile;
+      const cost = this.nameChangeCost;
+      if (cost > 0) p.diamonds = Math.max(0, (p.diamonds || 0) - cost);
+      p.nameChanges = (p.nameChanges || 0) + 1;
+      this.save();
+      return cost;
+    }
+
     updateUsername(rawName) {
       const cleaned = String(rawName || '').trim().replace(/\s+/g, '_').slice(0, 18);
       if (cleaned.length < 2) {
@@ -239,14 +256,17 @@
         this.save();
         return { ok: true, action: 'equipped', message: `Now playing on the ${theme.name} table.` };
       }
-      if (p.coins < theme.price) {
-        return { ok: false, action: 'insufficient_funds', message: `Not enough 🦁 Lions for "${theme.name}" — you need ${theme.price - p.coins} more (${theme.price} total).` };
+      const diamonds = theme.currency === 'diamonds';
+      const balance = diamonds ? (p.diamonds || 0) : p.coins;
+      if (balance < theme.price) {
+        return { ok: false, action: 'insufficient_funds', message: `Not enough ${diamonds ? '💎 Diamonds' : '🦁 Lions'} for "${theme.name}" — you need ${theme.price - balance} more (${theme.price} total).` };
       }
-      p.coins -= theme.price;
+      if (diamonds) p.diamonds -= theme.price;
+      else p.coins -= theme.price;
       p.ownedTableThemes.push(themeId);
       p.selectedTableTheme = themeId;
       this.save();
-      return { ok: true, action: 'purchased', message: `Unlocked the ${theme.name} table for ${theme.price} 🦁 Lions!` };
+      return { ok: true, action: 'purchased', message: `Unlocked the ${theme.name} table for ${theme.price} ${diamonds ? '💎 Diamonds' : '🦁 Lions'}!` };
     }
 
     /**
