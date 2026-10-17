@@ -344,8 +344,8 @@
       if (typeof document === 'undefined') return;
       const profile = SH.store.getProfile();
       const settings = SH.store.getSettings();
-      document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.coins); });
-      document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.diamonds || 0); });
+      document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = profile.unlimited ? '1B' : String(profile.coins); });
+      document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = profile.unlimited ? '1B' : String(profile.diamonds || 0); });
       document.body.setAttribute('data-card-skin', profile.selectedCardSkin || 'classic');
       document.body.setAttribute('data-table-theme', profile.selectedTableTheme || 'emerald');
       document.querySelectorAll('[data-hud-username]').forEach(el => { el.textContent = profile.username; });
@@ -3556,7 +3556,7 @@
       overlay.innerHTML = `
         <div class="choice-card gift-card" role="dialog" aria-modal="true" aria-label="Send a gift">
           <h3>🎁 Send a gift to ${esc(name)}</h3>
-          <p>You have 🦁 <strong>${profile.unlimited ? '∞' : profile.coins.toLocaleString('en-US')}</strong> Lions · 💎 <strong>${profile.unlimited ? '∞' : (profile.diamonds || 0).toLocaleString('en-US')}</strong> Diamonds · no sending limit</p>
+          <p>You have 🦁 <strong>${profile.coins.toLocaleString('en-US')}</strong> Lions · 💎 <strong>${(profile.diamonds || 0).toLocaleString('en-US')}</strong> Diamonds · no sending limit</p>
           <label class="gift-row">🦁 Lions
             <input type="number" id="gift-lions" inputmode="numeric" min="0" value="0" />
           </label>

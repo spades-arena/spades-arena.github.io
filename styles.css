@@ -3153,3 +3153,58 @@ body[data-table-theme="blackgold"] .felt-arena {
   border: 1px solid rgba(232, 196, 104, 0.45); background: #0b0b0d; color: #f4ecd8;
 }
 .pin-warning { color: #fbbf24 !important; }
+
+/* ------------------------------------------------------------------
+   Bigger, clearer hand cards + very visible "you can play this" glow
+   ------------------------------------------------------------------ */
+.player-hand-row { --card-w: 74px; min-height: 124px; padding-top: 18px; }
+.player-hand-row .hand-card { height: 108px; }
+body[data-device-frame="tablet"] .player-hand-row,
+body[data-device-frame="laptop"] .player-hand-row,
+body[data-device-frame="full"] .player-hand-row { --card-w: 92px; min-height: 150px; padding-top: 22px; }
+body[data-device-frame="tablet"] .player-hand-row .hand-card,
+body[data-device-frame="laptop"] .player-hand-row .hand-card,
+body[data-device-frame="full"] .player-hand-row .hand-card { height: 132px; }
+
+/* Corner letter & suit are what you see on overlapped cards — make them big and bold */
+.hand-card .pc-tl { top: 4px; left: 4px; }
+.hand-card .pc-rank { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.04em; }
+.hand-card .pc-index-suit { width: 15px; height: 15px; }
+.hand-card .pc-pip .pc-pip-lg { width: 34px; height: 34px; }
+.hand-card .pc-ace .pc-pip-xl { width: 44px; height: 44px; }
+body[data-device-frame="tablet"] .hand-card .pc-rank,
+body[data-device-frame="laptop"] .hand-card .pc-rank,
+body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1.5rem; }
+body[data-device-frame="tablet"] .hand-card .pc-index-suit,
+body[data-device-frame="laptop"] .hand-card .pc-index-suit,
+body[data-device-frame="full"] .hand-card .pc-index-suit { width: 18px; height: 18px; }
+body[data-device-frame="tablet"] .hand-card .pc-pip .pc-pip-lg,
+body[data-device-frame="laptop"] .hand-card .pc-pip .pc-pip-lg,
+body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: 42px; height: 42px; }
+
+/* Cards you CAN play: lifted, thick gold border, pulsing glow */
+.hand-card.card-legal-ready {
+  border: 3px solid #ffd54a !important;
+  transform: translateY(-14px);
+  z-index: 3;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.55),
+    0 0 16px 4px rgba(255, 213, 74, 0.85),
+    0 10px 18px rgba(0, 0, 0, 0.55);
+  animation: legalPulse 1.4s ease-in-out infinite;
+}
+.hand-card.card-legal-ready:hover,
+.hand-card.card-legal-ready:active { transform: translateY(-22px) scale(1.06); z-index: 12; }
+@keyframes legalPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 0 12px 3px rgba(255, 213, 74, 0.7), 0 10px 18px rgba(0, 0, 0, 0.55); }
+  50% { box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 0 24px 8px rgba(255, 213, 74, 1), 0 10px 18px rgba(0, 0, 0, 0.55); }
+}
+.reduced-motion .hand-card.card-legal-ready { animation: none; }
+
+/* Cards you CAN'T play right now: pushed back so the playable ones stand out */
+.hand-card.card-illegal-dim {
+  opacity: 0.42;
+  filter: grayscale(0.7) brightness(0.8);
+  transform: translateY(4px);
+}
+.legal-hint-badge { background: #ffd54a; color: #1a1405; font-weight: 800; }

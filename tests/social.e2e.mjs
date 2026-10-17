@@ -163,10 +163,10 @@ try {
   await C.waitForFunction(() => SpadesHadzz.store.isUnlimited, { timeout: 6000 });
   const hud = await C.$eval('#app-topbar [data-hud-coins]', el => el.textContent);
   const hudD = await C.$eval('#app-topbar [data-hud-diamonds]', el => el.textContent);
-  ok(hud === '∞' && hudD === '∞', `owner account shows unlimited Lions ${hud} and Diamonds ${hudD}`);
+  ok(hud === '1B' && hudD === '1B', `owner account shows unlimited Lions ${hud} and Diamonds ${hudD}`);
   const bought = await C.evaluate(() => SpadesHadzz.store.selectOrBuyAvatar('myth_cat').ok && SpadesHadzz.store.selectOrBuyAvatar('dia_icedragon').ok);
   const after = await prof(C);
-  ok(bought && after.coins >= 999999999 && after.diamonds >= 999999999, 'buying the priciest items never runs the owner out');
+  ok(bought && after.coins === 1000000000 && after.diamonds === 1000000000, 'buying the priciest items never runs the owner out');
   await C.evaluate(() => window.spadesApp.signOut());
   await waitScreen(C, 'screen-login');
   const back = await prof(C);

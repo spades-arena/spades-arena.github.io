@@ -3168,6 +3168,61 @@ body[data-table-theme="blackgold"] .felt-arena {
 }
 .pin-warning { color: #fbbf24 !important; }
 
+/* ------------------------------------------------------------------
+   Bigger, clearer hand cards + very visible "you can play this" glow
+   ------------------------------------------------------------------ */
+.player-hand-row { --card-w: 74px; min-height: 124px; padding-top: 18px; }
+.player-hand-row .hand-card { height: 108px; }
+body[data-device-frame="tablet"] .player-hand-row,
+body[data-device-frame="laptop"] .player-hand-row,
+body[data-device-frame="full"] .player-hand-row { --card-w: 92px; min-height: 150px; padding-top: 22px; }
+body[data-device-frame="tablet"] .player-hand-row .hand-card,
+body[data-device-frame="laptop"] .player-hand-row .hand-card,
+body[data-device-frame="full"] .player-hand-row .hand-card { height: 132px; }
+
+/* Corner letter & suit are what you see on overlapped cards — make them big and bold */
+.hand-card .pc-tl { top: 4px; left: 4px; }
+.hand-card .pc-rank { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.04em; }
+.hand-card .pc-index-suit { width: 15px; height: 15px; }
+.hand-card .pc-pip .pc-pip-lg { width: 34px; height: 34px; }
+.hand-card .pc-ace .pc-pip-xl { width: 44px; height: 44px; }
+body[data-device-frame="tablet"] .hand-card .pc-rank,
+body[data-device-frame="laptop"] .hand-card .pc-rank,
+body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1.5rem; }
+body[data-device-frame="tablet"] .hand-card .pc-index-suit,
+body[data-device-frame="laptop"] .hand-card .pc-index-suit,
+body[data-device-frame="full"] .hand-card .pc-index-suit { width: 18px; height: 18px; }
+body[data-device-frame="tablet"] .hand-card .pc-pip .pc-pip-lg,
+body[data-device-frame="laptop"] .hand-card .pc-pip .pc-pip-lg,
+body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: 42px; height: 42px; }
+
+/* Cards you CAN play: lifted, thick gold border, pulsing glow */
+.hand-card.card-legal-ready {
+  border: 3px solid #ffd54a !important;
+  transform: translateY(-14px);
+  z-index: 3;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.55),
+    0 0 16px 4px rgba(255, 213, 74, 0.85),
+    0 10px 18px rgba(0, 0, 0, 0.55);
+  animation: legalPulse 1.4s ease-in-out infinite;
+}
+.hand-card.card-legal-ready:hover,
+.hand-card.card-legal-ready:active { transform: translateY(-22px) scale(1.06); z-index: 12; }
+@keyframes legalPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 0 12px 3px rgba(255, 213, 74, 0.7), 0 10px 18px rgba(0, 0, 0, 0.55); }
+  50% { box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 0 24px 8px rgba(255, 213, 74, 1), 0 10px 18px rgba(0, 0, 0, 0.55); }
+}
+.reduced-motion .hand-card.card-legal-ready { animation: none; }
+
+/* Cards you CAN'T play right now: pushed back so the playable ones stand out */
+.hand-card.card-illegal-dim {
+  opacity: 0.42;
+  filter: grayscale(0.7) brightness(0.8);
+  transform: translateY(4px);
+}
+.legal-hint-badge { background: #ffd54a; color: #1a1405; font-weight: 800; }
+
   </style>
 </head>
 <body data-device-frame="full">
@@ -4032,7 +4087,7 @@ body[data-table-theme="blackgold"] .felt-arena {
   const SH = (root.SpadesHadzz = root.SpadesHadzz || {});
   // v2 = fresh start for everyone (new balances: 50 🦁 + 5 💎)
   const STORAGE_KEY = 'spades_royale_state_v2';
-  const UNLIMITED_BALANCE = 999999999;
+  const UNLIMITED_BALANCE = 1000000000; // owner account: 1B Lions & 1B Diamonds
   const NAME_CHANGE_DIAMONDS = 50;
   // Saved on the server for online accounts so purchases & progress follow you to every device
   const SYNC_FIELDS = [
@@ -8551,8 +8606,8 @@ if (typeof module === 'object' && module.exports) {
       if (typeof document === 'undefined') return;
       const profile = SH.store.getProfile();
       const settings = SH.store.getSettings();
-      document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.coins); });
-      document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.diamonds || 0); });
+      document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = profile.unlimited ? '1B' : String(profile.coins); });
+      document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = profile.unlimited ? '1B' : String(profile.diamonds || 0); });
       document.body.setAttribute('data-card-skin', profile.selectedCardSkin || 'classic');
       document.body.setAttribute('data-table-theme', profile.selectedTableTheme || 'emerald');
       document.querySelectorAll('[data-hud-username]').forEach(el => { el.textContent = profile.username; });
@@ -11763,7 +11818,7 @@ if (typeof module === 'object' && module.exports) {
       overlay.innerHTML = `
         <div class="choice-card gift-card" role="dialog" aria-modal="true" aria-label="Send a gift">
           <h3>🎁 Send a gift to ${esc(name)}</h3>
-          <p>You have 🦁 <strong>${profile.unlimited ? '∞' : profile.coins.toLocaleString('en-US')}</strong> Lions · 💎 <strong>${profile.unlimited ? '∞' : (profile.diamonds || 0).toLocaleString('en-US')}</strong> Diamonds · no sending limit</p>
+          <p>You have 🦁 <strong>${profile.coins.toLocaleString('en-US')}</strong> Lions · 💎 <strong>${(profile.diamonds || 0).toLocaleString('en-US')}</strong> Diamonds · no sending limit</p>
           <label class="gift-row">🦁 Lions
             <input type="number" id="gift-lions" inputmode="numeric" min="0" value="0" />
           </label>

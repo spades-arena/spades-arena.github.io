@@ -8,7 +8,7 @@
   const SH = (root.SpadesHadzz = root.SpadesHadzz || {});
   // v2 = fresh start for everyone (new balances: 50 🦁 + 5 💎)
   const STORAGE_KEY = 'spades_royale_state_v2';
-  const UNLIMITED_BALANCE = 999999999;
+  const UNLIMITED_BALANCE = 1000000000; // owner account: 1B Lions & 1B Diamonds
   const NAME_CHANGE_DIAMONDS = 50;
   // Saved on the server for online accounts so purchases & progress follow you to every device
   const SYNC_FIELDS = [
