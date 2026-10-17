@@ -40,7 +40,7 @@ async function register(page, name) {
   await page.evaluate((n) => {
     document.querySelector('#auth-username').value = n;
     document.querySelector('#auth-password').value = 'lion123';
-    document.querySelector('#auth-password2').value = 'lion123';
+    document.querySelector('#auth-password2').value = 'lion123'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
     document.querySelector('.auth-submit').click();
   }, name);
   await waitScreen(page, 'screen-menu');
@@ -177,7 +177,7 @@ try {
   await C.evaluate(() => {
     document.querySelector('#auth-username').value = 'OWNERTEST';
     document.querySelector('#auth-password').value = 'anything1';
-    const p2 = document.querySelector('#auth-password2'); if (p2) p2.value = 'anything1';
+    const p2 = document.querySelector('#auth-password2'); if (p2) p2.value = 'anything1'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
     document.querySelector('.auth-submit').click();
   });
   await sleep(1200);

@@ -72,7 +72,7 @@ try {
   await A.evaluate(() => window.spadesApp.navigateTo('menu'));
   ok(await screen(A) === 'screen-login', 'cannot open the app without logging in');
   await tap(A, '[data-auth-mode="register"]');
-  await A.evaluate(() => { document.querySelector('#auth-username').value = 'Ali'; document.querySelector('#auth-password').value = 'lion123'; document.querySelector('#auth-password2').value = 'lion123'; document.querySelector('.auth-submit').click(); });
+  await A.evaluate(() => { document.querySelector('#auth-username').value = 'Ali'; document.querySelector('#auth-password').value = 'lion123'; document.querySelector('#auth-password2').value = 'lion123'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; } document.querySelector('.auth-submit').click(); });
   await waitScreen(A, 'screen-menu');
   const fresh = await prof(A);
   ok(fresh.coins === 50 && fresh.diamonds === 5, `new account starts with 🦁 ${fresh.coins} and 💎 ${fresh.diamonds}`);

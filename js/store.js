@@ -10,6 +10,12 @@
   const STORAGE_KEY = 'spades_royale_state_v2';
   const UNLIMITED_BALANCE = 999999999;
   const NAME_CHANGE_DIAMONDS = 50;
+  // Saved on the server for online accounts so purchases & progress follow you to every device
+  const SYNC_FIELDS = [
+    'coins', 'diamonds', 'selectedAvatar', 'ownedAvatars', 'ownedCardSkins', 'selectedCardSkin',
+    'ownedTableThemes', 'selectedTableTheme', 'winStreak', 'bestStreak', 'winsAt250', 'winsAt500',
+    'stats', 'loginStreak', 'lastLoginDay', 'lastDailyDiamond', 'nameChanges'
+  ];
   const LOGIN_STREAK_REWARDS = [
     { lions: 10, diamonds: 0 }, { lions: 20, diamonds: 0 }, { lions: 30, diamonds: 0 }, { lions: 40, diamonds: 0 },
     { lions: 60, diamonds: 0 }, { lions: 80, diamonds: 0 }, { lions: 100, diamonds: 1 }
@@ -109,6 +115,7 @@
     save() {
       const p = this.state.profile;
       if (p.unlimited) { p.coins = UNLIMITED_BALANCE; p.diamonds = UNLIMITED_BALANCE; } // owner account never runs out
+      if (!this.applyingRemote) { p.syncDirty = true; p.changeSeq = (p.changeSeq || 0) + 1; } // needs uploading (online accounts)
       try {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
@@ -130,6 +137,136 @@
 
     getSettings() {
       return this.state.settings;
+    }
+
+    // ------------------------------------------------------------ sync between devices (online accounts)
+
+    /** The parts of the profile that follow your account to every device. */
+    exportSyncProfile() {
+      const p = this.state.profile;
+      const out = {};
+      for (const k of SYNC_FIELDS) if (p[k] !== undefined) out[k] = p[k];
+      if (p.unlimited) {
+        const real = p.balanceBeforeUnlimited || { coins: 50, diamonds: 5 };
+        out.coins = real.coins;
+        out.diamonds = real.diamonds;
+      }
+      out.selectedAvatar = p.selectedAvatar === 'photo' ? (p.lastNonPhotoAvatar || 'free_ace') : p.selectedAvatar;
+      out.rewardedIds = (p.rewardedIds || []).slice(-60);
+      return out;
+    }
+
+    realBalance() {
+      const p = this.state.profile;
+      const r = p.unlimited ? (p.balanceBeforeUnlimited || { coins: 50, diamonds: 5 }) : p;
+      return { coins: Number(r.coins) || 0, diamonds: Number(r.diamonds) || 0 };
+    }
+
+    setRealBalance(coins, diamonds) {
+      const p = this.state.profile;
+      coins = Math.max(0, Math.floor(coins));
+      diamonds = Math.max(0, Math.floor(diamonds));
+      if (p.unlimited) p.balanceBeforeUnlimited = { coins, diamonds };
+      else { p.coins = coins; p.diamonds = diamonds; }
+    }
+
+    saveRemote() {
+      this.applyingRemote = true;
+      try { this.save(); } finally { this.applyingRemote = false; }
+    }
+
+    /** Copies the account's saved fields onto this device (no upload needed afterwards). */
+    copyFields(data) {
+      const p = this.state.profile;
+      const keepPhoto = p.selectedAvatar === 'photo' && p.photo;
+      for (const k of SYNC_FIELDS) {
+        if (data[k] === undefined || k === 'coins' || k === 'diamonds') continue;
+        if (Array.isArray(p[k]) !== Array.isArray(data[k])) continue;
+        p[k] = k === 'stats' ? { ...p.stats, ...data.stats } : data[k];
+      }
+      p.ownedAvatars = Array.from(new Set([...getDefaultFreeIds(), ...(p.ownedAvatars || [])]));
+      p.ownedCardSkins = Array.from(new Set(['classic', ...(p.ownedCardSkins || [])]));
+      p.ownedTableThemes = Array.from(new Set(['emerald', ...(p.ownedTableThemes || [])]));
+      if (Array.isArray(data.rewardedIds)) p.rewardedIds = Array.from(new Set([...(p.rewardedIds || []), ...data.rewardedIds])).slice(-200);
+      if (keepPhoto) p.selectedAvatar = 'photo'; // your gallery photo stays on this device
+    }
+
+    /** Server copy changed and this device has nothing new: take it as-is. */
+    applySyncProfile(data, version) {
+      if (!data || typeof data !== 'object') return;
+      const p = this.state.profile;
+      this.copyFields(data);
+      this.setRealBalance(data.coins, data.diamonds);
+      p.syncBase = this.realBalance();
+      p.syncedAt = version;
+      p.syncDirty = false;
+      this.saveRemote();
+    }
+
+    /**
+     * Server copy changed AND this device changed too: start from the server copy and replay this
+     * device's Lions/Diamonds changes on top; owned items & best stats from both are kept.
+     */
+    rebaseSyncProfile(data, version) {
+      if (!data || typeof data !== 'object') return;
+      const p = this.state.profile;
+      const mine = this.realBalance();
+      const base = p.syncBase || mine;
+      const deltaCoins = mine.coins - base.coins;
+      const deltaDiamonds = mine.diamonds - base.diamonds;
+      const local = { ...p, stats: { ...p.stats } };
+      this.copyFields(data);
+      this.combineProgress(local);
+      p.selectedAvatar = local.selectedAvatar;
+      p.selectedCardSkin = local.selectedCardSkin;
+      p.selectedTableTheme = local.selectedTableTheme;
+      this.setRealBalance((Number(data.coins) || 0) + deltaCoins, (Number(data.diamonds) || 0) + deltaDiamonds);
+      p.syncBase = { coins: Number(data.coins) || 0, diamonds: Number(data.diamonds) || 0 };
+      p.syncedAt = version;
+      this.save(); // still has this device's changes → uploads
+    }
+
+    /** First sync of a device that played before accounts synced: keep the best of both (nothing bought is lost). */
+    mergeSyncProfile(data, version) {
+      if (!data || typeof data !== 'object') return;
+      const p = this.state.profile;
+      const mine = this.realBalance();
+      const local = { ...p, stats: { ...p.stats } };
+      this.copyFields(data);
+      this.combineProgress(local);
+      p.selectedAvatar = local.selectedAvatar;
+      p.selectedCardSkin = local.selectedCardSkin;
+      p.selectedTableTheme = local.selectedTableTheme;
+      this.setRealBalance(Math.max(mine.coins, Number(data.coins) || 0), Math.max(mine.diamonds, Number(data.diamonds) || 0));
+      p.syncBase = { coins: Number(data.coins) || 0, diamonds: Number(data.diamonds) || 0 };
+      p.syncedAt = version;
+      this.save();
+    }
+
+    /** Owned items: everything from both. Stats & streaks: the higher number. */
+    combineProgress(local) {
+      const p = this.state.profile;
+      const union = (a, b) => Array.from(new Set([...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])]));
+      const max = (a, b) => Math.max(Number(a) || 0, Number(b) || 0);
+      const later = (a, b) => (String(a || '') > String(b || '') ? a : b);
+      p.ownedAvatars = union(p.ownedAvatars, local.ownedAvatars);
+      p.ownedCardSkins = union(p.ownedCardSkins, local.ownedCardSkins);
+      p.ownedTableThemes = union(p.ownedTableThemes, local.ownedTableThemes);
+      for (const k of ['winStreak', 'bestStreak', 'winsAt250', 'winsAt500', 'nameChanges', 'loginStreak']) p[k] = max(p[k], local[k]);
+      p.lastLoginDay = later(p.lastLoginDay, local.lastLoginDay);
+      p.lastDailyDiamond = later(p.lastDailyDiamond, local.lastDailyDiamond);
+      const stats = { ...p.stats };
+      for (const [k, v] of Object.entries(local.stats || {})) stats[k] = max(stats[k], v);
+      p.stats = stats;
+      p.rewardedIds = union(p.rewardedIds, local.rewardedIds).slice(-200);
+    }
+
+    /** A different account logged in on this device and has nothing saved yet: start it fresh (🦁 50, 💎 5). */
+    resetProfileForNewAccount() {
+      const keep = { username: this.state.profile.username, unlimited: this.state.profile.unlimited };
+      this.state.profile = { ...createDefaultState().profile, ...keep };
+      if (keep.unlimited) this.state.profile.balanceBeforeUnlimited = { coins: 50, diamonds: 5 };
+      this.save();
     }
 
     /** Owner account (flagged by the server): unlimited Lions & Diamonds while signed in; normal balance comes back after. */
@@ -374,8 +511,8 @@
       const key = `gift_${giftId}`;
       if (!giftId || this.state.profile.rewardedIds.includes(key)) return false;
       this.state.profile.rewardedIds.push(key);
-      this.state.profile.coins += Math.max(0, Math.min(100000, Math.floor(lions)));
-      this.state.profile.diamonds += Math.max(0, Math.min(10000, Math.floor(diamonds)));
+      this.state.profile.coins += Math.max(0, Math.min(1e9, Math.floor(lions)));
+      this.state.profile.diamonds += Math.max(0, Math.min(1e9, Math.floor(diamonds)));
       this.save();
       return true;
     }

@@ -479,10 +479,77 @@ function validateCredentials(conn, username, password) {
   return true;
 }
 
+const PIN_RE = /^\d{4}$/;
+
+/** Recovery PIN (any 4 digits) — stored hashed like a password; used only to reset a forgotten password. */
+function setPin(user, pin) {
+  user.pinSalt = crypto.randomBytes(16).toString('hex');
+  user.pinHash = hashPassword(`pin:${pin}`, user.pinSalt);
+}
+
+function pinMatches(user, pin) {
+  if (!user.pinHash || !PIN_RE.test(String(pin || ''))) return false;
+  const a = Buffer.from(hashPassword(`pin:${pin}`, user.pinSalt), 'hex');
+  const b = Buffer.from(user.pinHash, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function setPassword(user, password) {
+  user.passwordSalt = crypto.randomBytes(16).toString('hex');
+  user.passwordHash = hashPassword(password, user.passwordSalt);
+}
+
+/** Counts a failed password / PIN attempt; too many locks the username for a while. Returns true if locked. */
+function noteAuthFailure(key) {
+  const fails = loginFailures.get(key);
+  const f = fails && fails.lockedUntil <= Date.now() && fails.count >= LOGIN_MAX_FAILS ? { count: 0, lockedUntil: 0 } : (fails || { count: 0, lockedUntil: 0 });
+  f.count += 1;
+  if (f.count >= LOGIN_MAX_FAILS) f.lockedUntil = Date.now() + LOGIN_LOCK_MS;
+  loginFailures.set(key, f);
+}
+
+function authLocked(conn, key) {
+  const fails = loginFailures.get(key);
+  if (fails && fails.lockedUntil > Date.now()) {
+    const mins = Math.ceil((fails.lockedUntil - Date.now()) / 60000);
+    sendError(conn, 'locked', `Too many failed attempts. Try again in ${mins} minute${mins > 1 ? 's' : ''}.`, 'auth');
+    return true;
+  }
+  return false;
+}
+
+/** Forgot password: username + recovery PIN → new password; all old logins are signed out. */
+function handleReset(conn, msg) {
+  const username = String(msg.username || '').trim();
+  const key = username.toLowerCase();
+  if (authLocked(conn, key)) return;
+  const user = getUser(usernameIndex.get(key));
+  if (typeof msg.password !== 'string' || msg.password.length < PASSWORD_MIN || msg.password.length > 128) {
+    return sendError(conn, 'weak_password', `Passwords must be at least ${PASSWORD_MIN} characters.`, 'auth');
+  }
+  if (user && !user.pinHash) {
+    return sendError(conn, 'no_pin', `${user.username} has no recovery PIN yet, so the password can’t be reset this way. Log in on a device that’s still signed in and set a PIN in Profile.`, 'auth');
+  }
+  if (!user || !pinMatches(user, msg.pin)) {
+    noteAuthFailure(key);
+    return sendError(conn, 'bad_credentials', 'Wrong username or PIN.', 'auth');
+  }
+  loginFailures.delete(key);
+  setPassword(user, msg.password);
+  for (const h of user.sessions || []) sessionIndex.delete(h); // sign out everywhere else
+  user.sessions = [];
+  log(`password reset with PIN for ${user.username}`);
+  attachUser(conn, user, issueSession(user));
+  sendTo(conn, 'notice', { tone: 'success', message: '🔑 Password changed — you’re logged in with your new password.' });
+}
+
 function handleRegister(conn, msg) {
   const username = String(msg.username || '').trim();
   const password = msg.password;
   if (!validateCredentials(conn, username, password)) return;
+  if (msg.pin !== undefined && msg.pin !== '' && !PIN_RE.test(String(msg.pin))) {
+    return sendError(conn, 'bad_pin', 'Your recovery PIN must be exactly 4 numbers.', 'auth');
+  }
   if (usernameIndex.has(username.toLowerCase())) {
     return sendError(conn, 'taken_username', `The username "${username}" is already taken by another player. Please choose a different one.`, 'auth');
   }
@@ -500,6 +567,7 @@ function handleRegister(conn, msg) {
     createdAt: Date.now(),
     lastSeen: Date.now()
   };
+  if (PIN_RE.test(String(msg.pin || ''))) setPin(user, String(msg.pin));
   db.users[user.id] = user;
   usernameIndex.set(username.toLowerCase(), user.id);
   log(`registered ${username}`);
@@ -565,7 +633,8 @@ function attachUser(conn, user, newSession) {
   userConns.get(user.id).add(conn);
 
   sendTo(conn, 'welcome', {
-    user: { id: user.id, username: user.username, avatar: user.avatar, unlimited: Boolean(user.unlimited) },
+    user: { id: user.id, username: user.username, avatar: user.avatar, unlimited: Boolean(user.unlimited), hasPin: Boolean(user.pinHash) },
+    profile: user.profile || null, // { data, updatedAt } — Lions, Diamonds, items & stats saved for this account
     session: newSession
   });
   deliverGiftInbox(user);
@@ -660,6 +729,60 @@ const handlers = {
     const room = rooms.get(userRoom.get(user.id));
     if (room) broadcastRoom(room);
     broadcastPresence(user.id);
+  },
+
+  'account:change_password'(conn, msg) {
+    const user = getUser(conn.userId);
+    const reply = (ok, message) => sendTo(conn, 'account:result', { action: 'change_password', ok, message });
+    const key = user.username.toLowerCase();
+    if (authLocked(conn, key)) return;
+    if (typeof msg.oldPassword !== 'string' || !passwordMatches(user, msg.oldPassword)) {
+      noteAuthFailure(key);
+      return reply(false, 'Your current password is wrong.');
+    }
+    if (typeof msg.newPassword !== 'string' || msg.newPassword.length < PASSWORD_MIN || msg.newPassword.length > 128) {
+      return reply(false, `New passwords must be at least ${PASSWORD_MIN} characters.`);
+    }
+    setPassword(user, msg.newPassword);
+    saveDbSoon();
+    reply(true, '🔑 Password changed.');
+  },
+
+  'account:set_pin'(conn, msg) {
+    const user = getUser(conn.userId);
+    const reply = (ok, message) => sendTo(conn, 'account:result', { action: 'set_pin', ok, message });
+    const key = user.username.toLowerCase();
+    if (authLocked(conn, key)) return;
+    if (typeof msg.password !== 'string' || !passwordMatches(user, msg.password)) {
+      noteAuthFailure(key);
+      return reply(false, 'Your password is wrong.');
+    }
+    if (!PIN_RE.test(String(msg.pin || ''))) return reply(false, 'The PIN must be exactly 4 numbers.');
+    setPin(user, String(msg.pin));
+    saveDbSoon();
+    reply(true, '🔢 Recovery PIN saved. Use it on the login screen if you ever forget your password.');
+  },
+
+  'profile:sync'(conn, msg) {
+    // The account's progress (Lions, Diamonds, owned items, stats). Devices send changes on top of the
+    // version they last saw; if another device saved in between, they get the newer copy to rebase on.
+    const user = getUser(conn.userId);
+    const data = msg.profile;
+    let json = '';
+    try { json = JSON.stringify(data); } catch (e) { return; }
+    if (!data || typeof data !== 'object' || Array.isArray(data) || json.length > 60000) return;
+    const stored = user.profile;
+    if (stored && Number(msg.base) !== stored.updatedAt) {
+      sendTo(conn, 'profile:state', stored);
+      return;
+    }
+    const updatedAt = Math.max(Date.now(), stored ? stored.updatedAt + 1 : 0);
+    user.profile = { data: JSON.parse(json), updatedAt };
+    saveDbSoon();
+    sendTo(conn, 'profile:saved', { updatedAt });
+    for (const other of userConns.get(user.id) || []) {
+      if (other !== conn) sendTo(other, 'profile:state', user.profile); // other logged-in devices update live
+    }
   },
 
   'profile:update'(conn, msg) {
@@ -777,7 +900,7 @@ const handlers = {
     const fail = (message) => sendTo(conn, 'error', { code: 'gift_failed', giftId, message, scope: 'gift' });
     const me = getUser(conn.userId);
     const to = getUser(msg.userId) || getUser(usernameIndex.get(String(msg.username || '').trim().toLowerCase()));
-    if (!giftId || lions < 0 || diamonds < 0 || lions > 100000 || diamonds > 10000 || lions + diamonds === 0) return fail('That gift amount isn’t valid.');
+    if (!giftId || lions < 0 || diamonds < 0 || lions > 1e9 || diamonds > 1e9 || lions + diamonds === 0) return fail('That gift amount isn’t valid.');
     if (!to) return fail('No Spades Royale player has that username — gift returned.');
     if (to.id === me.id) return fail('You can’t send a gift to yourself.');
     to.giftInbox = to.giftInbox || [];
@@ -1078,6 +1201,7 @@ function onConnection(conn) {
     if (msg.t === 'ping') return sendTo(conn, 'pong', { at: now });
     if (msg.t === 'hello') return handleHello(conn, msg);
     if (msg.t === 'auth:register') return handleRegister(conn, msg);
+    if (msg.t === 'auth:reset') return handleReset(conn, msg);
     if (msg.t === 'auth:login') return handleLogin(conn, msg);
     if (!conn.userId) return sendError(conn, 'not_identified', 'Please log in to play online.', 'auth');
     if (msg.t === 'auth:logout') return handleLogout(conn, msg);

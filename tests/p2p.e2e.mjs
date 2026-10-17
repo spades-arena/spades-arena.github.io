@@ -35,7 +35,7 @@ async function phone(label, name) {
   await page.evaluate((n) => {
     document.querySelector('#auth-username').value = n;
     document.querySelector('#auth-password').value = 'secret1';
-    document.querySelector('#auth-password2').value = 'secret1';
+    document.querySelector('#auth-password2').value = 'secret1'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
     document.querySelector('.auth-submit').click();
   }, name);
   await page.waitForFunction(() => document.querySelector('.screen-view.active')?.id === 'screen-menu', { timeout: 8000 });

@@ -2622,7 +2622,7 @@ body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1rem; }
   font-size: 1.05rem;
   text-align: right;
 }
-.gift-quick { display: flex; gap: 0.35rem; justify-content: flex-end; margin-top: 0.3rem; }
+.gift-quick { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: flex-end; margin-top: 0.3rem; }
 .gift-card .choice-actions { margin-top: 0.85rem; }
 
 /* ==========================================================================
@@ -3131,3 +3131,25 @@ body[data-table-theme="blackgold"] .felt-arena {
 .theme-swatch[data-table-swatch="galaxy"] { background: radial-gradient(1px 1px at 25% 30%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 70% 60%, #fff 50%, transparent 51%), radial-gradient(ellipse at center, #6d28d9, #0b0420); }
 .theme-swatch[data-table-swatch="aurora"] { background: radial-gradient(ellipse at 30% 30%, #10b981, transparent 60%), radial-gradient(ellipse at 70% 80%, #8b5cf6, transparent 60%), #0a1a24; }
 .theme-swatch[data-table-swatch="blackgold"] { border-color: #facc15; box-shadow: 0 0 14px rgba(250, 204, 21, 0.5); }
+
+/* Lobby: who's on each team */
+.team-select-btn { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+.team-people { font-size: 0.8rem; font-weight: 700; color: #fff; }
+.team-spots { font-size: 0.7rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: rgba(0, 0, 0, 0.35); color: #d1fae5; }
+.team-spots.full { color: #fecaca; }
+.team-hint { font-size: 0.82rem; margin: 0 0 0.5rem; color: var(--text-muted); }
+.team-hint .hint-blue { color: #60a5fa; }
+.team-hint .hint-red { color: #f87171; }
+
+/* Forgot password link & Profile security card */
+.auth-link {
+  background: none; border: none; color: var(--accent-gold); font-weight: 700; cursor: pointer;
+  margin-top: 0.6rem; padding: 0.3rem; text-decoration: underline; font-size: 0.9rem; align-self: center;
+}
+.security-form { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin-top: 0.7rem; }
+.security-form strong { flex-basis: 100%; font-size: 0.85rem; }
+.security-form input {
+  flex: 1 1 140px; min-width: 0; padding: 0.55rem 0.7rem; border-radius: 10px;
+  border: 1px solid rgba(232, 196, 104, 0.45); background: #0b0b0d; color: #f4ecd8;
+}
+.pin-warning { color: #fbbf24 !important; }

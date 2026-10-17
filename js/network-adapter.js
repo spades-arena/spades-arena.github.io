@@ -57,6 +57,8 @@
     rate_limited: 'Slow Down',
     not_identified: 'Please Log In',
     bad_credentials: 'Login Failed',
+    no_pin: 'No Recovery PIN',
+    bad_pin: 'PIN Must Be 4 Numbers',
     weak_password: 'Password Too Short',
     locked: 'Account Temporarily Locked',
     session_expired: 'Session Expired',
@@ -202,6 +204,7 @@
       if (SH.store) {
         SH.store.subscribe(() => {
           const p = SH.store.getProfile();
+          this.scheduleProfileUpload();
           if (this.isOnlineReady() && this.avatarSentFor !== p.selectedAvatar) {
             this.avatarSentFor = p.selectedAvatar;
             this.send('profile:update', { avatar: publicAvatar(p.selectedAvatar) });
@@ -401,15 +404,35 @@
       this.authenticate('auth:login', username, password);
     }
 
-    register(username, password) {
-      this.authenticate('auth:register', username, password);
+    register(username, password, pin) {
+      this.authenticate('auth:register', username, password, { pin: String(pin || '') });
     }
 
-    authenticate(type, username, password) {
+    /** Forgot password: username + 4-digit recovery PIN → new password (and you're logged in). */
+    resetPassword(username, pin, newPassword) {
+      this.authenticate('auth:reset', username, newPassword, { pin: String(pin || '') });
+    }
+
+    /** Logged in: change password (needs the current one). Result arrives as an 'account_result' event. */
+    changePassword(oldPassword, newPassword) {
+      return this.sendAction('account:change_password', { oldPassword: String(oldPassword || ''), newPassword: String(newPassword || '') }, 'both');
+    }
+
+    /** Logged in: set or change the 4-digit recovery PIN (needs your password). */
+    setRecoveryPin(password, pin) {
+      return this.sendAction('account:set_pin', { password: String(password || ''), pin: String(pin || '') }, 'both');
+    }
+
+    authenticate(type, username, password, extra = {}) {
       const name = String(username || '').trim();
       if (!this.isOpen() && HOSTED_SERVER_URL) {
         // Online accounts: wait for the free cloud server (it can take up to a minute to wake up)
-        this.waitForServerThenAuth(type, name, password);
+        this.waitForServerThenAuth(type, name, password, extra);
+        return;
+      }
+      if (!this.isOpen() && type === 'auth:reset') {
+        this.state.authAlert = { type: 'error', title: 'Needs the Internet', detail: 'Resetting a password with your PIN needs a connection to the Spades Royale server.' };
+        this.emit();
         return;
       }
       if (!this.isOpen()) {
@@ -423,11 +446,11 @@
       this.prefs.username = name;
       this.state.savedUsername = name;
       savePrefs(this.prefs);
-      this.send(type, { username: name, password: String(password || ''), avatar: p ? publicAvatar(p.selectedAvatar) : undefined });
+      this.send(type, { ...extra, username: name, password: String(password || ''), avatar: p ? publicAvatar(p.selectedAvatar) : undefined });
       this.emit();
     }
 
-    waitForServerThenAuth(type, name, password) {
+    waitForServerThenAuth(type, name, password, extra = {}) {
       const attempt = (this.authWaitId || 0) + 1;
       this.authWaitId = attempt;
       const started = Date.now();
@@ -447,7 +470,7 @@
       const tick = () => {
         if (this.authWaitId !== attempt) return;
         if (this.isOpen()) {
-          this.authenticate(type, name, password);
+          this.authenticate(type, name, password, extra);
           return;
         }
         if (Date.now() - started > LIMIT_MS) {
@@ -605,6 +628,7 @@
           this.state.me = msg.user;
           if (SH.store && SH.store.setUnlimited) SH.store.setUnlimited(Boolean(msg.user.unlimited));
           this.state.identity = 'ok';
+          this.reconcileProfile(msg.profile || null);
           this.state.authBusy = false;
           this.state.authAlert = null;
           this.state.savedUsername = msg.user.username;
@@ -614,6 +638,27 @@
           this.emit();
           this.reportStats();
           this.fire('signed_in', { user: msg.user, freshLogin });
+          break;
+        }
+
+        case 'account:result':
+          if (msg.action === 'set_pin' && msg.ok && this.state.me) this.state.me.hasPin = true;
+          this.fire('account_result', { ok: Boolean(msg.ok), action: msg.action, message: msg.message || '' });
+          this.emit();
+          break;
+
+        case 'profile:state':
+          this.reconcileProfile(msg); // another device changed something, or our upload was out of date
+          break;
+
+        case 'profile:saved': {
+          const p = SH.store && SH.store.getProfile();
+          if (!p) break;
+          p.syncedAt = msg.updatedAt;
+          p.syncBase = this.profileSentBalance || SH.store.realBalance(); // what the server now holds
+          if ((p.changeSeq || 0) === this.profileSentSeq) p.syncDirty = false;
+          SH.store.saveRemote();
+          if (p.syncDirty) this.scheduleProfileUpload();
           break;
         }
 
@@ -1441,6 +1486,53 @@
       const timer = setTimeout(() => this.refundGift(giftId, 'The gift couldn’t be delivered — returned to you.'), 15000);
       this.pendingGifts.set(giftId, { lions, diamonds, timer });
       return { ok: true };
+    }
+
+    /**
+     * Logging in on any device (or another device changed something): bring this device in line with the account.
+     * The server keeps the master copy with a version number; each device sends only on top of the version it has.
+     */
+    reconcileProfile(server) {
+      if (!SH.store || !this.state.me) return;
+      const id = this.state.me.id;
+      const p = SH.store.getProfile();
+      const sv = server && server.data ? server : null;
+      if (p.syncedAccount !== id) {
+        if (!sv) {
+          if (p.syncedAccount) SH.store.resetProfileForNewAccount(); // another account's progress stays theirs
+        } else if (p.syncedAccount) {
+          SH.store.applySyncProfile(sv.data, sv.updatedAt); // device belonged to another account
+        } else {
+          SH.store.mergeSyncProfile(sv.data, sv.updatedAt); // first sync of this device: keep purchases from both
+        }
+        const prof = SH.store.getProfile();
+        prof.syncedAccount = id;
+        if (!sv) { prof.syncedAt = 0; prof.syncDirty = true; }
+        SH.store.saveRemote();
+      } else if (sv && sv.updatedAt !== p.syncedAt) {
+        if (p.syncDirty) SH.store.rebaseSyncProfile(sv.data, sv.updatedAt);
+        else SH.store.applySyncProfile(sv.data, sv.updatedAt);
+      } else if (!sv) {
+        p.syncedAt = 0;
+        p.syncDirty = true;
+      }
+      if (SH.store.getProfile().syncDirty) this.uploadProfileNow();
+    }
+
+    scheduleProfileUpload() {
+      if (!SH.store || SH.store.applyingRemote || !SH.store.getProfile().syncDirty) return;
+      clearTimeout(this.profileUploadTimer);
+      this.profileUploadTimer = setTimeout(() => this.uploadProfileNow(), 1200);
+    }
+
+    uploadProfileNow() {
+      if (!SH.store || !this.isOnlineReady() || !this.state.me) return;
+      clearTimeout(this.profileUploadTimer);
+      const p = SH.store.getProfile();
+      if (p.syncedAccount !== this.state.me.id || !p.syncDirty) return;
+      this.profileSentSeq = p.changeSeq || 0;
+      this.profileSentBalance = SH.store.realBalance();
+      this.send('profile:sync', { profile: SH.store.exportSyncProfile(), base: p.syncedAt || 0 });
     }
 
     /** Sends your games / wins / best streak to the leaderboard (online accounts only). */

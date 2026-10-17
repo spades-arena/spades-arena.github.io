@@ -456,7 +456,7 @@
           const diamonds = Math.floor(Number(msg.diamonds) || 0);
           const to = this.members.get(String(msg.toId || ''));
           const fail = (message) => this.send(id, 'error', { code: 'gift_failed', giftId, message, scope: 'gift' });
-          if (!giftId || lions < 0 || diamonds < 0 || lions > 100000 || diamonds > 10000 || lions + diamonds === 0) return fail('That gift amount isn’t valid.');
+          if (!giftId || lions < 0 || diamonds < 0 || lions > 1e9 || diamonds > 1e9 || lions + diamonds === 0) return fail('That gift amount isn’t valid.');
           if (!to || to.id === id) return fail('That player isn’t in the room.');
           if (!to.connected) return fail(`${to.name} is offline right now — gift returned.`);
           this.send(to.id, 'gift', { giftId, lions, diamonds, fromName: m.name });

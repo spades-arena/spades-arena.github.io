@@ -362,9 +362,9 @@
    * botBidMs / botPlayMs: how long a bot "thinks"; trickPauseMs: how long a finished trick stays on the mat.
    */
   const GAME_SPEEDS = {
-    relaxed: { label: 'Relaxed', botBidMs: 1500, botPlayMs: 1700, trickPauseMs: 2500 },
-    normal: { label: 'Normal', botBidMs: 1000, botPlayMs: 1150, trickPauseMs: 1700 },
-    fast: { label: 'Fast', botBidMs: 550, botPlayMs: 600, trickPauseMs: 1000 }
+    relaxed: { label: 'Relaxed', botBidMs: 1000, botPlayMs: 1150, trickPauseMs: 1700 },
+    normal: { label: 'Normal', botBidMs: 550, botPlayMs: 600, trickPauseMs: 1000 },
+    fast: { label: 'Super Fast', botBidMs: 220, botPlayMs: 250, trickPauseMs: 520 } // super fast
   };
 
   function getGameSpeed(id) {

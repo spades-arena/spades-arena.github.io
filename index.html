@@ -2636,7 +2636,7 @@ body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1rem; }
   font-size: 1.05rem;
   text-align: right;
 }
-.gift-quick { display: flex; gap: 0.35rem; justify-content: flex-end; margin-top: 0.3rem; }
+.gift-quick { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: flex-end; margin-top: 0.3rem; }
 .gift-card .choice-actions { margin-top: 0.85rem; }
 
 /* ==========================================================================
@@ -3145,6 +3145,28 @@ body[data-table-theme="blackgold"] .felt-arena {
 .theme-swatch[data-table-swatch="galaxy"] { background: radial-gradient(1px 1px at 25% 30%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 70% 60%, #fff 50%, transparent 51%), radial-gradient(ellipse at center, #6d28d9, #0b0420); }
 .theme-swatch[data-table-swatch="aurora"] { background: radial-gradient(ellipse at 30% 30%, #10b981, transparent 60%), radial-gradient(ellipse at 70% 80%, #8b5cf6, transparent 60%), #0a1a24; }
 .theme-swatch[data-table-swatch="blackgold"] { border-color: #facc15; box-shadow: 0 0 14px rgba(250, 204, 21, 0.5); }
+
+/* Lobby: who's on each team */
+.team-select-btn { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+.team-people { font-size: 0.8rem; font-weight: 700; color: #fff; }
+.team-spots { font-size: 0.7rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: rgba(0, 0, 0, 0.35); color: #d1fae5; }
+.team-spots.full { color: #fecaca; }
+.team-hint { font-size: 0.82rem; margin: 0 0 0.5rem; color: var(--text-muted); }
+.team-hint .hint-blue { color: #60a5fa; }
+.team-hint .hint-red { color: #f87171; }
+
+/* Forgot password link & Profile security card */
+.auth-link {
+  background: none; border: none; color: var(--accent-gold); font-weight: 700; cursor: pointer;
+  margin-top: 0.6rem; padding: 0.3rem; text-decoration: underline; font-size: 0.9rem; align-self: center;
+}
+.security-form { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin-top: 0.7rem; }
+.security-form strong { flex-basis: 100%; font-size: 0.85rem; }
+.security-form input {
+  flex: 1 1 140px; min-width: 0; padding: 0.55rem 0.7rem; border-radius: 10px;
+  border: 1px solid rgba(232, 196, 104, 0.45); background: #0b0b0d; color: #f4ecd8;
+}
+.pin-warning { color: #fbbf24 !important; }
 
   </style>
 </head>
@@ -4012,6 +4034,12 @@ body[data-table-theme="blackgold"] .felt-arena {
   const STORAGE_KEY = 'spades_royale_state_v2';
   const UNLIMITED_BALANCE = 999999999;
   const NAME_CHANGE_DIAMONDS = 50;
+  // Saved on the server for online accounts so purchases & progress follow you to every device
+  const SYNC_FIELDS = [
+    'coins', 'diamonds', 'selectedAvatar', 'ownedAvatars', 'ownedCardSkins', 'selectedCardSkin',
+    'ownedTableThemes', 'selectedTableTheme', 'winStreak', 'bestStreak', 'winsAt250', 'winsAt500',
+    'stats', 'loginStreak', 'lastLoginDay', 'lastDailyDiamond', 'nameChanges'
+  ];
   const LOGIN_STREAK_REWARDS = [
     { lions: 10, diamonds: 0 }, { lions: 20, diamonds: 0 }, { lions: 30, diamonds: 0 }, { lions: 40, diamonds: 0 },
     { lions: 60, diamonds: 0 }, { lions: 80, diamonds: 0 }, { lions: 100, diamonds: 1 }
@@ -4111,6 +4139,7 @@ body[data-table-theme="blackgold"] .felt-arena {
     save() {
       const p = this.state.profile;
       if (p.unlimited) { p.coins = UNLIMITED_BALANCE; p.diamonds = UNLIMITED_BALANCE; } // owner account never runs out
+      if (!this.applyingRemote) { p.syncDirty = true; p.changeSeq = (p.changeSeq || 0) + 1; } // needs uploading (online accounts)
       try {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
@@ -4132,6 +4161,136 @@ body[data-table-theme="blackgold"] .felt-arena {
 
     getSettings() {
       return this.state.settings;
+    }
+
+    // ------------------------------------------------------------ sync between devices (online accounts)
+
+    /** The parts of the profile that follow your account to every device. */
+    exportSyncProfile() {
+      const p = this.state.profile;
+      const out = {};
+      for (const k of SYNC_FIELDS) if (p[k] !== undefined) out[k] = p[k];
+      if (p.unlimited) {
+        const real = p.balanceBeforeUnlimited || { coins: 50, diamonds: 5 };
+        out.coins = real.coins;
+        out.diamonds = real.diamonds;
+      }
+      out.selectedAvatar = p.selectedAvatar === 'photo' ? (p.lastNonPhotoAvatar || 'free_ace') : p.selectedAvatar;
+      out.rewardedIds = (p.rewardedIds || []).slice(-60);
+      return out;
+    }
+
+    realBalance() {
+      const p = this.state.profile;
+      const r = p.unlimited ? (p.balanceBeforeUnlimited || { coins: 50, diamonds: 5 }) : p;
+      return { coins: Number(r.coins) || 0, diamonds: Number(r.diamonds) || 0 };
+    }
+
+    setRealBalance(coins, diamonds) {
+      const p = this.state.profile;
+      coins = Math.max(0, Math.floor(coins));
+      diamonds = Math.max(0, Math.floor(diamonds));
+      if (p.unlimited) p.balanceBeforeUnlimited = { coins, diamonds };
+      else { p.coins = coins; p.diamonds = diamonds; }
+    }
+
+    saveRemote() {
+      this.applyingRemote = true;
+      try { this.save(); } finally { this.applyingRemote = false; }
+    }
+
+    /** Copies the account's saved fields onto this device (no upload needed afterwards). */
+    copyFields(data) {
+      const p = this.state.profile;
+      const keepPhoto = p.selectedAvatar === 'photo' && p.photo;
+      for (const k of SYNC_FIELDS) {
+        if (data[k] === undefined || k === 'coins' || k === 'diamonds') continue;
+        if (Array.isArray(p[k]) !== Array.isArray(data[k])) continue;
+        p[k] = k === 'stats' ? { ...p.stats, ...data.stats } : data[k];
+      }
+      p.ownedAvatars = Array.from(new Set([...getDefaultFreeIds(), ...(p.ownedAvatars || [])]));
+      p.ownedCardSkins = Array.from(new Set(['classic', ...(p.ownedCardSkins || [])]));
+      p.ownedTableThemes = Array.from(new Set(['emerald', ...(p.ownedTableThemes || [])]));
+      if (Array.isArray(data.rewardedIds)) p.rewardedIds = Array.from(new Set([...(p.rewardedIds || []), ...data.rewardedIds])).slice(-200);
+      if (keepPhoto) p.selectedAvatar = 'photo'; // your gallery photo stays on this device
+    }
+
+    /** Server copy changed and this device has nothing new: take it as-is. */
+    applySyncProfile(data, version) {
+      if (!data || typeof data !== 'object') return;
+      const p = this.state.profile;
+      this.copyFields(data);
+      this.setRealBalance(data.coins, data.diamonds);
+      p.syncBase = this.realBalance();
+      p.syncedAt = version;
+      p.syncDirty = false;
+      this.saveRemote();
+    }
+
+    /**
+     * Server copy changed AND this device changed too: start from the server copy and replay this
+     * device's Lions/Diamonds changes on top; owned items & best stats from both are kept.
+     */
+    rebaseSyncProfile(data, version) {
+      if (!data || typeof data !== 'object') return;
+      const p = this.state.profile;
+      const mine = this.realBalance();
+      const base = p.syncBase || mine;
+      const deltaCoins = mine.coins - base.coins;
+      const deltaDiamonds = mine.diamonds - base.diamonds;
+      const local = { ...p, stats: { ...p.stats } };
+      this.copyFields(data);
+      this.combineProgress(local);
+      p.selectedAvatar = local.selectedAvatar;
+      p.selectedCardSkin = local.selectedCardSkin;
+      p.selectedTableTheme = local.selectedTableTheme;
+      this.setRealBalance((Number(data.coins) || 0) + deltaCoins, (Number(data.diamonds) || 0) + deltaDiamonds);
+      p.syncBase = { coins: Number(data.coins) || 0, diamonds: Number(data.diamonds) || 0 };
+      p.syncedAt = version;
+      this.save(); // still has this device's changes → uploads
+    }
+
+    /** First sync of a device that played before accounts synced: keep the best of both (nothing bought is lost). */
+    mergeSyncProfile(data, version) {
+      if (!data || typeof data !== 'object') return;
+      const p = this.state.profile;
+      const mine = this.realBalance();
+      const local = { ...p, stats: { ...p.stats } };
+      this.copyFields(data);
+      this.combineProgress(local);
+      p.selectedAvatar = local.selectedAvatar;
+      p.selectedCardSkin = local.selectedCardSkin;
+      p.selectedTableTheme = local.selectedTableTheme;
+      this.setRealBalance(Math.max(mine.coins, Number(data.coins) || 0), Math.max(mine.diamonds, Number(data.diamonds) || 0));
+      p.syncBase = { coins: Number(data.coins) || 0, diamonds: Number(data.diamonds) || 0 };
+      p.syncedAt = version;
+      this.save();
+    }
+
+    /** Owned items: everything from both. Stats & streaks: the higher number. */
+    combineProgress(local) {
+      const p = this.state.profile;
+      const union = (a, b) => Array.from(new Set([...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])]));
+      const max = (a, b) => Math.max(Number(a) || 0, Number(b) || 0);
+      const later = (a, b) => (String(a || '') > String(b || '') ? a : b);
+      p.ownedAvatars = union(p.ownedAvatars, local.ownedAvatars);
+      p.ownedCardSkins = union(p.ownedCardSkins, local.ownedCardSkins);
+      p.ownedTableThemes = union(p.ownedTableThemes, local.ownedTableThemes);
+      for (const k of ['winStreak', 'bestStreak', 'winsAt250', 'winsAt500', 'nameChanges', 'loginStreak']) p[k] = max(p[k], local[k]);
+      p.lastLoginDay = later(p.lastLoginDay, local.lastLoginDay);
+      p.lastDailyDiamond = later(p.lastDailyDiamond, local.lastDailyDiamond);
+      const stats = { ...p.stats };
+      for (const [k, v] of Object.entries(local.stats || {})) stats[k] = max(stats[k], v);
+      p.stats = stats;
+      p.rewardedIds = union(p.rewardedIds, local.rewardedIds).slice(-200);
+    }
+
+    /** A different account logged in on this device and has nothing saved yet: start it fresh (🦁 50, 💎 5). */
+    resetProfileForNewAccount() {
+      const keep = { username: this.state.profile.username, unlimited: this.state.profile.unlimited };
+      this.state.profile = { ...createDefaultState().profile, ...keep };
+      if (keep.unlimited) this.state.profile.balanceBeforeUnlimited = { coins: 50, diamonds: 5 };
+      this.save();
     }
 
     /** Owner account (flagged by the server): unlimited Lions & Diamonds while signed in; normal balance comes back after. */
@@ -4376,8 +4535,8 @@ body[data-table-theme="blackgold"] .felt-arena {
       const key = `gift_${giftId}`;
       if (!giftId || this.state.profile.rewardedIds.includes(key)) return false;
       this.state.profile.rewardedIds.push(key);
-      this.state.profile.coins += Math.max(0, Math.min(100000, Math.floor(lions)));
-      this.state.profile.diamonds += Math.max(0, Math.min(10000, Math.floor(diamonds)));
+      this.state.profile.coins += Math.max(0, Math.min(1e9, Math.floor(lions)));
+      this.state.profile.diamonds += Math.max(0, Math.min(1e9, Math.floor(diamonds)));
       this.save();
       return true;
     }
@@ -4862,9 +5021,9 @@ body[data-table-theme="blackgold"] .felt-arena {
    * botBidMs / botPlayMs: how long a bot "thinks"; trickPauseMs: how long a finished trick stays on the mat.
    */
   const GAME_SPEEDS = {
-    relaxed: { label: 'Relaxed', botBidMs: 1500, botPlayMs: 1700, trickPauseMs: 2500 },
-    normal: { label: 'Normal', botBidMs: 1000, botPlayMs: 1150, trickPauseMs: 1700 },
-    fast: { label: 'Fast', botBidMs: 550, botPlayMs: 600, trickPauseMs: 1000 }
+    relaxed: { label: 'Relaxed', botBidMs: 1000, botPlayMs: 1150, trickPauseMs: 1700 },
+    normal: { label: 'Normal', botBidMs: 550, botPlayMs: 600, trickPauseMs: 1000 },
+    fast: { label: 'Super Fast', botBidMs: 220, botPlayMs: 250, trickPauseMs: 520 } // super fast
   };
 
   function getGameSpeed(id) {
@@ -6288,7 +6447,7 @@ if (typeof module === 'object' && module.exports) {
           const diamonds = Math.floor(Number(msg.diamonds) || 0);
           const to = this.members.get(String(msg.toId || ''));
           const fail = (message) => this.send(id, 'error', { code: 'gift_failed', giftId, message, scope: 'gift' });
-          if (!giftId || lions < 0 || diamonds < 0 || lions > 100000 || diamonds > 10000 || lions + diamonds === 0) return fail('That gift amount isn’t valid.');
+          if (!giftId || lions < 0 || diamonds < 0 || lions > 1e9 || diamonds > 1e9 || lions + diamonds === 0) return fail('That gift amount isn’t valid.');
           if (!to || to.id === id) return fail('That player isn’t in the room.');
           if (!to.connected) return fail(`${to.name} is offline right now — gift returned.`);
           this.send(to.id, 'gift', { giftId, lions, diamonds, fromName: m.name });
@@ -6412,6 +6571,8 @@ if (typeof module === 'object' && module.exports) {
     rate_limited: 'Slow Down',
     not_identified: 'Please Log In',
     bad_credentials: 'Login Failed',
+    no_pin: 'No Recovery PIN',
+    bad_pin: 'PIN Must Be 4 Numbers',
     weak_password: 'Password Too Short',
     locked: 'Account Temporarily Locked',
     session_expired: 'Session Expired',
@@ -6557,6 +6718,7 @@ if (typeof module === 'object' && module.exports) {
       if (SH.store) {
         SH.store.subscribe(() => {
           const p = SH.store.getProfile();
+          this.scheduleProfileUpload();
           if (this.isOnlineReady() && this.avatarSentFor !== p.selectedAvatar) {
             this.avatarSentFor = p.selectedAvatar;
             this.send('profile:update', { avatar: publicAvatar(p.selectedAvatar) });
@@ -6756,15 +6918,35 @@ if (typeof module === 'object' && module.exports) {
       this.authenticate('auth:login', username, password);
     }
 
-    register(username, password) {
-      this.authenticate('auth:register', username, password);
+    register(username, password, pin) {
+      this.authenticate('auth:register', username, password, { pin: String(pin || '') });
     }
 
-    authenticate(type, username, password) {
+    /** Forgot password: username + 4-digit recovery PIN → new password (and you're logged in). */
+    resetPassword(username, pin, newPassword) {
+      this.authenticate('auth:reset', username, newPassword, { pin: String(pin || '') });
+    }
+
+    /** Logged in: change password (needs the current one). Result arrives as an 'account_result' event. */
+    changePassword(oldPassword, newPassword) {
+      return this.sendAction('account:change_password', { oldPassword: String(oldPassword || ''), newPassword: String(newPassword || '') }, 'both');
+    }
+
+    /** Logged in: set or change the 4-digit recovery PIN (needs your password). */
+    setRecoveryPin(password, pin) {
+      return this.sendAction('account:set_pin', { password: String(password || ''), pin: String(pin || '') }, 'both');
+    }
+
+    authenticate(type, username, password, extra = {}) {
       const name = String(username || '').trim();
       if (!this.isOpen() && HOSTED_SERVER_URL) {
         // Online accounts: wait for the free cloud server (it can take up to a minute to wake up)
-        this.waitForServerThenAuth(type, name, password);
+        this.waitForServerThenAuth(type, name, password, extra);
+        return;
+      }
+      if (!this.isOpen() && type === 'auth:reset') {
+        this.state.authAlert = { type: 'error', title: 'Needs the Internet', detail: 'Resetting a password with your PIN needs a connection to the Spades Royale server.' };
+        this.emit();
         return;
       }
       if (!this.isOpen()) {
@@ -6778,11 +6960,11 @@ if (typeof module === 'object' && module.exports) {
       this.prefs.username = name;
       this.state.savedUsername = name;
       savePrefs(this.prefs);
-      this.send(type, { username: name, password: String(password || ''), avatar: p ? publicAvatar(p.selectedAvatar) : undefined });
+      this.send(type, { ...extra, username: name, password: String(password || ''), avatar: p ? publicAvatar(p.selectedAvatar) : undefined });
       this.emit();
     }
 
-    waitForServerThenAuth(type, name, password) {
+    waitForServerThenAuth(type, name, password, extra = {}) {
       const attempt = (this.authWaitId || 0) + 1;
       this.authWaitId = attempt;
       const started = Date.now();
@@ -6802,7 +6984,7 @@ if (typeof module === 'object' && module.exports) {
       const tick = () => {
         if (this.authWaitId !== attempt) return;
         if (this.isOpen()) {
-          this.authenticate(type, name, password);
+          this.authenticate(type, name, password, extra);
           return;
         }
         if (Date.now() - started > LIMIT_MS) {
@@ -6960,6 +7142,7 @@ if (typeof module === 'object' && module.exports) {
           this.state.me = msg.user;
           if (SH.store && SH.store.setUnlimited) SH.store.setUnlimited(Boolean(msg.user.unlimited));
           this.state.identity = 'ok';
+          this.reconcileProfile(msg.profile || null);
           this.state.authBusy = false;
           this.state.authAlert = null;
           this.state.savedUsername = msg.user.username;
@@ -6969,6 +7152,27 @@ if (typeof module === 'object' && module.exports) {
           this.emit();
           this.reportStats();
           this.fire('signed_in', { user: msg.user, freshLogin });
+          break;
+        }
+
+        case 'account:result':
+          if (msg.action === 'set_pin' && msg.ok && this.state.me) this.state.me.hasPin = true;
+          this.fire('account_result', { ok: Boolean(msg.ok), action: msg.action, message: msg.message || '' });
+          this.emit();
+          break;
+
+        case 'profile:state':
+          this.reconcileProfile(msg); // another device changed something, or our upload was out of date
+          break;
+
+        case 'profile:saved': {
+          const p = SH.store && SH.store.getProfile();
+          if (!p) break;
+          p.syncedAt = msg.updatedAt;
+          p.syncBase = this.profileSentBalance || SH.store.realBalance(); // what the server now holds
+          if ((p.changeSeq || 0) === this.profileSentSeq) p.syncDirty = false;
+          SH.store.saveRemote();
+          if (p.syncDirty) this.scheduleProfileUpload();
           break;
         }
 
@@ -7798,6 +8002,53 @@ if (typeof module === 'object' && module.exports) {
       return { ok: true };
     }
 
+    /**
+     * Logging in on any device (or another device changed something): bring this device in line with the account.
+     * The server keeps the master copy with a version number; each device sends only on top of the version it has.
+     */
+    reconcileProfile(server) {
+      if (!SH.store || !this.state.me) return;
+      const id = this.state.me.id;
+      const p = SH.store.getProfile();
+      const sv = server && server.data ? server : null;
+      if (p.syncedAccount !== id) {
+        if (!sv) {
+          if (p.syncedAccount) SH.store.resetProfileForNewAccount(); // another account's progress stays theirs
+        } else if (p.syncedAccount) {
+          SH.store.applySyncProfile(sv.data, sv.updatedAt); // device belonged to another account
+        } else {
+          SH.store.mergeSyncProfile(sv.data, sv.updatedAt); // first sync of this device: keep purchases from both
+        }
+        const prof = SH.store.getProfile();
+        prof.syncedAccount = id;
+        if (!sv) { prof.syncedAt = 0; prof.syncDirty = true; }
+        SH.store.saveRemote();
+      } else if (sv && sv.updatedAt !== p.syncedAt) {
+        if (p.syncDirty) SH.store.rebaseSyncProfile(sv.data, sv.updatedAt);
+        else SH.store.applySyncProfile(sv.data, sv.updatedAt);
+      } else if (!sv) {
+        p.syncedAt = 0;
+        p.syncDirty = true;
+      }
+      if (SH.store.getProfile().syncDirty) this.uploadProfileNow();
+    }
+
+    scheduleProfileUpload() {
+      if (!SH.store || SH.store.applyingRemote || !SH.store.getProfile().syncDirty) return;
+      clearTimeout(this.profileUploadTimer);
+      this.profileUploadTimer = setTimeout(() => this.uploadProfileNow(), 1200);
+    }
+
+    uploadProfileNow() {
+      if (!SH.store || !this.isOnlineReady() || !this.state.me) return;
+      clearTimeout(this.profileUploadTimer);
+      const p = SH.store.getProfile();
+      if (p.syncedAccount !== this.state.me.id || !p.syncDirty) return;
+      this.profileSentSeq = p.changeSeq || 0;
+      this.profileSentBalance = SH.store.realBalance();
+      this.send('profile:sync', { profile: SH.store.exportSyncProfile(), base: p.syncedAt || 0 });
+    }
+
     /** Sends your games / wins / best streak to the leaderboard (online accounts only). */
     reportStats() {
       if (!this.isOnlineReady() || !SH.store) return;
@@ -8102,6 +8353,11 @@ if (typeof module === 'object' && module.exports) {
       net.on('chat', (msg) => this.handleOnlineChat(msg));
       net.on('notice', (n) => this.showToast(n.message, n.tone));
       net.on('friend_request', (req) => this.showFriendRequestPopup(req));
+      net.on('account_result', ({ ok, message }) => {
+        if (!ok) SH.audio.notEnoughFunds();
+        this.showToast(message, ok ? 'success' : 'error');
+        if (this.currentScreen === 'profile') this.renderProfileScreen();
+      });
       net.on('account_renamed', ({ username }) => {
         let paid = 0;
         if (this.pendingRename) {
@@ -9505,21 +9761,6 @@ if (typeof module === 'object' && module.exports) {
       this.chatDrawerOpen = false;
       this.showSeatBubble(seat, content, kind, 3400);
 
-      if (seat === 0 && this.game && !this.isOnlineGame()) {
-        setTimeout(() => {
-          if (this.currentScreen !== 'game') return;
-          const partnerReplies = ['Well played!', 'Good move!', '😊 Happy', '😎 Sunglasses'];
-          const pick = partnerReplies[Math.floor(Math.random() * partnerReplies.length)];
-          this.seatBubbles[2] = { content: pick, kind: 'quick_chat', expires: Date.now() + 2800 };
-          this.renderGameScreen();
-          setTimeout(() => {
-            if (this.seatBubbles[2] && Date.now() >= this.seatBubbles[2].expires) {
-              this.seatBubbles[2] = null;
-              if (this.currentScreen === 'game') this.renderGameScreen();
-            }
-          }, 2850);
-        }, 900);
-      }
     }
 
     /**
@@ -10293,22 +10534,12 @@ if (typeof module === 'object' && module.exports) {
             return; // keep the typed text
           }
           if (!g.online) {
-            // Game against bots: show your message; your partner bot sometimes answers
+            // Game against bots: show your message (bots don't chat back)
             this.lastChatSentAt = Date.now();
             input.value = '';
             const clean = text.replace(/\s+/g, ' ').slice(0, 80);
             this.chatLog = [...this.chatLog, { name: 'You', text: clean, to: 'all', mine: true }].slice(-40);
             this.showSeatBubble(0, clean.length > 42 ? `${clean.slice(0, 40)}…` : clean, 'text', 4500);
-            if (Math.random() < 0.7) {
-              const replier = (g.numSeats || 4) === 4 ? 2 : 1 + Math.floor(Math.random() * 2);
-              const replies = ['Well played!', 'Good luck!', 'Haha 😂', 'Let’s win this 😎', 'Nice one!', 'Good move!'];
-              const reply = replies[Math.floor(Math.random() * replies.length)];
-              setTimeout(() => {
-                if (!this.game || this.game.online || this.currentScreen !== 'game') return;
-                this.chatLog = [...this.chatLog, { name: this.game.players[replier].name, text: reply, to: 'all', mine: false }].slice(-40);
-                this.showSeatBubble(replier, reply, 'text', 3200);
-              }, 1100);
-            }
             return;
           }
           if (SH.networkAdapter.sendChatText(text, this.chatTarget)) {
@@ -10554,22 +10785,35 @@ if (typeof module === 'object' && module.exports) {
             <p class="field-help auth-help">
               ${mode === 'login'
                 ? 'Welcome back! Log in to play.'
-                : 'New here? Pick a username (2–18 letters, numbers, _ - .) and a password (6+ characters). You start with 🦁 50 Lions and 💎 5 Diamonds.'}
+                : mode === 'reset'
+                ? '🔑 Forgot your password? Enter your username, your 4-digit recovery PIN and a new password.'
+                : 'New here? Pick a username (2–18 letters, numbers, _ - .), a password (6+ characters) and a 4-digit recovery PIN. You start with 🦁 50 Lions and 💎 5 Diamonds.'}
             </p>
             <form id="auth-form" class="auth-form" autocomplete="on">
               <label for="auth-username">Username</label>
               <input id="auth-username" type="text" name="username" maxlength="18" autocomplete="username"
                 autocapitalize="none" spellcheck="false" required value="${esc(net.savedUsername || (mode === 'register' ? SH.store.getProfile().username : ''))}" />
-              <label for="auth-password">Password</label>
+              ${mode === 'reset' ? `
+                <label for="auth-pin">Recovery PIN</label>
+                <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="4 numbers" required />
+              ` : ''}
+              <label for="auth-password">${mode === 'reset' ? 'New Password' : 'Password'}</label>
               <input id="auth-password" type="password" name="password" maxlength="128"
                 autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}" required />
-              ${mode === 'register' ? `
-                <label for="auth-password2">Confirm Password</label>
+              ${mode !== 'login' ? `
+                <label for="auth-password2">Confirm ${mode === 'reset' ? 'New ' : ''}Password</label>
                 <input id="auth-password2" type="password" maxlength="128" autocomplete="new-password" required />
               ` : ''}
+              ${mode === 'register' ? `
+                <label for="auth-pin">Recovery PIN <small>(any 4 numbers — not an app lock)</small></label>
+                <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="e.g. 4821" required />
+                <p class="field-help">Remember it! If you ever forget your password, this PIN lets you make a new one.</p>
+              ` : ''}
               <button type="submit" class="btn-primary auth-submit" ${net.authBusy ? 'disabled' : ''}>
-                ${net.authBusy ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Create Account'}
+                ${net.authBusy ? 'Please wait…' : mode === 'login' ? 'Log In' : mode === 'reset' ? 'Set New Password & Log In' : 'Create Account'}
               </button>
+              ${mode === 'login' ? '<button type="button" class="auth-link" data-auth-mode="reset">Forgot password?</button>' : ''}
+              ${mode === 'reset' ? '<button type="button" class="auth-link" data-auth-mode="login">← Back to Log In</button>' : ''}
             </form>
           `}
         </div>
@@ -10599,14 +10843,22 @@ if (typeof module === 'object' && module.exports) {
           SH.audio.uiClick();
           const username = mount.querySelector('#auth-username').value;
           const password = mount.querySelector('#auth-password').value;
-          if (mode === 'register') {
+          const pinEl = mount.querySelector('#auth-pin');
+          const pin = pinEl ? pinEl.value.trim() : '';
+          if (mode === 'register' || mode === 'reset') {
             const confirm = mount.querySelector('#auth-password2').value;
             if (password !== confirm) {
               net.authAlert = { type: 'error', title: 'Passwords Don’t Match', detail: 'Please type the same password in both fields.' };
               this.renderLoginScreen();
               return;
             }
-            adapter.register(username, password);
+            if (!/^\d{4}$/.test(pin)) {
+              net.authAlert = { type: 'error', title: 'PIN Must Be 4 Numbers', detail: 'Type exactly 4 numbers, like 4821.' };
+              this.renderLoginScreen();
+              return;
+            }
+            if (mode === 'reset') adapter.resetPassword(username, pin, password);
+            else adapter.register(username, password, pin);
           } else {
             adapter.login(username, password);
           }
@@ -10834,16 +11086,37 @@ if (typeof module === 'object' && module.exports) {
 
             ${net.humanCountMode === 3 ? '' : `
             <h4>Choose Your Team &amp; Seat</h4>
+            ${(() => {
+              // Who's already on each team, so you can join your friend's team (or play against them)
+              const seats = inRoom ? (net.seats || []) : [];
+              const onTeam = (team) => seats.filter(x => x.team === team && (x.role === 'human' || x.role === 'human_self'));
+              const capacity = 2;
+              const people = (team) => {
+                const list = onTeam(team);
+                const others = list.filter(x => x.role === 'human');
+                const me = list.some(x => x.role === 'human_self');
+                const names = [...(me ? ['You'] : []), ...others.map(x => esc(x.plainName || x.name))];
+                const free = Math.max(0, capacity - list.length);
+                return `
+                  <span class="team-people">${names.length ? `👤 ${names.join(' & ')}` : 'Nobody yet'}</span>
+                  <span class="team-spots ${free ? '' : 'full'}">${free ? `${free} spot${free > 1 ? 's' : ''} free` : 'Full'}</span>`;
+              };
+              const friendsTeams = ['blue', 'red'].filter(t => onTeam(t).some(x => x.role === 'human'));
+              return `
+            ${inRoom && friendsTeams.length ? `<p class="team-hint">${friendsTeams.map(t => `${onTeam(t).filter(x => x.role === 'human').map(x => `<strong>${esc(x.plainName || x.name)}</strong>`).join(' & ')} ${onTeam(t).filter(x => x.role === 'human').length > 1 ? 'are' : 'is'} on <strong class="hint-${t}">Team ${t === 'blue' ? 'Blue' : 'Red'}</strong>`).join(' · ')} — join them to play as partners, or pick the other team to play against them.</p>` : ''}
             <div class="team-pick-row">
               <button type="button" class="team-select-btn team-blue ${net.selectedTeam === 'blue' ? 'selected' : ''}" data-mp-team="blue" ${playing ? 'disabled' : ''}>
                 <span class="team-badge">TEAM BLUE</span>
                 <small>Seats: South &amp; North (Opposite)</small>
+                ${inRoom ? people('blue') : ''}
               </button>
               <button type="button" class="team-select-btn team-red ${net.selectedTeam === 'red' ? 'selected' : ''}" data-mp-team="red" ${playing ? 'disabled' : ''}>
                 <span class="team-badge">TEAM RED</span>
                 <small>Seats: West &amp; East (Opposite)</small>
+                ${inRoom ? people('red') : ''}
               </button>
-            </div>
+            </div>`;
+            })()}
             `}
 
             <hr class="divider"/>
@@ -11490,15 +11763,15 @@ if (typeof module === 'object' && module.exports) {
       overlay.innerHTML = `
         <div class="choice-card gift-card" role="dialog" aria-modal="true" aria-label="Send a gift">
           <h3>🎁 Send a gift to ${esc(name)}</h3>
-          <p>You have 🦁 <strong>${profile.coins}</strong> Lions · 💎 <strong>${profile.diamonds || 0}</strong> Diamonds</p>
+          <p>You have 🦁 <strong>${profile.unlimited ? '∞' : profile.coins.toLocaleString('en-US')}</strong> Lions · 💎 <strong>${profile.unlimited ? '∞' : (profile.diamonds || 0).toLocaleString('en-US')}</strong> Diamonds · no sending limit</p>
           <label class="gift-row">🦁 Lions
-            <input type="number" id="gift-lions" inputmode="numeric" min="0" max="${profile.coins}" value="0" />
+            <input type="number" id="gift-lions" inputmode="numeric" min="0" value="0" />
           </label>
-          <div class="gift-quick">${[10, 50, 100, 500].map(v => `<button type="button" class="chip-btn" data-gift-quick-lions="${v}">+${v}</button>`).join('')}</div>
+          <div class="gift-quick">${[10, 100, 500, 1000, 10000].map(v => `<button type="button" class="chip-btn" data-gift-quick-lions="${v}">+${v.toLocaleString('en-US')}</button>`).join('')}${profile.unlimited ? '' : '<button type="button" class="chip-btn" data-gift-all-lions>All</button>'}</div>
           <label class="gift-row">💎 Diamonds
-            <input type="number" id="gift-diamonds" inputmode="numeric" min="0" max="${profile.diamonds || 0}" value="0" />
+            <input type="number" id="gift-diamonds" inputmode="numeric" min="0" value="0" />
           </label>
-          <div class="gift-quick">${[1, 5].map(v => `<button type="button" class="chip-btn" data-gift-quick-diamonds="${v}">+${v}</button>`).join('')}</div>
+          <div class="gift-quick">${[1, 5, 10, 50, 100].map(v => `<button type="button" class="chip-btn" data-gift-quick-diamonds="${v}">+${v}</button>`).join('')}${profile.unlimited ? '' : '<button type="button" class="chip-btn" data-gift-all-diamonds>All</button>'}</div>
           <div class="choice-actions">
             <button type="button" class="btn-yes" data-gift-send>🎁 Send gift</button>
             <button type="button" class="btn-no" data-gift-cancel>Cancel</button>
@@ -11513,6 +11786,10 @@ if (typeof module === 'object' && module.exports) {
       overlay.querySelectorAll('[data-gift-quick-diamonds]').forEach(b => b.addEventListener('click', () => {
         diamondsInput.value = String(Math.min(profile.diamonds || 0, (Number(diamondsInput.value) || 0) + Number(b.getAttribute('data-gift-quick-diamonds'))));
       }));
+      const allLions = overlay.querySelector('[data-gift-all-lions]');
+      if (allLions) allLions.addEventListener('click', () => { lionsInput.value = String(profile.coins); });
+      const allDiamonds = overlay.querySelector('[data-gift-all-diamonds]');
+      if (allDiamonds) allDiamonds.addEventListener('click', () => { diamondsInput.value = String(profile.diamonds || 0); });
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay || e.target.closest('[data-gift-cancel]')) {
           SH.audio.uiClick();
@@ -11573,6 +11850,24 @@ if (typeof module === 'object' && module.exports) {
         </div>
 
         ${this.renderStatsCard(profile)}
+
+        ${online ? `
+        <div class="mp-card security-card">
+          <div class="section-head"><h3>🔐 Password &amp; Recovery PIN</h3><span>${SH.networkAdapter.state.me && SH.networkAdapter.state.me.hasPin ? '✅ PIN set' : '⚠️ No PIN yet'}</span></div>
+          ${SH.networkAdapter.state.me && !SH.networkAdapter.state.me.hasPin ? '<p class="field-help pin-warning">Set a 4-digit recovery PIN so you can reset your password if you ever forget it.</p>' : ''}
+          <form id="pin-form" class="security-form" autocomplete="off">
+            <strong>${SH.networkAdapter.state.me && SH.networkAdapter.state.me.hasPin ? 'Change' : 'Set'} recovery PIN</strong>
+            <input id="pin-new" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="New 4-digit PIN" required />
+            <input id="pin-password" type="password" maxlength="128" placeholder="Your password" autocomplete="current-password" required />
+            <button type="submit" class="btn-primary btn-sm">Save PIN</button>
+          </form>
+          <form id="password-form" class="security-form" autocomplete="off">
+            <strong>Change password</strong>
+            <input id="pw-old" type="password" maxlength="128" placeholder="Current password" autocomplete="current-password" required />
+            <input id="pw-new" type="password" maxlength="128" placeholder="New password (6+ characters)" autocomplete="new-password" required />
+            <button type="submit" class="btn-primary btn-sm">Change password</button>
+          </form>
+        </div>` : ''}
 
         <div class="mp-card">
           <form id="username-form" class="username-form">
@@ -11689,6 +11984,33 @@ if (typeof module === 'object' && module.exports) {
       }
       const removePhoto = mount.querySelector('#photo-remove-btn');
       if (removePhoto) removePhoto.addEventListener('click', () => { SH.audio.uiClick(); SH.store.setPhoto(null); });
+
+      const pinForm = mount.querySelector('#pin-form');
+      if (pinForm) {
+        pinForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          SH.audio.uiClick();
+          const pin = mount.querySelector('#pin-new').value.trim();
+          if (!/^\d{4}$/.test(pin)) { this.showToast('The PIN must be exactly 4 numbers.', 'error'); return; }
+          if (SH.networkAdapter.setRecoveryPin(mount.querySelector('#pin-password').value, pin)) {
+            mount.querySelector('#pin-new').value = '';
+            mount.querySelector('#pin-password').value = '';
+          }
+        });
+      }
+      const pwForm = mount.querySelector('#password-form');
+      if (pwForm) {
+        pwForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          SH.audio.uiClick();
+          const next = mount.querySelector('#pw-new').value;
+          if (next.length < 6) { this.showToast('New passwords must be at least 6 characters.', 'error'); return; }
+          if (SH.networkAdapter.changePassword(mount.querySelector('#pw-old').value, next)) {
+            mount.querySelector('#pw-old').value = '';
+            mount.querySelector('#pw-new').value = '';
+          }
+        });
+      }
 
       const nameForm = mount.querySelector('#username-form');
       if (nameForm) {

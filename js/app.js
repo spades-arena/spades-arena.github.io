@@ -146,6 +146,11 @@
       net.on('chat', (msg) => this.handleOnlineChat(msg));
       net.on('notice', (n) => this.showToast(n.message, n.tone));
       net.on('friend_request', (req) => this.showFriendRequestPopup(req));
+      net.on('account_result', ({ ok, message }) => {
+        if (!ok) SH.audio.notEnoughFunds();
+        this.showToast(message, ok ? 'success' : 'error');
+        if (this.currentScreen === 'profile') this.renderProfileScreen();
+      });
       net.on('account_renamed', ({ username }) => {
         let paid = 0;
         if (this.pendingRename) {
@@ -1549,21 +1554,6 @@
       this.chatDrawerOpen = false;
       this.showSeatBubble(seat, content, kind, 3400);
 
-      if (seat === 0 && this.game && !this.isOnlineGame()) {
-        setTimeout(() => {
-          if (this.currentScreen !== 'game') return;
-          const partnerReplies = ['Well played!', 'Good move!', '😊 Happy', '😎 Sunglasses'];
-          const pick = partnerReplies[Math.floor(Math.random() * partnerReplies.length)];
-          this.seatBubbles[2] = { content: pick, kind: 'quick_chat', expires: Date.now() + 2800 };
-          this.renderGameScreen();
-          setTimeout(() => {
-            if (this.seatBubbles[2] && Date.now() >= this.seatBubbles[2].expires) {
-              this.seatBubbles[2] = null;
-              if (this.currentScreen === 'game') this.renderGameScreen();
-            }
-          }, 2850);
-        }, 900);
-      }
     }
 
     /**
@@ -2337,22 +2327,12 @@
             return; // keep the typed text
           }
           if (!g.online) {
-            // Game against bots: show your message; your partner bot sometimes answers
+            // Game against bots: show your message (bots don't chat back)
             this.lastChatSentAt = Date.now();
             input.value = '';
             const clean = text.replace(/\s+/g, ' ').slice(0, 80);
             this.chatLog = [...this.chatLog, { name: 'You', text: clean, to: 'all', mine: true }].slice(-40);
             this.showSeatBubble(0, clean.length > 42 ? `${clean.slice(0, 40)}…` : clean, 'text', 4500);
-            if (Math.random() < 0.7) {
-              const replier = (g.numSeats || 4) === 4 ? 2 : 1 + Math.floor(Math.random() * 2);
-              const replies = ['Well played!', 'Good luck!', 'Haha 😂', 'Let’s win this 😎', 'Nice one!', 'Good move!'];
-              const reply = replies[Math.floor(Math.random() * replies.length)];
-              setTimeout(() => {
-                if (!this.game || this.game.online || this.currentScreen !== 'game') return;
-                this.chatLog = [...this.chatLog, { name: this.game.players[replier].name, text: reply, to: 'all', mine: false }].slice(-40);
-                this.showSeatBubble(replier, reply, 'text', 3200);
-              }, 1100);
-            }
             return;
           }
           if (SH.networkAdapter.sendChatText(text, this.chatTarget)) {
@@ -2598,22 +2578,35 @@
             <p class="field-help auth-help">
               ${mode === 'login'
                 ? 'Welcome back! Log in to play.'
-                : 'New here? Pick a username (2–18 letters, numbers, _ - .) and a password (6+ characters). You start with 🦁 50 Lions and 💎 5 Diamonds.'}
+                : mode === 'reset'
+                ? '🔑 Forgot your password? Enter your username, your 4-digit recovery PIN and a new password.'
+                : 'New here? Pick a username (2–18 letters, numbers, _ - .), a password (6+ characters) and a 4-digit recovery PIN. You start with 🦁 50 Lions and 💎 5 Diamonds.'}
             </p>
             <form id="auth-form" class="auth-form" autocomplete="on">
               <label for="auth-username">Username</label>
               <input id="auth-username" type="text" name="username" maxlength="18" autocomplete="username"
                 autocapitalize="none" spellcheck="false" required value="${esc(net.savedUsername || (mode === 'register' ? SH.store.getProfile().username : ''))}" />
-              <label for="auth-password">Password</label>
+              ${mode === 'reset' ? `
+                <label for="auth-pin">Recovery PIN</label>
+                <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="4 numbers" required />
+              ` : ''}
+              <label for="auth-password">${mode === 'reset' ? 'New Password' : 'Password'}</label>
               <input id="auth-password" type="password" name="password" maxlength="128"
                 autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}" required />
-              ${mode === 'register' ? `
-                <label for="auth-password2">Confirm Password</label>
+              ${mode !== 'login' ? `
+                <label for="auth-password2">Confirm ${mode === 'reset' ? 'New ' : ''}Password</label>
                 <input id="auth-password2" type="password" maxlength="128" autocomplete="new-password" required />
               ` : ''}
+              ${mode === 'register' ? `
+                <label for="auth-pin">Recovery PIN <small>(any 4 numbers — not an app lock)</small></label>
+                <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="e.g. 4821" required />
+                <p class="field-help">Remember it! If you ever forget your password, this PIN lets you make a new one.</p>
+              ` : ''}
               <button type="submit" class="btn-primary auth-submit" ${net.authBusy ? 'disabled' : ''}>
-                ${net.authBusy ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Create Account'}
+                ${net.authBusy ? 'Please wait…' : mode === 'login' ? 'Log In' : mode === 'reset' ? 'Set New Password & Log In' : 'Create Account'}
               </button>
+              ${mode === 'login' ? '<button type="button" class="auth-link" data-auth-mode="reset">Forgot password?</button>' : ''}
+              ${mode === 'reset' ? '<button type="button" class="auth-link" data-auth-mode="login">← Back to Log In</button>' : ''}
             </form>
           `}
         </div>
@@ -2643,14 +2636,22 @@
           SH.audio.uiClick();
           const username = mount.querySelector('#auth-username').value;
           const password = mount.querySelector('#auth-password').value;
-          if (mode === 'register') {
+          const pinEl = mount.querySelector('#auth-pin');
+          const pin = pinEl ? pinEl.value.trim() : '';
+          if (mode === 'register' || mode === 'reset') {
             const confirm = mount.querySelector('#auth-password2').value;
             if (password !== confirm) {
               net.authAlert = { type: 'error', title: 'Passwords Don’t Match', detail: 'Please type the same password in both fields.' };
               this.renderLoginScreen();
               return;
             }
-            adapter.register(username, password);
+            if (!/^\d{4}$/.test(pin)) {
+              net.authAlert = { type: 'error', title: 'PIN Must Be 4 Numbers', detail: 'Type exactly 4 numbers, like 4821.' };
+              this.renderLoginScreen();
+              return;
+            }
+            if (mode === 'reset') adapter.resetPassword(username, pin, password);
+            else adapter.register(username, password, pin);
           } else {
             adapter.login(username, password);
           }
@@ -2878,16 +2879,37 @@
 
             ${net.humanCountMode === 3 ? '' : `
             <h4>Choose Your Team &amp; Seat</h4>
+            ${(() => {
+              // Who's already on each team, so you can join your friend's team (or play against them)
+              const seats = inRoom ? (net.seats || []) : [];
+              const onTeam = (team) => seats.filter(x => x.team === team && (x.role === 'human' || x.role === 'human_self'));
+              const capacity = 2;
+              const people = (team) => {
+                const list = onTeam(team);
+                const others = list.filter(x => x.role === 'human');
+                const me = list.some(x => x.role === 'human_self');
+                const names = [...(me ? ['You'] : []), ...others.map(x => esc(x.plainName || x.name))];
+                const free = Math.max(0, capacity - list.length);
+                return `
+                  <span class="team-people">${names.length ? `👤 ${names.join(' & ')}` : 'Nobody yet'}</span>
+                  <span class="team-spots ${free ? '' : 'full'}">${free ? `${free} spot${free > 1 ? 's' : ''} free` : 'Full'}</span>`;
+              };
+              const friendsTeams = ['blue', 'red'].filter(t => onTeam(t).some(x => x.role === 'human'));
+              return `
+            ${inRoom && friendsTeams.length ? `<p class="team-hint">${friendsTeams.map(t => `${onTeam(t).filter(x => x.role === 'human').map(x => `<strong>${esc(x.plainName || x.name)}</strong>`).join(' & ')} ${onTeam(t).filter(x => x.role === 'human').length > 1 ? 'are' : 'is'} on <strong class="hint-${t}">Team ${t === 'blue' ? 'Blue' : 'Red'}</strong>`).join(' · ')} — join them to play as partners, or pick the other team to play against them.</p>` : ''}
             <div class="team-pick-row">
               <button type="button" class="team-select-btn team-blue ${net.selectedTeam === 'blue' ? 'selected' : ''}" data-mp-team="blue" ${playing ? 'disabled' : ''}>
                 <span class="team-badge">TEAM BLUE</span>
                 <small>Seats: South &amp; North (Opposite)</small>
+                ${inRoom ? people('blue') : ''}
               </button>
               <button type="button" class="team-select-btn team-red ${net.selectedTeam === 'red' ? 'selected' : ''}" data-mp-team="red" ${playing ? 'disabled' : ''}>
                 <span class="team-badge">TEAM RED</span>
                 <small>Seats: West &amp; East (Opposite)</small>
+                ${inRoom ? people('red') : ''}
               </button>
-            </div>
+            </div>`;
+            })()}
             `}
 
             <hr class="divider"/>
@@ -3534,15 +3556,15 @@
       overlay.innerHTML = `
         <div class="choice-card gift-card" role="dialog" aria-modal="true" aria-label="Send a gift">
           <h3>🎁 Send a gift to ${esc(name)}</h3>
-          <p>You have 🦁 <strong>${profile.coins}</strong> Lions · 💎 <strong>${profile.diamonds || 0}</strong> Diamonds</p>
+          <p>You have 🦁 <strong>${profile.unlimited ? '∞' : profile.coins.toLocaleString('en-US')}</strong> Lions · 💎 <strong>${profile.unlimited ? '∞' : (profile.diamonds || 0).toLocaleString('en-US')}</strong> Diamonds · no sending limit</p>
           <label class="gift-row">🦁 Lions
-            <input type="number" id="gift-lions" inputmode="numeric" min="0" max="${profile.coins}" value="0" />
+            <input type="number" id="gift-lions" inputmode="numeric" min="0" value="0" />
           </label>
-          <div class="gift-quick">${[10, 50, 100, 500].map(v => `<button type="button" class="chip-btn" data-gift-quick-lions="${v}">+${v}</button>`).join('')}</div>
+          <div class="gift-quick">${[10, 100, 500, 1000, 10000].map(v => `<button type="button" class="chip-btn" data-gift-quick-lions="${v}">+${v.toLocaleString('en-US')}</button>`).join('')}${profile.unlimited ? '' : '<button type="button" class="chip-btn" data-gift-all-lions>All</button>'}</div>
           <label class="gift-row">💎 Diamonds
-            <input type="number" id="gift-diamonds" inputmode="numeric" min="0" max="${profile.diamonds || 0}" value="0" />
+            <input type="number" id="gift-diamonds" inputmode="numeric" min="0" value="0" />
           </label>
-          <div class="gift-quick">${[1, 5].map(v => `<button type="button" class="chip-btn" data-gift-quick-diamonds="${v}">+${v}</button>`).join('')}</div>
+          <div class="gift-quick">${[1, 5, 10, 50, 100].map(v => `<button type="button" class="chip-btn" data-gift-quick-diamonds="${v}">+${v}</button>`).join('')}${profile.unlimited ? '' : '<button type="button" class="chip-btn" data-gift-all-diamonds>All</button>'}</div>
           <div class="choice-actions">
             <button type="button" class="btn-yes" data-gift-send>🎁 Send gift</button>
             <button type="button" class="btn-no" data-gift-cancel>Cancel</button>
@@ -3557,6 +3579,10 @@
       overlay.querySelectorAll('[data-gift-quick-diamonds]').forEach(b => b.addEventListener('click', () => {
         diamondsInput.value = String(Math.min(profile.diamonds || 0, (Number(diamondsInput.value) || 0) + Number(b.getAttribute('data-gift-quick-diamonds'))));
       }));
+      const allLions = overlay.querySelector('[data-gift-all-lions]');
+      if (allLions) allLions.addEventListener('click', () => { lionsInput.value = String(profile.coins); });
+      const allDiamonds = overlay.querySelector('[data-gift-all-diamonds]');
+      if (allDiamonds) allDiamonds.addEventListener('click', () => { diamondsInput.value = String(profile.diamonds || 0); });
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay || e.target.closest('[data-gift-cancel]')) {
           SH.audio.uiClick();
@@ -3617,6 +3643,24 @@
         </div>
 
         ${this.renderStatsCard(profile)}
+
+        ${online ? `
+        <div class="mp-card security-card">
+          <div class="section-head"><h3>🔐 Password &amp; Recovery PIN</h3><span>${SH.networkAdapter.state.me && SH.networkAdapter.state.me.hasPin ? '✅ PIN set' : '⚠️ No PIN yet'}</span></div>
+          ${SH.networkAdapter.state.me && !SH.networkAdapter.state.me.hasPin ? '<p class="field-help pin-warning">Set a 4-digit recovery PIN so you can reset your password if you ever forget it.</p>' : ''}
+          <form id="pin-form" class="security-form" autocomplete="off">
+            <strong>${SH.networkAdapter.state.me && SH.networkAdapter.state.me.hasPin ? 'Change' : 'Set'} recovery PIN</strong>
+            <input id="pin-new" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="New 4-digit PIN" required />
+            <input id="pin-password" type="password" maxlength="128" placeholder="Your password" autocomplete="current-password" required />
+            <button type="submit" class="btn-primary btn-sm">Save PIN</button>
+          </form>
+          <form id="password-form" class="security-form" autocomplete="off">
+            <strong>Change password</strong>
+            <input id="pw-old" type="password" maxlength="128" placeholder="Current password" autocomplete="current-password" required />
+            <input id="pw-new" type="password" maxlength="128" placeholder="New password (6+ characters)" autocomplete="new-password" required />
+            <button type="submit" class="btn-primary btn-sm">Change password</button>
+          </form>
+        </div>` : ''}
 
         <div class="mp-card">
           <form id="username-form" class="username-form">
@@ -3733,6 +3777,33 @@
       }
       const removePhoto = mount.querySelector('#photo-remove-btn');
       if (removePhoto) removePhoto.addEventListener('click', () => { SH.audio.uiClick(); SH.store.setPhoto(null); });
+
+      const pinForm = mount.querySelector('#pin-form');
+      if (pinForm) {
+        pinForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          SH.audio.uiClick();
+          const pin = mount.querySelector('#pin-new').value.trim();
+          if (!/^\d{4}$/.test(pin)) { this.showToast('The PIN must be exactly 4 numbers.', 'error'); return; }
+          if (SH.networkAdapter.setRecoveryPin(mount.querySelector('#pin-password').value, pin)) {
+            mount.querySelector('#pin-new').value = '';
+            mount.querySelector('#pin-password').value = '';
+          }
+        });
+      }
+      const pwForm = mount.querySelector('#password-form');
+      if (pwForm) {
+        pwForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          SH.audio.uiClick();
+          const next = mount.querySelector('#pw-new').value;
+          if (next.length < 6) { this.showToast('New passwords must be at least 6 characters.', 'error'); return; }
+          if (SH.networkAdapter.changePassword(mount.querySelector('#pw-old').value, next)) {
+            mount.querySelector('#pw-old').value = '';
+            mount.querySelector('#pw-new').value = '';
+          }
+        });
+      }
 
       const nameForm = mount.querySelector('#username-form');
       if (nameForm) {
