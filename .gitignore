@@ -10,3 +10,5 @@ android/app/build/
 android/app/src/main/assets/
 android/local.properties
 CHAT_HISTORY.md
+111
+tests/node_modules/
