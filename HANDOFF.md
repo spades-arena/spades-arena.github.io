@@ -1,6 +1,6 @@
-# Spades Royale — where we left off (18 Oct 2026)
+# Spades Royale — where we left off (18 Oct 2026, evening)
 
-*Play. Win. Rule.* — made by Hadzz. Version **1.0.10** is live.
+*Play. Win. Rule.* — made by Hadzz. Version **1.0.13** is live (apps + website + Render server all updated).
 
 ## Links
 | What | Where |
@@ -65,11 +65,29 @@
 **Branding**
 - 5-second loading screen with the gold Hadzz signature and the "no-ad game" note.
 
+## Added in v1.0.11 – v1.0.13
+- **Purchases sync across devices:** Lions, Diamonds, owned avatars, cards, tables, stats and streaks follow the online account.
+  - The server keeps a versioned master copy.
+  - Each device sends changes on top of that copy, so offline changes are merged, not lost.
+  - A device that played before sync existed merges once: union of items, higher balance.
+  - Logging into another account on the same device starts that account fresh.
+- **Recovery PIN:** sign-up asks for a 4-digit PIN (any numbers).
+  - "Forgot password?" on the login screen: username + PIN + new password.
+  - Profile has "Change password" and "Set / change PIN".
+- **Lobby:** the team buttons show who's on each team and how many spots are free, plus a hint about which team your friend is on.
+- **Gifts:** no 500 limit. The cap is 1 billion per gift. Added +1,000 / +10,000 / All buttons.
+- **Chat:** bots no longer reply to your chat.
+- **Speeds:** Relaxed = old Normal, Normal = old Fast, and Fast = Super Fast.
+- 💎 VIP tables (6, bought with Diamonds).
+- Name change: first one free, then 💎 50 each time.
+
 ## To do next time
+- [ ] **hadzz** has no recovery PIN yet: Profile → Set PIN.
+- [ ] Open the app on the laptop where the purchases were made, so they merge into the account. The server copy only had 1 table and 6 avatars on 18 Oct.
 - [ ] **Render Deploy Hook:** the server doesn't update itself when code is pushed.
   - Go to Render → spades-royale → Settings → **Deploy Hook**, copy the link and give it to Claude to wire into the GitHub build.
-  - Until then, click **Manual Deploy → Deploy latest commit** after each update.
-  - This is needed for the **leaderboard** to work online.
+  - Until then, after every update that changes `server/`, click **Manual Deploy → Deploy latest commit**.
+  - Otherwise new server features (and limits) won't work. Done manually for v1.0.13 on 18 Oct.
 - [ ] Test the Android APK and the Windows installer on real devices.
 - [ ] Optional: make a new Upstash token. Optional: remove the GitHub CLI access at github.com/settings/applications.
 - Ideas not built yet:
