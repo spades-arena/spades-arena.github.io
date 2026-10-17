@@ -7649,6 +7649,9 @@ if (typeof module === 'object' && module.exports) {
   const OFFLINE_GAME_KEY = 'spades_royale_offline_game_v2';
   const REDEAL_COST = 350; // 🦁 to redeal only your own hand (offline, before you bid)
   const LOADING_SCREEN_MS = 5000; // opening screen
+  // Release builds get their version stamped in by bundle.py (SPADES_APP_VERSION); 'dev' = local copy
+  const APP_VERSION = 'dev';
+  const UPDATE_SITE = 'https://spades-royale.github.io';
   const GAME_INTRO_MS = 5000; // cat-in-a-hat intro when a game starts
   const SCREEN_SESSION_KEY = 'spades_royale_screen'; // where you were, for page reloads
 
@@ -7837,6 +7840,47 @@ if (typeof module === 'object' && module.exports) {
           if (this.currentScreen === 'loading') this.navigateTo(SH.networkAdapter.isSignedIn() ? 'menu' : 'login');
         }, LOADING_SCREEN_MS);
       }
+      setTimeout(() => this.checkForUpdate(), LOADING_SCREEN_MS + 1500);
+    }
+
+    /** Which installed app this is: 'android' | 'windows' | 'mac' | null (website — always up to date). */
+    installedPlatform() {
+      if (typeof navigator === 'undefined' || typeof location === 'undefined') return null;
+      const ua = navigator.userAgent || '';
+      if (location.hostname === 'appassets.androidplatform.net' || /; wv\)/.test(ua)) return 'android';
+      if (/Electron\//.test(ua)) return /Windows/.test(ua) ? 'windows' : /Mac OS X|Macintosh/.test(ua) ? 'mac' : null;
+      return null;
+    }
+
+    /** Installed apps check the website for a newer version and offer the right download. */
+    checkForUpdate() {
+      const platform = this.installedPlatform();
+      if (!platform || APP_VERSION === 'dev' || typeof fetch !== 'function') return;
+      const newer = (a, b) => {
+        const pa = String(a).split('.').map(Number);
+        const pb = String(b).split('.').map(Number);
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+          if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
+        }
+        return false;
+      };
+      fetch(`${UPDATE_SITE}/version.json?t=${Date.now()}`, { cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : null))
+        .then((info) => {
+          if (!info || !info.version || !newer(info.version, APP_VERSION) || !info.downloads || !info.downloads[platform]) return;
+          if (this.currentScreen === 'game') return; // don't interrupt a game — ask next time
+          this.showChoiceDialog({
+            title: `✨ Update available — v${info.version}`,
+            message: platform === 'android'
+              ? `You have v${APP_VERSION}. Download the new version, then open it and tap Install — your account, Lions and Diamonds stay.`
+              : `You have v${APP_VERSION}. Download and install the new version — your account, Lions and Diamonds stay.`,
+            actions: [
+              { label: 'Download update', tone: 'yes', onClick: () => { location.href = info.downloads[platform]; } },
+              { label: 'Later', tone: 'no' }
+            ]
+          });
+        })
+        .catch(() => { /* offline — check again next time */ });
     }
 
     bindGlobalNavigation() {

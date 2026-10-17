@@ -46,6 +46,9 @@ import os
 server_url = os.environ.get('SPADES_SERVER_URL', '').strip()
 if server_url:
     js_bundle = js_bundle.replace("const HOSTED_SERVER_URL = '';", f"const HOSTED_SERVER_URL = {server_url!r};", 1)
+app_version = os.environ.get('SPADES_APP_VERSION', '').strip()
+if app_version:
+    js_bundle = js_bundle.replace("const APP_VERSION = 'dev';", f"const APP_VERSION = {app_version!r};", 1)
 
 new_html = (
     html[:style_start]

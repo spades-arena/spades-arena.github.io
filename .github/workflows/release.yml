@@ -28,6 +28,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Bundle the game
+        env:
+          SPADES_APP_VERSION: ${{ env.VERSION }}
         run: |
           python3 bundle.py
           mkdir -p web/assets
@@ -59,8 +61,8 @@ jobs:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
         run: |
           if [ -n "$KEYSTORE_B64" ]; then
-            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
-            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
+            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
           fi
       - name: Build APK
         working-directory: android
@@ -73,6 +75,8 @@ jobs:
         run: |
           gradle assembleRelease --no-daemon
           cp app/build/outputs/apk/release/app-release.apk ../Spades-Royale.apk
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/apksigner" verify --print-certs ../Spades-Royale.apk | grep -i "SHA-256"
       - uses: actions/upload-artifact@v4
         with:
           name: android
@@ -153,6 +157,10 @@ jobs:
           sed -e "s#__REPO__#${GITHUB_REPOSITORY}#g" -e "s#__VERSION__#${VERSION}#g" site/index.html > _site/index.html
           cp assets/logo.jpg assets/signature.png assets/icon-192.png _site/assets/
           touch _site/.nojekyll
+          base="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download"
+          cat > _site/version.json <<JSON
+          {"version": "${VERSION}", "downloads": {"android": "${base}/Spades-Royale.apk", "windows": "${base}/Spades-Royale-Windows-Setup.exe", "mac": "${base}/Spades-Royale-Mac.dmg"}}
+          JSON
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
