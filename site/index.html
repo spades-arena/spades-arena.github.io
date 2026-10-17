@@ -99,12 +99,15 @@
         <p>For Apple silicon and Intel Macs</p>
         <a class="btn" href="https://github.com/__REPO__/releases/latest/download/Spades-Royale-Mac.dmg">Download for Mac</a>
       </div>
+      <div class="card">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H8a3 3 0 00-3 3v16a3 3 0 003 3h8a3 3 0 003-3V4a3 3 0 00-3-3zm-4 20.2a1.2 1.2 0 110-2.4 1.2 1.2 0 010 2.4zM17 17H7V4h10z"/></svg>
+        <h2>iPhone &amp; iPad</h2>
+        <p>Play straight in Safari — no download. Tap Share → Add to Home Screen to keep it like an app.</p>
+        <a class="btn" href="play/">Play on iPhone</a>
+      </div>
     </div>
 
-    <div class="play">
-      <a class="btn ghost" id="iphone-play" href="play/" hidden>Play on iPhone — no download needed</a>
-      <p class="version">Version __VERSION__</p>
-    </div>
+    <p class="version" style="text-align:center">Version __VERSION__</p>
 
     <section class="help">
       <h3>Installing on Android</h3>
@@ -116,7 +119,7 @@
       <h3>Installing on Windows</h3>
       <p>If you see “Windows protected your PC”, click <b>More info</b> and then <b>Run anyway</b>.</p>
       <h3>Installing on Mac</h3>
-      <p>Open the .dmg and drag Spades Royale into Applications. The first time, right-click the app and choose <b>Open</b>. If macOS says the app is damaged, open Terminal and run <code>xattr -cr "/Applications/Spades Royale.app"</code>.</p>
+      <p>Open the .dmg and drag Spades Royale into Applications. If macOS says it “could not verify” the app, open <b>System Settings → Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b>. Or open Terminal and run <code>xattr -cr "/Applications/Spades Royale.app"</code>.</p>
     </section>
 
     <footer>
@@ -124,13 +127,5 @@
       Made by Hadzz
     </footer>
   </div>
-  <script>
-    // The browser version is only offered on iPhone / iPad (they can't install the APK)
-    (function () {
-      var ua = navigator.userAgent || '';
-      var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      if (ios) document.getElementById('iphone-play').hidden = false;
-    })();
-  </script>
 </body>
 </html>

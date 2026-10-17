@@ -407,8 +407,13 @@
 
     authenticate(type, username, password) {
       const name = String(username || '').trim();
+      if (!this.isOpen() && HOSTED_SERVER_URL) {
+        // Online accounts: wait for the free cloud server (it can take up to a minute to wake up)
+        this.waitForServerThenAuth(type, name, password);
+        return;
+      }
       if (!this.isOpen()) {
-        // No accounts server reachable (e.g. on mobile data): use an account kept on this phone
+        // No accounts server set up: use an account kept on this device
         this.authenticateOnDevice(type === 'auth:register' ? 'register' : 'login', name, String(password || ''));
         return;
       }
@@ -420,6 +425,52 @@
       savePrefs(this.prefs);
       this.send(type, { username: name, password: String(password || ''), avatar: p ? publicAvatar(p.selectedAvatar) : undefined });
       this.emit();
+    }
+
+    waitForServerThenAuth(type, name, password) {
+      const attempt = (this.authWaitId || 0) + 1;
+      this.authWaitId = attempt;
+      const started = Date.now();
+      const LIMIT_MS = 75000;
+      const busy = () => {
+        this.state.authBusy = true;
+        this.state.authAlert = {
+          type: 'info',
+          title: 'Connecting to Spades Royale…',
+          detail: 'Waking up the free login server — this can take up to a minute the first time. Keep this screen open.'
+        };
+        this.emit();
+      };
+      busy();
+      let lastKick = Date.now();
+      if (!this.ws) this.reconnectNow();
+      const tick = () => {
+        if (this.authWaitId !== attempt) return;
+        if (this.isOpen()) {
+          this.authenticate(type, name, password);
+          return;
+        }
+        if (Date.now() - started > LIMIT_MS) {
+          const local = (this.prefs.localAccounts || {})[name.toLowerCase()];
+          if (type === 'auth:login' && local) {
+            this.authenticateOnDevice('login', name, String(password || '')); // older account kept on this device
+            return;
+          }
+          this.state.authBusy = false;
+          this.state.authAlert = {
+            type: 'error',
+            title: 'Can’t Reach the Login Server',
+            detail: 'Check your Wi-Fi or mobile data and tap the button again.',
+            code: 'offline'
+          };
+          this.emit();
+          return;
+        }
+        if (!this.state.authBusy || !this.state.authAlert) busy(); // a failed connection attempt cleared it
+        if (!this.ws && Date.now() - lastKick > 3000) { lastKick = Date.now(); this.reconnectNow(); }
+        setTimeout(tick, 500);
+      };
+      setTimeout(tick, 500);
     }
 
     /** SHA-256(salt:password) as hex — passwords are never stored in plain text. */
@@ -454,7 +505,7 @@
       } else {
         const acct = accounts[key];
         if (!acct) {
-          return fail('Account Not Found', `No account called "${name}" on this phone, and the login server can’t be reached right now. Create an account, or try again when online.`, 'bad_credentials');
+          return fail('Account Not Found', `No account called "${name}" on this device, and the login server can’t be reached right now. Create an account, or try again when online.`, 'bad_credentials');
         }
         if (await this.hashPassword(acct.salt, password) !== acct.hash) return fail(ERROR_TITLES.bad_credentials, 'Incorrect username or password.', 'bad_credentials');
       }
