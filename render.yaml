@@ -1,5 +1,5 @@
 # Free Render web service for Spades Royale logins, friends, invites and gifts.
-# New → Blueprint on render.com, pick this repo, and it sets everything up.
+# One click: https://render.com/deploy?repo=https://github.com/spades-royale/spades-royale.github.io
 services:
   - type: web
     name: spades-royale
@@ -11,6 +11,11 @@ services:
     envVars:
       - key: NODE_VERSION
         value: '20'
+      # Owner account with unlimited Lions & Diamonds (its password is typed in on Render, never stored in the code)
+      - key: SPADES_ADMIN_USERNAME
+        value: hadzz
+      - key: SPADES_ADMIN_PASSWORD
+        sync: false
       # Free Upstash Redis (upstash.com) keeps accounts safe when the free server sleeps. Paste the REST URL and token.
       - key: UPSTASH_REDIS_REST_URL
         sync: false
