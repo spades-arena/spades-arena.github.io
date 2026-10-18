@@ -2283,8 +2283,11 @@
               <button type="button" class="btn-primary" id="reveal-hand-btn">I’m ${esc(g.viewerName)} — Show my cards</button>
             </div>
           ` : ''}
-          <div class="player-hand-row ${dealing ? 'dealing' : ''} ${handHidden ? 'hand-hidden' : ''}" role="group" aria-label="Your cards" style="--hand-count: ${human.hand.length}">
-            ${human.hand.map((c, idx) => {
+          ${(() => {
+            // Phones: 2 rows of cards so every card is wide enough to tap with a finger
+            const twoRows = document.body.getAttribute('data-device-frame') === 'phone' && human.hand.length > 7;
+            const split = Math.ceil(human.hand.length / 2);
+            const renderCard = (c, idx) => {
               const isRed = c.suit === 'H' || c.suit === 'D';
               const isLegal = legalIds.has(c.id);
               const dimClass = g.phase === 'playing' && g.turnSeat === 0 && !isLegal ? 'card-illegal-dim' : '';
@@ -2300,8 +2303,15 @@
                   ${SH.renderModernCardInnerHTML(c)}
                 </button>
               `;
-            }).join('')}
-          </div>
+            };
+            const cards = human.hand.map(renderCard);
+            return `
+          <div class="player-hand-row ${twoRows ? 'two-rows' : ''} ${dealing ? 'dealing' : ''} ${handHidden ? 'hand-hidden' : ''}" role="group" aria-label="Your cards" style="--hand-count: ${twoRows ? split : human.hand.length}">
+            ${twoRows
+              ? `<div class="hand-line" style="--hand-count: ${split}">${cards.slice(0, split).join('')}</div><div class="hand-line" style="--hand-count: ${human.hand.length - split}">${cards.slice(split).join('')}</div>`
+              : cards.join('')}
+          </div>`;
+          })()}
         </div>
       `;
 

@@ -3246,7 +3246,7 @@ body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: 42px; heig
 .hand-card { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85), 0 6px 14px rgba(0, 0, 0, 0.55); }
 
 /* Small phones: keep the whole top bar on screen */
-@media (max-width: 400px) {
+@media (max-width: 440px) {
   .app-topbar .sig-sm { display: none; }
   .app-topbar .brand-text { font-size: 0.82rem; line-height: 1.05; }
   .app-topbar .hud-cluster { gap: 0.25rem; }
@@ -3295,6 +3295,135 @@ body[data-device-frame="full"] .trick-slot .table-card .pc-pip .pc-pip-lg { widt
   flex: none; padding: 0.3rem 0.65rem; border-radius: 999px; font-weight: 900; font-size: 0.78rem; color: #1a1405;
   background: linear-gradient(180deg, #fff1c1, #e8c468 45%, #a8792a); box-shadow: 0 0 12px rgba(232, 196, 104, 0.45);
 }
+
+/* v2.1 — BIG cards (taller & wider) so everyone can actually see them */
+.player-hand-row { --card-w: 86px; min-height: 146px; padding-top: 20px; }
+.player-hand-row .hand-card { height: 126px; border-radius: 12px; }
+.hand-card .pc-rank { font-size: 1.45rem; }
+.hand-card .pc-index-suit { width: 17px; height: 17px; }
+.hand-card .pc-pip .pc-pip-lg { width: 40px; height: 40px; }
+.hand-card .pc-ace .pc-pip-xl { width: 52px; height: 52px; }
+
+body[data-device-frame="tablet"] .player-hand-row { --card-w: 112px; min-height: 184px; padding-top: 24px; }
+body[data-device-frame="tablet"] .player-hand-row .hand-card { height: 162px; }
+body[data-device-frame="laptop"] .player-hand-row,
+body[data-device-frame="full"] .player-hand-row { --card-w: 124px; min-height: 200px; padding-top: 24px; }
+body[data-device-frame="laptop"] .player-hand-row .hand-card,
+body[data-device-frame="full"] .player-hand-row .hand-card { height: 178px; }
+body[data-device-frame="tablet"] .hand-card .pc-rank,
+body[data-device-frame="laptop"] .hand-card .pc-rank,
+body[data-device-frame="full"] .hand-card .pc-rank { font-size: 1.85rem; }
+body[data-device-frame="tablet"] .hand-card .pc-index-suit,
+body[data-device-frame="laptop"] .hand-card .pc-index-suit,
+body[data-device-frame="full"] .hand-card .pc-index-suit { width: 22px; height: 22px; }
+body[data-device-frame="tablet"] .hand-card .pc-pip .pc-pip-lg,
+body[data-device-frame="laptop"] .hand-card .pc-pip .pc-pip-lg,
+body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: 54px; height: 54px; }
+
+/* Cards on the table */
+.trick-slot .table-card { width: 70px; height: 100px; }
+.trick-slot .table-card .pc-rank { font-size: 1.15rem; }
+.trick-mat { width: min(300px, 100%); height: min(250px, 100%); }
+body[data-device-frame="tablet"] .trick-mat,
+body[data-device-frame="laptop"] .trick-mat,
+body[data-device-frame="full"] .trick-mat { width: min(480px, 100%); height: min(400px, 100%); }
+body[data-device-frame="tablet"] .trick-slot .table-card,
+body[data-device-frame="laptop"] .trick-slot .table-card,
+body[data-device-frame="full"] .trick-slot .table-card { width: 98px; height: 140px; }
+body[data-device-frame="tablet"] .trick-slot .table-card .pc-rank,
+body[data-device-frame="laptop"] .trick-slot .table-card .pc-rank,
+body[data-device-frame="full"] .trick-slot .table-card .pc-rank { font-size: 1.55rem; }
+body[data-device-frame="tablet"] .trick-slot .table-card .pc-pip .pc-pip-lg,
+body[data-device-frame="laptop"] .trick-slot .table-card .pc-pip .pc-pip-lg,
+body[data-device-frame="full"] .trick-slot .table-card .pc-pip .pc-pip-lg { width: 48px; height: 48px; }
+@media (max-width: 380px) {
+  .player-hand-row { --card-w: 76px; }
+  .player-hand-row .hand-card { height: 114px; }
+  .hand-card .pc-rank { font-size: 1.3rem; }
+}
+/* Table cards & mat scale with screen height so they never spill off the felt */
+body[data-device-frame="tablet"] .trick-mat,
+body[data-device-frame="laptop"] .trick-mat,
+body[data-device-frame="full"] .trick-mat { width: clamp(280px, 40vw, 480px); height: clamp(220px, 42vh, 400px); }
+body[data-device-frame="tablet"] .trick-slot .table-card,
+body[data-device-frame="laptop"] .trick-slot .table-card,
+body[data-device-frame="full"] .trick-slot .table-card { height: clamp(88px, 14.5vh, 140px); width: auto; aspect-ratio: 7 / 10; }
+
+/* v2.1 — TALL hand cards sized from the screen height; the table gives up space for them */
+.player-hand-row {
+  --card-h: clamp(118px, 21vh, 210px);
+  --card-w: calc(var(--card-h) * 0.68);
+  min-height: calc(var(--card-h) + 22px);
+  padding-top: 20px;
+}
+.player-hand-row .hand-card { height: var(--card-h); }
+.hand-card .pc-rank { font-size: calc(var(--card-h) * 0.13); }
+.hand-card .pc-index-suit { width: calc(var(--card-h) * 0.12); height: calc(var(--card-h) * 0.12); }
+.hand-card .pc-pip .pc-pip-lg { width: calc(var(--card-h) * 0.33); height: calc(var(--card-h) * 0.33); }
+.hand-card .pc-ace .pc-pip-xl { width: calc(var(--card-h) * 0.42); height: calc(var(--card-h) * 0.42); }
+body[data-device-frame="tablet"] .player-hand-row,
+body[data-device-frame="laptop"] .player-hand-row,
+body[data-device-frame="full"] .player-hand-row {
+  --card-h: clamp(150px, 26vh, 260px);
+  --card-w: calc(var(--card-h) * 0.68);
+  min-height: calc(var(--card-h) + 26px);
+}
+body[data-device-frame="tablet"] .player-hand-row .hand-card,
+body[data-device-frame="laptop"] .player-hand-row .hand-card,
+body[data-device-frame="full"] .player-hand-row .hand-card { height: var(--card-h); }
+body[data-device-frame="tablet"] .hand-card .pc-rank,
+body[data-device-frame="laptop"] .hand-card .pc-rank,
+body[data-device-frame="full"] .hand-card .pc-rank { font-size: calc(var(--card-h) * 0.13); }
+body[data-device-frame="tablet"] .hand-card .pc-index-suit,
+body[data-device-frame="laptop"] .hand-card .pc-index-suit,
+body[data-device-frame="full"] .hand-card .pc-index-suit { width: calc(var(--card-h) * 0.12); height: calc(var(--card-h) * 0.12); }
+body[data-device-frame="tablet"] .hand-card .pc-pip .pc-pip-lg,
+body[data-device-frame="laptop"] .hand-card .pc-pip .pc-pip-lg,
+body[data-device-frame="full"] .hand-card .pc-pip .pc-pip-lg { width: calc(var(--card-h) * 0.33); height: calc(var(--card-h) * 0.33); }
+@media (max-width: 380px) {
+  .player-hand-row { --card-h: clamp(110px, 19vh, 170px); }
+}
+
+/* Smaller table: the trick mat & cards in the middle shrink to fit the shorter felt */
+.trick-mat { width: min(290px, 100%); height: clamp(190px, 30vh, 250px); }
+.trick-slot .table-card { height: clamp(78px, 11vh, 100px); width: auto; aspect-ratio: 7 / 10; }
+body[data-device-frame="tablet"] .trick-mat,
+body[data-device-frame="laptop"] .trick-mat,
+body[data-device-frame="full"] .trick-mat { width: clamp(260px, 36vw, 440px); height: clamp(190px, 33vh, 360px); }
+body[data-device-frame="tablet"] .trick-slot .table-card,
+body[data-device-frame="laptop"] .trick-slot .table-card,
+body[data-device-frame="full"] .trick-slot .table-card { height: clamp(76px, 11.5vh, 126px); }
+/* Phones: a bit smaller than tablets, and overlap more so all 13 always fit */
+.player-hand-row { --card-h: clamp(108px, 17vh, 160px); }
+@media (max-width: 380px) { .player-hand-row { --card-h: clamp(104px, 16vh, 140px); } }
+.player-hand-row .hand-card {
+  margin-left: clamp(
+    calc(var(--card-w) * -0.8),
+    calc((100% - var(--hand-count, 13) * var(--card-w)) / max(var(--hand-count, 13) - 1, 1)),
+    -6px
+  );
+}
+.player-hand-row .hand-card:first-child { margin-left: 0; }
+/* Cards you can't play: solid & darkened (not see-through) */
+.hand-card.card-illegal-dim { opacity: 1; filter: grayscale(0.75) brightness(0.55); }
+
+/* Phones: hand in 2 rows (7 + 6) so each card is a proper finger-sized target */
+.player-hand-row.two-rows {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  min-height: calc(var(--card-h) * 1.52 + 24px);
+}
+.hand-line { display: flex; justify-content: safe center; align-items: flex-end; width: 100%; }
+.hand-line + .hand-line { margin-top: calc(var(--card-h) * -0.48); }
+.hand-line .hand-card:first-child { margin-left: 0; }
+/* Two rows side by side vertically (no overlap): each card shows ~50px wide × full height */
+.player-hand-row.two-rows { --card-h: clamp(92px, 13vh, 122px); min-height: calc(var(--card-h) * 2 + 34px); padding-top: 12px; gap: 8px; }
+.player-hand-row.two-rows .hand-line + .hand-line { margin-top: 0; }
+.player-hand-row.two-rows .hand-card.card-legal-ready { transform: translateY(-5px); }
+.player-hand-row.two-rows .hand-card.card-legal-ready:hover,
+.player-hand-row.two-rows .hand-card.card-legal-ready:active { transform: translateY(-8px) scale(1.04); }
+.player-hand-row.two-rows .hand-card.card-illegal-dim { transform: none; }
 
   </style>
 </head>
@@ -10654,8 +10783,11 @@ if (typeof module === 'object' && module.exports) {
               <button type="button" class="btn-primary" id="reveal-hand-btn">I’m ${esc(g.viewerName)} — Show my cards</button>
             </div>
           ` : ''}
-          <div class="player-hand-row ${dealing ? 'dealing' : ''} ${handHidden ? 'hand-hidden' : ''}" role="group" aria-label="Your cards" style="--hand-count: ${human.hand.length}">
-            ${human.hand.map((c, idx) => {
+          ${(() => {
+            // Phones: 2 rows of cards so every card is wide enough to tap with a finger
+            const twoRows = document.body.getAttribute('data-device-frame') === 'phone' && human.hand.length > 7;
+            const split = Math.ceil(human.hand.length / 2);
+            const renderCard = (c, idx) => {
               const isRed = c.suit === 'H' || c.suit === 'D';
               const isLegal = legalIds.has(c.id);
               const dimClass = g.phase === 'playing' && g.turnSeat === 0 && !isLegal ? 'card-illegal-dim' : '';
@@ -10671,8 +10803,15 @@ if (typeof module === 'object' && module.exports) {
                   ${SH.renderModernCardInnerHTML(c)}
                 </button>
               `;
-            }).join('')}
-          </div>
+            };
+            const cards = human.hand.map(renderCard);
+            return `
+          <div class="player-hand-row ${twoRows ? 'two-rows' : ''} ${dealing ? 'dealing' : ''} ${handHidden ? 'hand-hidden' : ''}" role="group" aria-label="Your cards" style="--hand-count: ${twoRows ? split : human.hand.length}">
+            ${twoRows
+              ? `<div class="hand-line" style="--hand-count: ${split}">${cards.slice(0, split).join('')}</div><div class="hand-line" style="--hand-count: ${human.hand.length - split}">${cards.slice(split).join('')}</div>`
+              : cards.join('')}
+          </div>`;
+          })()}
         </div>
       `;
 
