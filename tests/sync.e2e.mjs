@@ -22,7 +22,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const require = createRequire(import.meta.url);
 require(path.join(ROOT, 'js/engine.js'));
 const SP = globalThis.SpadesHadzz.GAME_SPEEDS;
-ok(SP.relaxed.botPlayMs === 1150 && SP.normal.botPlayMs === 600 && SP.fast.botPlayMs < 300 && SP.fast.label === 'Super Fast',
+ok(SP.relaxed.botPlayMs === 1150 && SP.normal.botPlayMs === 600 && SP.normal.trickPauseMs === 1400 && SP.fast.botPlayMs < 300 && SP.fast.label === 'Super Fast',
   `speeds: Relaxed = old Normal (${SP.relaxed.botPlayMs}ms), Normal = old Fast (${SP.normal.botPlayMs}ms), Super Fast ${SP.fast.botPlayMs}ms`);
 
 const server = spawn(process.execPath, [path.join(ROOT, 'server/server.js')], { env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', DATA_DIR }, stdio: 'ignore' });

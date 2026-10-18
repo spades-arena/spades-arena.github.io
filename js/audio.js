@@ -144,9 +144,22 @@
       this.playTone(523.25, 110, 'triangle', 0.08, 659.25);
     }
 
+    /** 💥 Spades broken: a sharp crack, then glass shattering & tinkling pieces. */
     spadeBroken() {
-      this.vibrate([25, 35, 45]);
-      this.playTone(220, 180, 'sawtooth', 0.06, 440);
+      this.vibrate([40, 30, 20, 30, 15]);
+      // the crack: a hard, very short burst of bright noise + a low thump under it
+      this.playNoise({ durationMs: 70, fromHz: 5200, toHz: 2400, q: 0.7, gainLevel: 0.32, attackMs: 2, filterType: 'highpass' });
+      this.playNoise({ durationMs: 160, fromHz: 900, toHz: 160, q: 0.8, gainLevel: 0.22, attackMs: 3, filterType: 'lowpass' });
+      // the shatter: a spray of short glassy bursts
+      for (let i = 0; i < 7; i++) {
+        const f = 3500 + Math.random() * 4500;
+        this.playNoise({ durationMs: 60 + Math.random() * 90, fromHz: f, toHz: f * 0.7, q: 6, gainLevel: 0.07 + Math.random() * 0.05, attackMs: 2, delayMs: 45 + i * 28 + Math.random() * 20, filterType: 'bandpass' });
+      }
+      // falling pieces: little high "tink"s
+      for (let i = 0; i < 5; i++) {
+        const tink = 2200 + Math.random() * 2600;
+        setTimeout(() => this.playTone(tink, 70, 'sine', 0.025, tink * 0.98), 220 + i * 70 + Math.random() * 40);
+      }
     }
 
     illegalMove() {

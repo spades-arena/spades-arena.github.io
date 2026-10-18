@@ -1389,7 +1389,8 @@
       if (card.suit === 'S' && !this.game.spadesBroken) {
         this.game.spadesBroken = true;
         SH.audio.spadeBroken();
-        this.showToast('Spades have been broken! ♠', 'info');
+        this.flashSpadesCracked();
+        this.showToast('💥 Spades are cracked! ♠ Spades can now be led.', 'info');
       } else {
         SH.audio.cardPlay();
       }
@@ -1959,7 +1960,8 @@
           break;
         case 'spades_broken':
           SH.audio.spadeBroken();
-          this.showToast('Spades have been broken! ♠', 'info');
+          this.flashSpadesCracked();
+          this.showToast('💥 Spades are cracked! ♠ Spades can now be led.', 'info');
           break;
         case 'trick_won':
         case 'round_over':
@@ -2106,8 +2108,10 @@
         const seatAvatar = g.local ? '' : `<span class="edge-avatar">${seatIdx === 0
           ? SH.renderAvatarSVG(SH.store.getProfile().selectedAvatar, 22)
           : SH.renderAvatarArt(p.avatar === 'photo' ? 'free_ace' : (p.avatar || 'free_ace'), 22)}</span>`;
+        const tookTrick = g.phase === 'trick_pause' && g.lastTrickWinner === seatIdx;
         return `
-          <div class="table-edge-seat ${posClass} ${isTurn ? 'active-turn' : ''}" data-seat="${seatIdx}"${g.online ? ` title="${esc(p.name)}"` : ''}>
+          <div class="table-edge-seat ${posClass} ${isTurn ? 'active-turn' : ''} ${tookTrick ? 'trick-winner-seat' : ''}" data-seat="${seatIdx}"${g.online ? ` title="${esc(p.name)}"` : ''}>
+            ${tookTrick ? '<span class="trick-plus" aria-hidden="true">+1</span>' : ''}
             ${bubble ? `<div class="chat-bubble ${bubble.kind === 'text' ? 'text-bubble' : ''} ${bubble.team ? 'team-bubble' : ''}" role="status">${esc(bubble.content)}</div>` : ''}
             ${seatAvatar}${colorDot}<span class="edge-compass" data-compass="${compass}">${esc(shortName)}${botTag}</span>
             <span class="edge-stat">${p.tricks}/${bidStr}</span>
@@ -2237,6 +2241,12 @@
             <div class="hand-caption">
               ${g.local ? `${esc(g.viewerName)}’s Hand` : 'Your Hand'} (${human.hand.length})
               ${g.phase === 'playing' && g.turnSeat === 0 && !handHidden ? '<span class="legal-hint-badge">Tap glowing card</span>' : ''}
+              ${g.phase === 'trick_pause' && g.players[g.lastTrickWinner] ? (() => {
+                const w = g.lastTrickWinner;
+                const nm = String(g.players[w].name || '').replace(/ \(Bot\)$/, '');
+                const label = w === 0 && !g.local ? 'You won the trick' : (!solo && w === 2 && !g.local ? `${esc(nm)} (partner) won it` : `${esc(nm)} won it`);
+                return `<span class="trick-won-note ${solo ? '' : (w % 2 === 0 ? 'won-mine' : 'won-foe')}">🏆 ${label}</span>`;
+              })() : ''}
               ${g.online && g.turnDeadline && g.turnSeat === 0 && (g.phase === 'bidding' || g.phase === 'playing')
                 ? `<span class="turn-timer" id="turn-timer">⏱ ${Math.max(0, Math.ceil((g.turnDeadline - Date.now()) / 1000))}s</span>` : ''}
             </div>
@@ -3510,6 +3520,25 @@
       requestAnimationFrame(() => pop.classList.add('visible'));
       // Not answered in 8s → it stays in Friends → Requests
       pop._timer = setTimeout(done, 8000);
+    }
+
+    /** 💥 Quick crack lines over the table when spades are broken (fades in ~1s, never blocks taps). */
+    flashSpadesCracked() {
+      if (typeof document === 'undefined' || SH.store.getSettings().reducedMotion) return;
+      setTimeout(() => {
+        const felt = document.querySelector('.felt-arena');
+        if (!felt) return;
+        const r = felt.getBoundingClientRect();
+        const el = document.createElement('div');
+        el.className = 'spades-crack-flash';
+        el.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
+        el.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M50 48 L44 30 L47 18 L40 2 M50 48 L62 36 L70 22 L86 10 M50 48 L68 54 L84 50 L99 60 M50 48 L58 66 L54 80 L60 99 M50 48 L36 60 L24 58 L4 72 M50 48 L32 44 L18 34 L2 30 M44 30 L36 24 M70 22 L76 30 M58 66 L68 74 M24 58 L20 66"
+            fill="none" stroke="#fff" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        </svg><span class="crack-spade">♠</span>`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1300);
+      }, 30);
     }
 
     rematchReadyCount() {

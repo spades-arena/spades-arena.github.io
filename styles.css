@@ -3416,3 +3416,65 @@ body[data-device-frame="full"] .trick-slot .table-card { height: clamp(76px, 11.
 .update-card { text-align: center; max-width: 380px; }
 .update-logo { width: 96px; height: 96px; margin: 0 auto 0.5rem; border-radius: 20px; }
 .update-have { font-size: 0.75rem; color: var(--text-muted); }
+
+/* 🏆 Who won the trick */
+.trick-winner-banner {
+  position: absolute; left: 50%; top: 50%; z-index: 20;
+  transform: translate(-50%, -50%);
+  padding: 0.45rem 0.95rem; border-radius: 999px; white-space: nowrap;
+  font-weight: 900; font-size: 0.95rem; color: #1a1405;
+  background: linear-gradient(180deg, #fff1c1, #ffd54a 45%, #c9971c);
+  box-shadow: 0 0 0 2px #0b0b0d, 0 0 22px rgba(255, 213, 74, 0.8), 0 8px 18px rgba(0, 0, 0, 0.6);
+  animation: trickWinIn 260ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  pointer-events: none;
+}
+.trick-winner-banner.win-mine { box-shadow: 0 0 0 2px #0b0b0d, 0 0 0 5px #e3242b, 0 0 22px rgba(255, 213, 74, 0.8), 0 8px 18px rgba(0, 0, 0, 0.6); }
+.trick-winner-banner.win-foe { box-shadow: 0 0 0 2px #0b0b0d, 0 0 0 5px #1877f2, 0 0 22px rgba(255, 213, 74, 0.6), 0 8px 18px rgba(0, 0, 0, 0.6); }
+@keyframes trickWinIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+body[data-device-frame="phone"] .trick-winner-banner { font-size: 0.8rem; white-space: normal; text-align: center; max-width: 92%; }
+
+.table-edge-seat.trick-winner-seat {
+  border-color: #ffd54a !important;
+  background: linear-gradient(180deg, #4a3a0c, #241a05) !important;
+  box-shadow: 0 0 0 2px #ffd54a, 0 0 18px rgba(255, 213, 74, 0.9);
+  transform: scale(1.12);
+  z-index: 15;
+  transition: transform 180ms ease;
+}
+.trick-plus {
+  position: absolute; top: -12px; right: -10px; z-index: 16;
+  padding: 0.05rem 0.4rem; border-radius: 999px; font-size: 0.72rem; font-weight: 900;
+  color: #fff; background: #1e9e55; box-shadow: 0 0 0 2px #0b0b0d;
+  animation: trickWinIn 260ms ease both;
+}
+.table-card.winning-card {
+  border: 3px solid #ffd54a !important;
+  box-shadow: 0 0 0 2px #0b0b0d, 0 0 22px 6px rgba(255, 213, 74, 0.95) !important;
+  transform: scale(1.1);
+  z-index: 5;
+}
+.table-card.winning-card::after {
+  content: '👑'; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 1.1rem;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6));
+}
+.reduced-motion .trick-winner-banner, .reduced-motion .trick-plus { animation: none; }
+body[data-device-frame="phone"] .trick-winner-banner { white-space: nowrap; max-width: none; font-size: 0.74rem; padding: 0.35rem 0.7rem; }
+/* Small "who won the trick" note next to "Your Hand" (doesn't cover the table) */
+.trick-won-note {
+  display: inline-block; margin-left: 0.4rem; padding: 0.1rem 0.5rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 800; color: #1a1405; background: #ffd54a; white-space: nowrap;
+}
+.trick-won-note.won-mine { box-shadow: 0 0 0 2px #e3242b; }
+.trick-won-note.won-foe { box-shadow: 0 0 0 2px #1877f2; }
+
+/* 💥 Spades cracked flash */
+.spades-crack-flash { position: fixed; z-index: 50; pointer-events: none; border-radius: 22px; overflow: hidden; animation: crackFade 1.25s ease-out forwards; }
+.spades-crack-flash svg { width: 100%; height: 100%; filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 8px rgba(255, 213, 74, 0.7)); }
+.spades-crack-flash svg path { stroke-dasharray: 400; stroke-dashoffset: 400; animation: crackDraw 220ms ease-out forwards; }
+.spades-crack-flash .crack-spade {
+  position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%) scale(0.6);
+  font-size: 3.2rem; color: #fff; text-shadow: 0 0 14px rgba(255, 213, 74, 0.9); animation: crackSpade 1.25s ease-out forwards;
+}
+@keyframes crackDraw { to { stroke-dashoffset: 0; } }
+@keyframes crackFade { 0% { opacity: 1; } 65% { opacity: 0.85; } 100% { opacity: 0; } }
+@keyframes crackSpade { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4); } }
