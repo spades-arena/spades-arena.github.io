@@ -3493,6 +3493,26 @@ body[data-device-frame="phone"] .trick-winner-banner { white-space: nowrap; max-
 @keyframes crackFade { 0% { opacity: 1; } 65% { opacity: 0.85; } 100% { opacity: 0; } }
 @keyframes crackSpade { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4); } }
 
+/* 🏆 2-second "won the trick" strip along the top of the table */
+.trick-win-strip {
+  position: fixed; z-index: 60; transform: translateX(-50%);
+  padding: 0.3rem 0.85rem; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-weight: 900; font-size: 0.85rem; color: #1a1405; pointer-events: none;
+  background: linear-gradient(180deg, #fff1c1, #ffd54a 50%, #d9a520);
+  box-shadow: 0 0 0 2px #0b0b0d, 0 0 16px rgba(255, 213, 74, 0.75), 0 6px 14px rgba(0, 0, 0, 0.55);
+  animation: stripIn 200ms ease-out both;
+  transition: opacity 250ms ease, transform 250ms ease;
+}
+.trick-win-strip.won-mine { box-shadow: 0 0 0 2px #0b0b0d, 0 0 0 4px #e3242b, 0 0 16px rgba(255, 213, 74, 0.75), 0 6px 14px rgba(0, 0, 0, 0.55); }
+.trick-win-strip.won-foe { box-shadow: 0 0 0 2px #0b0b0d, 0 0 0 4px #1877f2, 0 0 16px rgba(255, 213, 74, 0.6), 0 6px 14px rgba(0, 0, 0, 0.55); }
+.trick-win-strip.leaving { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+@keyframes stripIn { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@media (max-width: 440px) { .trick-win-strip { font-size: 0.74rem; } }
+
+/* Winner's name tag: BIG */
+.table-edge-seat.trick-winner-seat { transform: scale(1.4); z-index: 25; }
+.table-edge-seat.trick-winner-seat .edge-compass { color: #fff1c1; font-weight: 900; }
+
   </style>
 </head>
 <body data-device-frame="full">
@@ -5360,9 +5380,9 @@ body[data-device-frame="phone"] .trick-winner-banner { white-space: nowrap; max-
    * botBidMs / botPlayMs: how long a bot "thinks"; trickPauseMs: how long a finished trick stays on the mat.
    */
   const GAME_SPEEDS = {
-    relaxed: { label: 'Relaxed', botBidMs: 1000, botPlayMs: 1150, trickPauseMs: 1900 },
-    normal: { label: 'Normal', botBidMs: 550, botPlayMs: 600, trickPauseMs: 1400 }, // long enough to see who won the trick
-    fast: { label: 'Super Fast', botBidMs: 220, botPlayMs: 250, trickPauseMs: 900 } // super fast
+    relaxed: { label: 'Relaxed', botBidMs: 1000, botPlayMs: 1150, trickPauseMs: 2000 },
+    normal: { label: 'Normal', botBidMs: 550, botPlayMs: 600, trickPauseMs: 1700 }, // 1.5–2s so you can see who won the trick
+    fast: { label: 'Super Fast', botBidMs: 220, botPlayMs: 250, trickPauseMs: 1500 } // super fast play, but still 1.5s to see who won the trick
   };
 
   function getGameSpeed(id) {
@@ -8597,7 +8617,7 @@ if (typeof module === 'object' && module.exports) {
 
   const OFFLINE_GAME_KEY = 'spades_royale_offline_game_v2';
   const REDEAL_COST = 350; // 🦁 to redeal only your own hand (offline, before you bid)
-  const LOADING_SCREEN_MS = 5000; // opening screen
+  const LOADING_SCREEN_MS = 3000; // opening screen (3 seconds)
   // Release builds get their version stamped in by bundle.py (SPADES_APP_VERSION); 'dev' = local copy
   const APP_VERSION = 'dev';
   const UPDATE_SITE = 'https://spades-royale.github.io';
@@ -9994,6 +10014,7 @@ if (typeof module === 'object' && module.exports) {
         const winnerSeat = SH.resolveTrickWinner(this.game.currentTrick);
         this.game.lastTrickWinner = winnerSeat;
         this.renderGameScreen();
+        this.showTrickWinBanner(winnerSeat);
 
         const pauseMs = this.getPace().trickPauseMs;
         this.botTimer = setTimeout(() => {
@@ -10554,9 +10575,12 @@ if (typeof module === 'object' && module.exports) {
           break;
         case 'trick_won':
         case 'round_over':
-        case 'game_over':
+        case 'game_over': {
           SH.audio.trickWin();
+          const wv = this.game && this.game.players.find(pl => pl.serverSeat === ev.seat);
+          if (wv) this.showTrickWinBanner(wv.seat);
           break;
+        }
         case 'player_disconnected':
         case 'player_quit':
         case 'player_away':
@@ -10830,12 +10854,6 @@ if (typeof module === 'object' && module.exports) {
             <div class="hand-caption">
               ${g.local ? `${esc(g.viewerName)}’s Hand` : 'Your Hand'} (${human.hand.length})
               ${g.phase === 'playing' && g.turnSeat === 0 && !handHidden ? '<span class="legal-hint-badge">Tap glowing card</span>' : ''}
-              ${g.phase === 'trick_pause' && g.players[g.lastTrickWinner] ? (() => {
-                const w = g.lastTrickWinner;
-                const nm = String(g.players[w].name || '').replace(/ \(Bot\)$/, '');
-                const label = w === 0 && !g.local ? 'You won the trick' : (!solo && w === 2 && !g.local ? `${esc(nm)} (partner) won it` : `${esc(nm)} won it`);
-                return `<span class="trick-won-note ${solo ? '' : (w % 2 === 0 ? 'won-mine' : 'won-foe')}">🏆 ${label}</span>`;
-              })() : ''}
               ${g.online && g.turnDeadline && g.turnSeat === 0 && (g.phase === 'bidding' || g.phase === 'playing')
                 ? `<span class="turn-timer" id="turn-timer">⏱ ${Math.max(0, Math.ceil((g.turnDeadline - Date.now()) / 1000))}s</span>` : ''}
             </div>
@@ -12109,6 +12127,29 @@ if (typeof module === 'object' && module.exports) {
       requestAnimationFrame(() => pop.classList.add('visible'));
       // Not answered in 8s → it stays in Friends → Requests
       pop._timer = setTimeout(done, 8000);
+    }
+
+    /** 🏆 Slim 2-second banner along the top of the table: "Ezra won the trick" (never covers the cards). */
+    showTrickWinBanner(seat) {
+      if (typeof document === 'undefined' || !this.game || !this.game.players[seat]) return;
+      const g = this.game;
+      const solo = (g.numSeats || 4) === 3;
+      const name = String(g.players[seat].name || '').replace(/ \(Bot\)$/, '');
+      const text = seat === 0 && !g.local ? 'You won the trick!' : (!solo && seat === 2 && !g.local ? `${name} (your partner) won the trick` : `${name} won the trick`);
+      document.querySelectorAll('.trick-win-strip').forEach(el => el.remove());
+      setTimeout(() => {
+        const felt = document.querySelector('.felt-arena');
+        if (!felt) return;
+        const r = felt.getBoundingClientRect();
+        const el = document.createElement('div');
+        el.className = `trick-win-strip ${solo ? '' : (seat % 2 === 0 ? 'won-mine' : 'won-foe')}`;
+        el.setAttribute('role', 'status');
+        el.style.cssText = `left:${r.left + r.width / 2}px;top:${r.top + 8}px;max-width:${Math.max(160, r.width - 24)}px`;
+        el.textContent = `🏆 ${text}`;
+        document.body.appendChild(el);
+        setTimeout(() => el.classList.add('leaving'), 1750);
+        setTimeout(() => el.remove(), 2000);
+      }, 20);
     }
 
     /** 💥 Quick crack lines over the table when spades are broken (fades in ~1s, never blocks taps). */

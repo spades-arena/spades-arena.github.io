@@ -59,7 +59,7 @@ try {
   await shot(A, '01-loading');
   await waitScreen(A, 'screen-login', 9000);
   const loadMs = Date.now() - t0;
-  ok(loadMs >= 4800, `opening screen lasts 5 seconds (${(loadMs / 1000).toFixed(1)}s) and can't be skipped`);
+  ok(loadMs >= 2800 && loadMs < 4500, `opening screen lasts 3 seconds (${(loadMs / 1000).toFixed(1)}s) and can't be skipped`);
 
   // 2) Login is mandatory and the login page has no other buttons
   const login = await A.evaluate(() => ({
