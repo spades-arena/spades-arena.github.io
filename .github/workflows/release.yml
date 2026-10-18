@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VERSION: 2.0.${{ github.run_number }}
+  VERSION: 3.0.${{ github.run_number }}
   # Set this repo variable once the free Render server is up, e.g. wss://spades-royale.onrender.com/ws
   SPADES_SERVER_URL: ${{ vars.SPADES_SERVER_URL }}
 
