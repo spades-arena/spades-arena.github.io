@@ -117,3 +117,19 @@
   - a **green theme "like real Spades"** for v2;
   - "make the app fresh": ask whether that means a fresh look, or wiping all accounts. **Don't wipe without confirming.**
 - Server code didn't change since the v1.0.13 Render deploy, so Render is up to date (the user may redeploy anyway).
+
+## v3.0.20 — live 19 Oct 2026 (apps + website + Render all updated)
+- Version numbers are now **3.0.<build>**.
+  - Never go back to a lower number: update checks and the server's minimum version both compare numbers.
+- **Required updates:**
+  - Apps from v2.0.17 on show a full-screen update message with no "Later" button.
+  - The server rejects logins from apps older than `MIN_APP_VERSION` (default **2.0.17**, in `server/server.js`; set the env var `''` to turn it off).
+- **Cards:** sized from the screen height (`--card-h`). Phones use 2 non-overlapping rows (7 + 6), so each card is about 48px wide for a finger. The table is shorter.
+- **Trick winner:** a slim 2-second strip at the top of the table says who won. The winner's name tag turns gold (no pop-out, as the user asked) and the winning card gets a gold glow and 👑.
+  - The user REJECTED a big banner in the middle of the table, and a pop-out name.
+  - The pause after each trick is 1.5–2s on every speed.
+- **Spades broken:** crack + glass-shatter sound, and crack lines flash over the table for about 1s.
+- **Opening screen:** 3 seconds.
+- **Colours:** red is the main colour (your team shows as Red). It's display-only: internal team ids are still 'blue' (seats 0/2) and 'red'.
+- **2-player rooms:** the host picks Play Together or Play Against Each Other, and teams are locked.
+- **Still to do:** green "real Spades" theme (asked for, not started); Render Deploy Hook.
