@@ -103,3 +103,17 @@
 - The project memory is in `~/.claude/projects/-Users-hadzz-Documents-Spades/memory/`.
 - The user wants free-only services and quick, autonomous work: test, push, then reinstall on the Mac.
 - The GitHub CLI login lives in that session's scratchpad. In a new session, log in again with `gh auth login --web` (device code).
+
+## Session end — 18 Oct 2026 (late)
+- Uploaded **v2.0.15**:
+  - red-first team colours (your team is shown as Red);
+  - 2-player rooms: Play Together / Play Against Each Other, with teams locked;
+  - VIP welcome on Home;
+  - bigger hand and table cards with a gold glow on playable cards;
+  - owner balance shows 1B;
+  - small-phone top bar fix.
+- ⚠️ The **test suites were NOT run on the v2 changes**: the user stopped the run. Run all of `tests/*.mjs` first next time.
+- Requested but **not started**:
+  - a **green theme "like real Spades"** for v2;
+  - "make the app fresh": ask whether that means a fresh look, or wiping all accounts. **Don't wipe without confirming.**
+- Server code didn't change since the v1.0.13 Render deploy, so Render is up to date (the user may redeploy anyway).
