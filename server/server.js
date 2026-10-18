@@ -481,6 +481,23 @@ function validateCredentials(conn, username, password) {
 
 const PIN_RE = /^\d{4}$/;
 
+// Players on old app versions must update before logging in (MIN_APP_VERSION='' turns this off).
+const MIN_APP_VERSION = process.env.MIN_APP_VERSION === undefined ? '2.0.17' : process.env.MIN_APP_VERSION;
+function versionTooOld(v) {
+  if (!MIN_APP_VERSION) return false;
+  if (v === 'dev') return false; // local test copies
+  if (typeof v !== 'string' || !/^\d+(\.\d+)*$/.test(v)) return true; // apps from before version checks
+  const a = v.split('.').map(Number);
+  const b = MIN_APP_VERSION.split('.').map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) < (b[i] || 0);
+  }
+  return false;
+}
+function requireUpdate(conn) {
+  sendError(conn, 'update_required', '✨ A new version of Spades Royale is out! Please update to keep playing — download it at spades-royale.github.io (your account, Lions & Diamonds are safe).', 'auth');
+}
+
 /** Recovery PIN (any 4 digits) — stored hashed like a password; used only to reset a forgotten password. */
 function setPin(user, pin) {
   user.pinSalt = crypto.randomBytes(16).toString('hex');
@@ -520,6 +537,7 @@ function authLocked(conn, key) {
 
 /** Forgot password: username + recovery PIN → new password; all old logins are signed out. */
 function handleReset(conn, msg) {
+  if (versionTooOld(msg.appVersion)) return requireUpdate(conn);
   const username = String(msg.username || '').trim();
   const key = username.toLowerCase();
   if (authLocked(conn, key)) return;
@@ -544,6 +562,7 @@ function handleReset(conn, msg) {
 }
 
 function handleRegister(conn, msg) {
+  if (versionTooOld(msg.appVersion)) return requireUpdate(conn);
   const username = String(msg.username || '').trim();
   const password = msg.password;
   if (!validateCredentials(conn, username, password)) return;
@@ -575,6 +594,7 @@ function handleRegister(conn, msg) {
 }
 
 function handleLogin(conn, msg) {
+  if (versionTooOld(msg.appVersion)) return requireUpdate(conn);
   const username = String(msg.username || '').trim();
   const key = username.toLowerCase();
   const fails = loginFailures.get(key);
@@ -597,6 +617,7 @@ function handleLogin(conn, msg) {
 
 /** Resumes a saved login session (app reopen / reconnect). */
 function handleHello(conn, msg) {
+  if (versionTooOld(msg.appVersion)) return requireUpdate(conn);
   const user = getUser(sessionIndex.get(hashToken(String(msg.session || ''))));
   if (!user) return sendError(conn, 'session_expired', 'Your login session has expired. Please log in again.', 'auth');
   if (msg.avatar) user.avatar = String(msg.avatar).slice(0, 40);

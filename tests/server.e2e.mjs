@@ -23,7 +23,7 @@ const ok = (cond, label) => { console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}`)
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 const server = spawn(process.execPath, [path.join(ROOT, 'server/server.js')], {
-  env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', DATA_DIR, SPADES_FAST_TIMERS: '1', SPADES_MSG_LIMIT: '100000', SPADES_TURN_MS: '1500' },
+  env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', DATA_DIR, SPADES_FAST_TIMERS: '1', MIN_APP_VERSION: '', SPADES_MSG_LIMIT: '100000', SPADES_TURN_MS: '1500' },
   stdio: ['ignore', 'pipe', 'pipe']
 });
 let serverLog = '';

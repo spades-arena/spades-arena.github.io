@@ -159,7 +159,7 @@ jobs:
           touch _site/.nojekyll
           base="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download"
           cat > _site/version.json <<JSON
-          {"version": "${VERSION}", "downloads": {"android": "${base}/Spades-Royale.apk", "windows": "${base}/Spades-Royale-Windows-Setup.exe", "mac": "${base}/Spades-Royale-Mac.dmg"}}
+          {"version": "${VERSION}", "minVersion": "${VERSION}", "downloads": {"android": "${base}/Spades-Royale.apk", "windows": "${base}/Spades-Royale-Windows-Setup.exe", "mac": "${base}/Spades-Royale-Mac.dmg"}}
           JSON
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

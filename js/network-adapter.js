@@ -60,6 +60,7 @@
     bad_credentials: 'Login Failed',
     no_pin: 'No Recovery PIN',
     bad_pin: 'PIN Must Be 4 Numbers',
+    update_required: 'Update Spades Royale',
     weak_password: 'Password Too Short',
     locked: 'Account Temporarily Locked',
     session_expired: 'Session Expired',
@@ -396,7 +397,7 @@
       }
       const p = SH.store ? SH.store.getProfile() : null;
       this.avatarSentFor = p ? p.selectedAvatar : null;
-      this.send('hello', { session: this.prefs.session, avatar: p ? publicAvatar(p.selectedAvatar) : undefined });
+      this.send('hello', { session: this.prefs.session, avatar: p ? publicAvatar(p.selectedAvatar) : undefined, appVersion: SH.APP_VERSION || 'dev' });
     }
 
     // ------------------------------------------------------------ accounts
@@ -447,7 +448,7 @@
       this.prefs.username = name;
       this.state.savedUsername = name;
       savePrefs(this.prefs);
-      this.send(type, { ...extra, username: name, password: String(password || ''), avatar: p ? publicAvatar(p.selectedAvatar) : undefined });
+      this.send(type, { ...extra, username: name, password: String(password || ''), avatar: p ? publicAvatar(p.selectedAvatar) : undefined, appVersion: SH.APP_VERSION || 'dev' });
       this.emit();
     }
 
@@ -800,6 +801,13 @@
     handleError(msg) {
       const code = msg.code;
       const scope = msg.scope || 'lobby';
+
+      if (code === 'update_required') {
+        this.state.authBusy = false;
+        this.fire('update_required', { message: msg.message || '' });
+        this.emit();
+        return;
+      }
 
       if (scope === 'game') {
         this.fire('game_error', msg);

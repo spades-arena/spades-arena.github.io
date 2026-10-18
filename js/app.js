@@ -146,6 +146,7 @@
       net.on('chat', (msg) => this.handleOnlineChat(msg));
       net.on('notice', (n) => this.showToast(n.message, n.tone));
       net.on('friend_request', (req) => this.showFriendRequestPopup(req));
+      net.on('update_required', () => this.checkForUpdate(true));
       net.on('account_result', ({ ok, message }) => {
         if (!ok) SH.audio.notEnoughFunds();
         this.showToast(message, ok ? 'success' : 'error');
@@ -228,10 +229,14 @@
       return null;
     }
 
-    /** Installed apps check the website for a newer version and offer the right download. */
-    checkForUpdate() {
+    /** Installed apps check the website for a newer version; updating is required (no "Later"). */
+    checkForUpdate(forced = false) {
       const platform = this.installedPlatform();
-      if (!platform || APP_VERSION === 'dev' || typeof fetch !== 'function') return;
+      if (!platform) {
+        if (forced && typeof location !== 'undefined') this.showUpdateRequired(null, null); // website: just reload
+        return;
+      }
+      if ((APP_VERSION === 'dev' && !forced) || typeof fetch !== 'function') return;
       const newer = (a, b) => {
         const pa = String(a).split('.').map(Number);
         const pb = String(b).split('.').map(Number);
@@ -243,20 +248,42 @@
       fetch(`${UPDATE_SITE}/version.json?t=${Date.now()}`, { cache: 'no-store' })
         .then(r => (r.ok ? r.json() : null))
         .then((info) => {
-          if (!info || !info.version || !newer(info.version, APP_VERSION) || !info.downloads || !info.downloads[platform]) return;
-          if (this.currentScreen === 'game') return; // don't interrupt a game — ask next time
-          this.showChoiceDialog({
-            title: `✨ Update available — v${info.version}`,
-            message: platform === 'android'
-              ? `You have v${APP_VERSION}. Download the new version, then open it and tap Install — your account, Lions and Diamonds stay.`
-              : `You have v${APP_VERSION}. Download and install the new version — your account, Lions and Diamonds stay.`,
-            actions: [
-              { label: 'Download update', tone: 'yes', onClick: () => { location.href = info.downloads[platform]; } },
-              { label: 'Later', tone: 'no' }
-            ]
-          });
+          if (!info || !info.version || !info.downloads || !info.downloads[platform]) return;
+          if (!forced && !newer(info.version, APP_VERSION)) return;
+          if (!forced && this.currentScreen === 'game') { // don't interrupt a game — ask as soon as it ends
+            this.pendingUpdateCheck = true;
+            return;
+          }
+          this.showUpdateRequired(info, platform);
         })
-        .catch(() => { /* offline — check again next time */ });
+        .catch(() => {
+          if (forced) this.showUpdateRequired(null, platform);
+        });
+    }
+
+    /** Full-screen "please update" that can't be dismissed. */
+    showUpdateRequired(info, platform) {
+      if (typeof document === 'undefined' || document.querySelector('.update-required-overlay')) return;
+      const url = info && platform ? info.downloads[platform] : (platform ? 'https://spades-royale.github.io' : null);
+      const overlay = document.createElement('div');
+      overlay.className = 'choice-overlay update-required-overlay';
+      overlay.innerHTML = `
+        <div class="choice-card update-card" role="alertdialog" aria-modal="true" aria-label="Update required">
+          <div class="royale-logo update-logo" aria-hidden="true"></div>
+          <h3>✨ New version${info ? ` — v${esc(info.version)}` : ''}</h3>
+          <p>${platform
+            ? `Please update Spades Royale to keep playing. ${platform === 'android' ? 'Download it, open the file and tap <strong>Install</strong>.' : 'Download it and install it over this one.'} Your account, Lions, Diamonds and items stay.`
+            : 'A new version of Spades Royale is ready. Tap below to load it — your account stays.'}</p>
+          <p class="update-have">You have v${esc(APP_VERSION)}</p>
+          <div class="choice-actions"><button type="button" class="btn-yes" data-update-now>${platform ? '⬇️ Download update' : '🔄 Load the new version'}</button></div>
+        </div>
+      `;
+      overlay.querySelector('[data-update-now]').addEventListener('click', () => {
+        SH.audio.uiClick();
+        if (url) location.href = url;
+        else location.reload();
+      });
+      (document.querySelector('.android-device-shell') || document.body).appendChild(overlay);
     }
 
     bindGlobalNavigation() {
@@ -379,6 +406,10 @@
     }
 
     navigateTo(screen, forceFreshMatch = false) {
+      if (this.pendingUpdateCheck && screen !== 'game') {
+        this.pendingUpdateCheck = false;
+        setTimeout(() => this.checkForUpdate(), 400);
+      }
       // Logging in is required for everything
       if (screen !== 'loading' && screen !== 'login' && !SH.networkAdapter.isSignedIn()) {
         this.afterLoginScreen = screen === 'game' ? 'menu' : screen;
@@ -4507,6 +4538,7 @@
   }
 
   SH.SpadesApp = SpadesApp;
+  SH.APP_VERSION = APP_VERSION;
 
   function bootSpadesApp() {
     if (window.spadesApp) return;

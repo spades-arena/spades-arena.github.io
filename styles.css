@@ -3410,3 +3410,9 @@ body[data-device-frame="full"] .trick-slot .table-card { height: clamp(76px, 11.
 .player-hand-row.two-rows .hand-card.card-legal-ready:hover,
 .player-hand-row.two-rows .hand-card.card-legal-ready:active { transform: translateY(-8px) scale(1.04); }
 .player-hand-row.two-rows .hand-card.card-illegal-dim { transform: none; }
+
+/* Update required */
+.update-required-overlay { z-index: 99999; background: rgba(0, 0, 0, 0.88); }
+.update-card { text-align: center; max-width: 380px; }
+.update-logo { width: 96px; height: 96px; margin: 0 auto 0.5rem; border-radius: 20px; }
+.update-have { font-size: 0.75rem; color: var(--text-muted); }
