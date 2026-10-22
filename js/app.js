@@ -397,7 +397,8 @@
       if (typeof document === 'undefined') return;
       const toast = document.getElementById('app-toast');
       if (!toast) return;
-      toast.className = `app-toast visible toast-${tone}`;
+      // During a game, messages show at the top so they never cover your cards
+      toast.className = `app-toast visible toast-${tone}${this.currentScreen === 'game' ? ' toast-top' : ''}`;
       toast.textContent = message;
       clearTimeout(this.toastTimer);
       this.toastTimer = setTimeout(() => {
@@ -1390,7 +1391,7 @@
         this.game.spadesBroken = true;
         SH.audio.spadeBroken();
         this.flashSpadesCracked();
-        this.showToast('💥 Spades are cracked! ♠ Spades can now be led.', 'info');
+        this.showToast('💥 Spades are cracked!', 'info');
       } else {
         SH.audio.cardPlay();
       }
@@ -1962,7 +1963,7 @@
         case 'spades_broken':
           SH.audio.spadeBroken();
           this.flashSpadesCracked();
-          this.showToast('💥 Spades are cracked! ♠ Spades can now be led.', 'info');
+          this.showToast('💥 Spades are cracked!', 'info');
           break;
         case 'trick_won':
         case 'round_over':

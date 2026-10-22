@@ -3548,3 +3548,6 @@ body[data-device-frame="phone"] .trick-winner-banner { white-space: nowrap; max-
 .player-hand-row.two-rows .hand-card.card-legal-ready { z-index: auto; }
 .player-hand-row.two-rows .hand-card.card-legal-ready:hover,
 .player-hand-row.two-rows .hand-card.card-legal-ready:active { z-index: 12; }
+/* In a game: messages appear just under the score bar, never over your hand */
+.app-toast.toast-top { bottom: auto; top: 62px; max-width: calc(100vw - 32px); white-space: normal; text-align: center; }
+.app-toast.toast-top { font-size: 0.74rem; padding: 0.4rem 0.8rem; }

@@ -169,19 +169,16 @@
 
   /**
    * Card face — simple classic style: a big bold serif letter top-left with the suit under it,
-   * and one large suit (or a gold crown on J/Q/K) at the bottom-right. Clean white card.
+   * and one large suit at the bottom-right. Clean white card.
    * Sizes use container units, so it looks the same at every card size; colours come from the
    * card design's CSS variables, so every design in the Shop still restyles it.
    */
   function renderModernCardInnerHTML(card) {
-    const isCourt = card.rank >= 11 && card.rank <= 13;
-    const big = isCourt
-      ? `<svg class="sc-crown" viewBox="0 0 100 48" aria-hidden="true">${COURT_CROWN[card.rank]}</svg>${suitSVG(card.suit, 'sc-court-suit')}`
-      : suitSVG(card.suit, 'sc-big-suit');
+    const big = suitSVG(card.suit, 'sc-big-suit'); // same plain big suit on every card (no crowns)
     return `
       <div class="pc-face sc-face ${card.label === '10' ? 'sc-ten' : ''}">
         <div class="sc-corner"><span class="sc-rank">${card.label}</span>${suitSVG(card.suit, 'sc-corner-suit')}</div>
-        <div class="sc-big ${isCourt ? 'sc-big-court' : ''} ${card.rank === 14 ? 'sc-big-ace' : ''}">${big}</div>
+        <div class="sc-big ${card.rank === 14 ? 'sc-big-ace' : ''}">${big}</div>
       </div>
     `;
   }
