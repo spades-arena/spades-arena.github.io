@@ -3690,3 +3690,5 @@ body[data-device-frame="phone"] .player-hand-row.two-rows .tc-ten .tc-rank { fon
 body[data-device-frame="phone"] .player-hand-row.two-rows .tc-csuit { width: 16cqh; height: 16cqh; }
 /* Phones, 2 rows: slightly smaller cards → bigger table */
 body[data-device-frame="phone"] .player-hand-row.two-rows { --card-h: clamp(94px, 13.5vh, 120px); }
+/* Number cards: one big centred suit */
+.tc-one-suit { width: 44cqw; height: 44cqw; }
