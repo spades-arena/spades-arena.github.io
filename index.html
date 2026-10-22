@@ -3702,6 +3702,8 @@ body[data-device-frame="phone"] .player-hand-row.two-rows .tc-tl { left: 5%; top
 body[data-device-frame="phone"] .player-hand-row.two-rows .tc-rank { font-size: 22cqh; }
 body[data-device-frame="phone"] .player-hand-row.two-rows .tc-ten .tc-rank { font-size: 18cqh; }
 body[data-device-frame="phone"] .player-hand-row.two-rows .tc-csuit { width: 16cqh; height: 16cqh; }
+/* Phones, 2 rows: slightly smaller cards → bigger table */
+body[data-device-frame="phone"] .player-hand-row.two-rows { --card-h: clamp(94px, 13.5vh, 120px); }
 
   </style>
 </head>
