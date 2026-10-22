@@ -1,8 +1,8 @@
 {
   "name": "spades-royale",
-  "productName": "Spades Royale",
+  "productName": "Spades Arena",
   "version": "1.0.0",
-  "description": "Spades Royale \u2014 Play. Win. Rule. Made by Hadzz.",
+  "description": "Spades Arena \u2014 Play. Win. Rule. Made by Hadzz.",
   "author": "Hadzz",
   "main": "main.js",
   "private": true,
@@ -17,7 +17,7 @@
   },
   "build": {
     "appId": "com.hadzz.spadesroyale",
-    "productName": "Spades Royale",
+    "productName": "Spades Arena",
     "copyright": "Made by Hadzz",
     "files": [
       "main.js",
@@ -41,8 +41,8 @@
       "identity": null
     },
     "dmg": {
-      "title": "Spades Royale",
-      "artifactName": "Spades-Royale-Mac.${ext}"
+      "title": "Spades Arena",
+      "artifactName": "Spades-Arena-Mac.${ext}"
     },
     "win": {
       "target": [
@@ -58,8 +58,8 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "Spades Royale",
-      "artifactName": "Spades-Royale-Windows-Setup.${ext}"
+      "shortcutName": "Spades Arena",
+      "artifactName": "Spades-Arena-Windows-Setup.${ext}"
     }
   }
 }

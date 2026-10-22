@@ -1,5 +1,5 @@
 /**
- * Spades Royale - Avatar Definitions & Procedural SVG Builder
+ * Spades Arena - Avatar Definitions & Procedural SVG Builder
  * 5 Free + 10 Classic (30 🦁) + 5 Legendary (60–100 🦁) + 8 Mythic (150–1000 🦁) + 6 Diamond (5–25 💎)
  * plus the player's own gallery photo ('photo').
  */
@@ -8,6 +8,15 @@
 
   const AVATARS = [
     // 5 Free Avatars (everyone owns these)
+    // THE ARENA SHOP — realistic portrait avatars (images in assets/avatars, embedded by the bundler)
+    { id: 'av_panther', name: 'Black Panther', tier: 'free', price: 0, image: 'assets/avatars/av_panther.webp', bg: '#050706', fg: '#2bff88', icon: 'spade_crown', arena: true },
+    { id: 'av_champion', name: 'The Champion', tier: 'arena', price: 100, image: 'assets/avatars/av_champion.webp', bg: '#050706', fg: '#2bff88', icon: 'spade_crown', arena: true },
+    { id: 'av_strategist', name: 'The Strategist', tier: 'arena', price: 200, image: 'assets/avatars/av_strategist.webp', bg: '#050706', fg: '#2bff88', icon: 'spade_crown', arena: true },
+    { id: 'av_veteran', name: 'The Veteran', tier: 'arena', price: 300, image: 'assets/avatars/av_veteran.webp', bg: '#050706', fg: '#2bff88', icon: 'spade_crown', arena: true },
+    { id: 'av_ace', name: 'The Ace', tier: 'arena', price: 450, image: 'assets/avatars/av_ace.webp', bg: '#050706', fg: '#2bff88', icon: 'spade_crown', arena: true },
+    { id: 'av_phantom', name: 'The Phantom', tier: 'arena', price: 650, image: 'assets/avatars/av_phantom.webp', bg: '#050706', fg: '#2bff88', icon: 'spade_crown', arena: true },
+    { id: 'av_elite', name: 'The Elite', tier: 'arena', price: 900, image: 'assets/avatars/av_elite.webp', bg: '#050706', fg: '#2bff88', icon: 'spade_crown', arena: true },
+    { id: 'av_legend', name: 'The Arena Legend', tier: 'arena', price: 1500, image: 'assets/avatars/av_legend.webp', bg: '#050706', fg: '#2bff88', icon: 'spade_crown', arena: true },
     { id: 'free_ace', name: 'Ace Spade', tier: 'free', price: 0, bg: '#133a27', fg: '#f0c36d', icon: 'spade_crown' },
     { id: 'free_knight', name: 'Royal Knight', tier: 'free', price: 0, bg: '#1e3545', fg: '#82c8f7', icon: 'shield' },
     { id: 'free_velvet', name: 'Emerald Fox', tier: 'free', price: 0, bg: '#1b4d34', fg: '#76e0a8', icon: 'fox' },
@@ -39,7 +48,7 @@
     { id: 'myth_robot', name: 'Cyber Bot', tier: 'mythic', price: 250, bg: '#062a33', fg: '#22d3ee', icon: 'robot' },
     { id: 'myth_tiger', name: 'Neon Tiger', tier: 'mythic', price: 300, bg: '#2a1204', fg: '#fb923c', icon: 'tiger' },
     { id: 'myth_king', name: 'Diamond King', tier: 'mythic', price: 400, bg: '#1a0b2e', fg: '#facc15', icon: 'diamond_king' },
-    { id: 'myth_lion', name: 'Golden Lion', tier: 'mythic', price: 500, bg: '#2b1a03', fg: '#fbbf24', icon: 'lion' },
+    { id: 'myth_lion', name: 'Golden Coin', tier: 'mythic', price: 500, bg: '#2b1a03', fg: '#fbbf24', icon: 'lion' },
     { id: 'myth_wizard', name: 'Arcane Wizard', tier: 'mythic', price: 750, bg: '#12083a', fg: '#a78bfa', icon: 'wizard' },
     { id: 'myth_cat', name: 'Hadzz Cat in a Hat', tier: 'mythic', price: 1000, bg: '#05301c', fg: '#f4a259', icon: 'cat_hat' },
 
@@ -307,7 +316,16 @@
    * Any avatar, including the player's own gallery photo ('photo' → their saved picture,
    * shown only on their own device; other players see their chosen fallback).
    */
+  // Realistic portrait avatars: shown as a round photo (falls back to the drawn style if the image is missing)
+  const AVATAR_BY_ID = new Map(AVATARS.map(a => [a.id, a]));
+  function renderImageAvatar(av, size) {
+    if (!av || !av.image || !/^data:image\/webp;base64,/.test(av.image)) return null; // only when the picture is embedded
+    return `<img class="avatar-photo avatar-portrait" src="${av.image}" width="${size}" height="${size}" alt="" draggable="false" style="width:${size}px;height:${size}px"/>`;
+  }
+
   function renderAvatar(avatarId, size = 56, photoUrl = null) {
+    const portrait = renderImageAvatar(AVATAR_BY_ID.get(avatarId), size);
+    if (portrait) return portrait;
     if (avatarId === 'photo') {
       const url = photoUrl || (SH.store && SH.store.getProfile().photo);
       if (url && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(url)) {
@@ -320,5 +338,5 @@
 
   SH.AVATARS = AVATARS;
   SH.renderAvatarSVG = renderAvatar; // photo-aware (all screens use this)
-  SH.renderAvatarArt = renderAvatarSVG;
+  SH.renderAvatarArt = (id, size) => renderImageAvatar(AVATAR_BY_ID.get(id), size) || renderAvatarSVG(id, size);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

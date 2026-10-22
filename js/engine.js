@@ -142,7 +142,7 @@
   }
 
   /**
-   * Spades Royale premium deck — professional suit shapes (100×100 artboard), drawn as SVG
+   * Spades Arena premium deck — professional suit shapes (100×100 artboard), drawn as SVG
    * so they look identical on every phone (no emoji / font glyph differences).
    */
   const SUIT_SVG_BODY = {
@@ -193,10 +193,10 @@
    */
   function renderModernCardInnerHTML(card) {
     const corner = (pos) => `<div class="tc-corner tc-${pos}"><span class="tc-rank">${card.label}</span>${suitSVG(card.suit, 'tc-csuit')}</div>`;
-    // Every card is simple: letter + suit in two corners, one big suit symbol in the middle
+    // Simple faces: letter + suit in two corners and one big suit symbol (J/Q/K included)
     const middle = card.rank === 14
-      ? `<div class="tc-ace">${suitSVG(card.suit, 'tc-ace-suit')}</div>`
-      : `<div class="tc-ace tc-one">${suitSVG(card.suit, 'tc-one-suit')}</div>`;
+        ? `<div class="tc-ace">${suitSVG(card.suit, 'tc-ace-suit')}</div>`
+        : `<div class="tc-ace tc-one">${suitSVG(card.suit, 'tc-one-suit')}</div>`;
     return `
       <div class="pc-face tc-face ${card.label === '10' ? 'tc-ten' : ''}">
         ${corner('tl')}${middle}${corner('br')}
@@ -206,9 +206,36 @@
 
 
 
-  /** Card designs: one free, five sold in the Profile shop for 🦁 Lions. */
+  /**
+   * THE ARENA SHOP — 3 categories × (8 items + 2 Coming Soon). Change prices here (coins);
+   * item 1 of each category is free, items 2–8 rise in price.
+   */
+  const SHOP_PRICES = {
+    tables: [0, 150, 300, 500, 800, 1200, 1800, 3000],
+    cards: [0, 100, 200, 350, 500, 750, 1100, 2000],
+    avatars: [0, 100, 200, 300, 450, 650, 900, 1500]
+  };
+  const SHOP_CATALOG = {
+    tables: ['emerald', 'arena_gold', 'arena_crimson', 'arena_arctic', 'arena_purple', 'arena_inferno', 'arena_shadow', 'arena_panther'],
+    cards: ['classic', 'cd_gold', 'cd_crimson', 'cd_ocean', 'cd_purple', 'cd_silver', 'cd_shadow', 'cd_panther'],
+    avatars: ['av_panther', 'av_champion', 'av_strategist', 'av_veteran', 'av_ace', 'av_phantom', 'av_elite', 'av_legend']
+  };
+  const SHOP_COMING_SOON = {
+    tables: ['Arena X', 'Champions Arena'],
+    cards: ['Diamond Edition', 'Champions Edition'],
+    avatars: ['The Commander', 'The Legend Returns']
+  };
+
+  /** Card designs: one free, five sold in the Profile shop for 🦁 Coins. */
   const CARD_SKINS = [
-    { id: 'classic', name: 'Royale Classic', price: 0, desc: 'Clean white classic cards — simple & easy to read' },
+    { id: 'classic', name: 'Classic White', price: 0, desc: 'Traditional white cards with a clean back' },
+    { id: 'cd_gold', name: 'Royal Gold', price: SHOP_PRICES.cards[1], desc: 'White faces, elegant gold-accented backs', shop: true },
+    { id: 'cd_crimson', name: 'Crimson Red', price: SHOP_PRICES.cards[2], desc: 'Deep-red card backs', shop: true },
+    { id: 'cd_ocean', name: 'Ocean Blue', price: SHOP_PRICES.cards[3], desc: 'Rich-blue card backs', shop: true },
+    { id: 'cd_purple', name: 'Royal Purple', price: SHOP_PRICES.cards[4], desc: 'Dark-purple card backs', shop: true },
+    { id: 'cd_silver', name: 'Silver Steel', price: SHOP_PRICES.cards[5], desc: 'Metallic silver card backs', shop: true },
+    { id: 'cd_shadow', name: 'Shadow Black', price: SHOP_PRICES.cards[6], desc: 'Black backs with charcoal accents', shop: true },
+    { id: 'cd_panther', name: 'Emerald Panther', price: SHOP_PRICES.cards[7], desc: 'Black & emerald backs with a spade emblem', shop: true },
     { id: 'frost', name: 'Frost Pearl', price: 200, desc: 'Pearl white with icy sapphire & violet' },
     { id: 'nebula', name: 'Neon Nebula', price: 400, desc: 'Deep-space purple with neon cyan & pink' },
     { id: 'obsidian', name: 'Obsidian Emerald', price: 600, desc: 'Black card with glowing emerald & coral' },
@@ -216,9 +243,19 @@
     { id: 'vip', name: 'VIP Black Gold', price: 1000, desc: 'Pure black, gold symbols & letters — VIP only' }
   ];
 
-  /** Table colours: the classic green felt is free, the rest are sold in the Shop for 🦁 Lions. */
+  // Avatar prices also come from SHOP_PRICES (avatars.js loads first)
+  if (SH.AVATARS) SHOP_CATALOG.avatars.forEach((id, i) => { const a = SH.AVATARS.find(x => x.id === id); if (a) a.price = SHOP_PRICES.avatars[i]; });
+
+  /** Table colours: the classic green felt is free, the rest are sold in the Shop for 🦁 Coins. */
   const TABLE_THEMES = [
-    { id: 'emerald', name: 'Classic Green', price: 0, desc: 'The real Spades table — bright green felt', swatch: ['#2f9a4a', '#145a2a'] },
+    { id: 'emerald', name: 'Classic Arena', price: 0, desc: 'Clean dark-green felt with subtle black borders', swatch: ['#1c6b3e', '#0a2c18'] },
+    { id: 'arena_gold', name: 'Royal Gold', price: SHOP_PRICES.tables[1], desc: 'Rich black surface with refined gold edges', swatch: ['#1a1a1c', '#000'], shop: true },
+    { id: 'arena_crimson', name: 'Crimson Arena', price: SHOP_PRICES.tables[2], desc: 'Deep burgundy with dark metallic trim', swatch: ['#5a0f1c', '#1c0307'], shop: true },
+    { id: 'arena_arctic', name: 'Arctic Steel', price: SHOP_PRICES.tables[3], desc: 'Silver, charcoal & icy-blue accents', swatch: ['#3b4a57', '#0e141a'], shop: true },
+    { id: 'arena_purple', name: 'Midnight Purple', price: SHOP_PRICES.tables[4], desc: 'Dark purple with subtle luminous details', swatch: ['#2e1450', '#0c0418'], shop: true },
+    { id: 'arena_inferno', name: 'Inferno Arena', price: SHOP_PRICES.tables[5], desc: 'Deep black with controlled orange-red light', swatch: ['#2a0c05', '#050202'], shop: true },
+    { id: 'arena_shadow', name: 'Shadow Arena', price: SHOP_PRICES.tables[6], desc: 'Matte black, charcoal texture, restrained green', swatch: ['#1a1d1b', '#060707'], shop: true },
+    { id: 'arena_panther', name: 'Panther Elite', price: SHOP_PRICES.tables[7], desc: 'Obsidian, emerald-lit edges & a central spade emblem', swatch: ['#0b130f', '#000'], shop: true },
     { id: 'midnight', name: 'Midnight Black', price: 100, desc: 'Sleek black felt with a gold rail', swatch: ['#2a2a2e', '#050506'] },
     { id: 'royal', name: 'Royal Blue', price: 150, desc: 'Deep sapphire felt fit for a king', swatch: ['#1d4ed8', '#0b1a4a'] },
     { id: 'velvet', name: 'Red Velvet', price: 250, desc: 'Rich crimson velvet, high-roller style', swatch: ['#9f1239', '#3b0614'] },
@@ -473,6 +510,9 @@
     renderSuitVector,
     CARD_SKINS,
     TABLE_THEMES,
+    SHOP_PRICES,
+    SHOP_CATALOG,
+    SHOP_COMING_SOON,
     validateCardPlay,
     getLegalCards,
     resolveTrickWinner,

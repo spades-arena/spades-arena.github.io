@@ -1,4 +1,4 @@
-# Builds Spades Royale for Android, Windows and Mac on GitHub's free servers,
+# Builds Spades Arena for Android, Windows and Mac on GitHub's free servers,
 # publishes them as a GitHub Release, and deploys the download site to GitHub Pages.
 # Runs on every push to main, or by hand from the Actions tab ("Run workflow").
 name: Build & Release
@@ -18,7 +18,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VERSION: 3.0.${{ github.run_number }}
+  # Hidden build number (always rises, so update checks work): 4.0.<run>
+  VERSION: 4.0.${{ github.run_number }}
+  # Public version shown to players: Spades Arena v1.0.0 = the first Arena build (run 28)
+  DISPLAY_BASE_RUN: 28
   # Set this repo variable once the free Render server is up, e.g. wss://spades-royale.onrender.com/ws
   SPADES_SERVER_URL: ${{ vars.SPADES_SERVER_URL }}
 
@@ -26,10 +29,14 @@ jobs:
   web:
     runs-on: ubuntu-latest
     steps:
+      - name: Public version number
+        shell: bash
+        run: echo "DISPLAY_VERSION=1.0.$(( ${{ github.run_number }} - DISPLAY_BASE_RUN ))" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - name: Bundle the game
         env:
           SPADES_APP_VERSION: ${{ env.VERSION }}
+          SPADES_DISPLAY_VERSION: ${{ env.DISPLAY_VERSION }}
         run: |
           python3 bundle.py
           mkdir -p web/assets
@@ -44,6 +51,9 @@ jobs:
     needs: web
     runs-on: ubuntu-latest
     steps:
+      - name: Public version number
+        shell: bash
+        run: echo "DISPLAY_VERSION=1.0.$(( ${{ github.run_number }} - DISPLAY_BASE_RUN ))" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
@@ -67,20 +77,20 @@ jobs:
       - name: Build APK
         working-directory: android
         env:
-          VERSION_NAME: ${{ env.VERSION }}
+          VERSION_NAME: ${{ env.DISPLAY_VERSION }}
           VERSION_CODE: ${{ github.run_number }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           gradle assembleRelease --no-daemon
-          cp app/build/outputs/apk/release/app-release.apk ../Spades-Royale.apk
+          cp app/build/outputs/apk/release/app-release.apk ../Spades-Arena.apk
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          "$BT/apksigner" verify --print-certs ../Spades-Royale.apk | grep -i "SHA-256"
+          "$BT/apksigner" verify --print-certs ../Spades-Arena.apk | grep -i "SHA-256"
       - uses: actions/upload-artifact@v4
         with:
           name: android
-          path: Spades-Royale.apk
+          path: Spades-Arena.apk
 
   desktop:
     needs: web
@@ -89,14 +99,17 @@ jobs:
         include:
           - os: windows-latest
             target: dist:win
-            file: desktop/dist/Spades-Royale-Windows-Setup.exe
+            file: desktop/dist/Spades-Arena-Windows-Setup.exe
           - os: macos-latest
             target: dist:mac
-            file: desktop/dist/Spades-Royale-Mac.dmg
+            file: desktop/dist/Spades-Arena-Mac.dmg
     runs-on: ${{ matrix.os }}
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
+      - name: Public version number
+        shell: bash
+        run: echo "DISPLAY_VERSION=1.0.$(( ${{ github.run_number }} - DISPLAY_BASE_RUN ))" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
@@ -111,7 +124,7 @@ jobs:
         run: |
           cp ../assets/icon-512.png icon.png
           npm install --no-audit --no-fund
-          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          npm version "$DISPLAY_VERSION" --no-git-tag-version --allow-same-version
           npm run ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
@@ -122,22 +135,36 @@ jobs:
     needs: [android, desktop]
     runs-on: ubuntu-latest
     steps:
+      - name: Public version number
+        shell: bash
+        run: echo "DISPLAY_VERSION=1.0.$(( ${{ github.run_number }} - DISPLAY_BASE_RUN ))" >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v4
         with:
           path: out
           merge-multiple: true
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ env.VERSION }}
-          name: Spades Royale ${{ env.VERSION }}
+          tag_name: v${{ env.DISPLAY_VERSION }}
+          name: SPADES ARENA v${{ env.DISPLAY_VERSION }}
           make_latest: 'true'
           body: |
-            Spades Royale — Play. Win. Rule. Made by Hadzz.
-            Download for Android (.apk), Windows (.exe) or Mac (.dmg) below.
+            ## SPADES ARENA v${{ env.DISPLAY_VERSION }}
+            Premium. Fierce. Competitive. — the all-new Spades Arena (formerly Spades Royale). Made by Hadzz.
+
+            **Downloads:** Android (.apk) · Windows (.exe) · Mac (.dmg) below, or play in the browser at https://spades-royale.github.io/play/
+
+            **What's new in Spades Arena**
+            - Brand-new black-panther identity: matte black, emerald & neon green, metallic silver
+            - THE ARENA SHOP: 8 tables, 8 card colour themes, 8 avatars (+ Coming Soon)
+            - 🎁 Gift Coins, Diamonds and owned designs to any player — checked & delivered by the server, with gift history
+            - Gold-bar coins & faceted diamonds, sign up with a password or a 4-digit code
+            - Your account, Coins, Diamonds and items carry over from Spades Royale
+
+            Internal build ${{ env.VERSION }}
           files: |
-            out/Spades-Royale.apk
-            out/Spades-Royale-Windows-Setup.exe
-            out/Spades-Royale-Mac.dmg
+            out/Spades-Arena.apk
+            out/Spades-Arena-Windows-Setup.exe
+            out/Spades-Arena-Mac.dmg
 
   pages:
     needs: release
@@ -146,6 +173,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
+      - name: Public version number
+        shell: bash
+        run: echo "DISPLAY_VERSION=1.0.$(( ${{ github.run_number }} - DISPLAY_BASE_RUN ))" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
@@ -154,12 +184,12 @@ jobs:
       - name: Build download site
         run: |
           mkdir -p _site/assets
-          sed -e "s#__REPO__#${GITHUB_REPOSITORY}#g" -e "s#__VERSION__#${VERSION}#g" site/index.html > _site/index.html
-          cp assets/logo.jpg assets/signature.png assets/icon-192.png _site/assets/
+          sed -e "s#__REPO__#${GITHUB_REPOSITORY}#g" -e "s#__VERSION__#${DISPLAY_VERSION}#g" site/index.html > _site/index.html
+          cp assets/logo.jpg assets/mark.jpg assets/signature.png assets/icon-192.png _site/assets/
           touch _site/.nojekyll
           base="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download"
           cat > _site/version.json <<JSON
-          {"version": "${VERSION}", "minVersion": "${VERSION}", "downloads": {"android": "${base}/Spades-Royale.apk", "windows": "${base}/Spades-Royale-Windows-Setup.exe", "mac": "${base}/Spades-Royale-Mac.dmg"}}
+          {"version": "${VERSION}", "displayVersion": "${DISPLAY_VERSION}", "minVersion": "${VERSION}", "downloads": {"android": "${base}/Spades-Arena.apk", "windows": "${base}/Spades-Arena-Windows-Setup.exe", "mac": "${base}/Spades-Arena-Mac.dmg"}}
           JSON
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

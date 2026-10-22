@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Spades Royale (by Hadzz) - Live Multiplayer, Friends & Presence Server
+ * Spades Arena (by Hadzz) - Live Multiplayer, Friends & Presence Server
  * ============================================================================
  * Zero dependencies (Node.js 18+). Run:   node server/server.js
  *
@@ -9,7 +9,7 @@
  *  - Server-authoritative Spades matches (see server/match.js)
  *  - Player directory persisted to server/data/db.json (override with DATA_DIR)
  *
- * Env: SPADES_ADMIN_USERNAME + SPADES_ADMIN_PASSWORD (owner account with unlimited Lions & Diamonds),
+ * Env: SPADES_ADMIN_USERNAME + SPADES_ADMIN_PASSWORD (owner account with unlimited Coins & Diamonds),
  *      PORT (default 8787), HOST (default 0.0.0.0), DATA_DIR, SPADES_MSG_LIMIT (msgs / 5s / socket),
  *      UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN (optional free cloud backup of accounts)
  * ============================================================================
@@ -480,9 +480,11 @@ function validateCredentials(conn, username, password) {
 }
 
 const PIN_RE = /^\d{4}$/;
+const GIFT_ITEM_KINDS = { avatar: 'ownedAvatars', card: 'ownedCardSkins', table: 'ownedTableThemes' };
+const GIFT_DEFAULT_ITEMS = new Set(['av_panther', 'classic', 'emerald', 'free_ace', 'free_knight', 'free_velvet', 'free_shadow', 'free_wave']);
 
 // Players on old app versions must update before logging in (MIN_APP_VERSION='' turns this off).
-const MIN_APP_VERSION = process.env.MIN_APP_VERSION === undefined ? '2.0.17' : process.env.MIN_APP_VERSION;
+const MIN_APP_VERSION = process.env.MIN_APP_VERSION === undefined ? '4.0.0' : process.env.MIN_APP_VERSION; // 4.0.x = Spades Arena
 function versionTooOld(v) {
   if (!MIN_APP_VERSION) return false;
   if (v === 'dev') return false; // local test copies
@@ -495,7 +497,7 @@ function versionTooOld(v) {
   return false;
 }
 function requireUpdate(conn) {
-  sendError(conn, 'update_required', '✨ A new version of Spades Royale is out! Please update to keep playing — download it at spades-royale.github.io (your account, Lions & Diamonds are safe).', 'auth');
+  sendError(conn, 'update_required', '⚠️ Spades Royale has shut down. Download the all-new SPADES ARENA to keep playing — spades-royale.github.io (your account, Coins, Diamonds and items come with you).', 'auth');
 }
 
 /** Recovery PIN (any 4 digits) — stored hashed like a password; used only to reset a forgotten password. */
@@ -517,11 +519,12 @@ function setPassword(user, password) {
 }
 
 /** Counts a failed password / PIN attempt; too many locks the username for a while. Returns true if locked. */
-function noteAuthFailure(key) {
+function noteAuthFailure(key, strict = false) {
+  const max = strict ? 5 : LOGIN_MAX_FAILS;
   const fails = loginFailures.get(key);
-  const f = fails && fails.lockedUntil <= Date.now() && fails.count >= LOGIN_MAX_FAILS ? { count: 0, lockedUntil: 0 } : (fails || { count: 0, lockedUntil: 0 });
+  const f = fails && fails.lockedUntil <= Date.now() && fails.count >= max ? { count: 0, lockedUntil: 0 } : (fails || { count: 0, lockedUntil: 0 });
   f.count += 1;
-  if (f.count >= LOGIN_MAX_FAILS) f.lockedUntil = Date.now() + LOGIN_LOCK_MS;
+  if (f.count >= max) f.lockedUntil = Date.now() + (strict ? 15 * 60 * 1000 : LOGIN_LOCK_MS);
   loginFailures.set(key, f);
 }
 
@@ -565,7 +568,12 @@ function handleRegister(conn, msg) {
   if (versionTooOld(msg.appVersion)) return requireUpdate(conn);
   const username = String(msg.username || '').trim();
   const password = msg.password;
-  if (!validateCredentials(conn, username, password)) return;
+  // Option B: a 4-digit login code instead of a password (convenience — protected by a stricter lockout)
+  const useCode = msg.useCode === true;
+  if (useCode) {
+    if (!USERNAME_RE.test(username)) return sendError(conn, 'invalid_username', 'Usernames must be 2–18 characters using only letters, numbers, _ - or .', 'auth');
+    if (!PIN_RE.test(String(password || ''))) return sendError(conn, 'weak_password', 'Your login code must be exactly 4 numbers.', 'auth');
+  } else if (!validateCredentials(conn, username, password)) return;
   if (msg.pin !== undefined && msg.pin !== '' && !PIN_RE.test(String(msg.pin))) {
     return sendError(conn, 'bad_pin', 'Your recovery PIN must be exactly 4 numbers.', 'auth');
   }
@@ -587,6 +595,7 @@ function handleRegister(conn, msg) {
     lastSeen: Date.now()
   };
   if (PIN_RE.test(String(msg.pin || ''))) setPin(user, String(msg.pin));
+  if (useCode) user.codeLogin = true;
   db.users[user.id] = user;
   usernameIndex.set(username.toLowerCase(), user.id);
   log(`registered ${username}`);
@@ -604,11 +613,8 @@ function handleLogin(conn, msg) {
   }
   const user = getUser(usernameIndex.get(key));
   if (!user || typeof msg.password !== 'string' || !passwordMatches(user, msg.password)) {
-    const f = fails && fails.lockedUntil <= Date.now() && fails.count >= LOGIN_MAX_FAILS ? { count: 0, lockedUntil: 0 } : (fails || { count: 0, lockedUntil: 0 });
-    f.count += 1;
-    if (f.count >= LOGIN_MAX_FAILS) f.lockedUntil = Date.now() + LOGIN_LOCK_MS;
-    loginFailures.set(key, f);
-    return sendError(conn, 'bad_credentials', 'Incorrect username or password.', 'auth');
+    noteAuthFailure(key, Boolean(user && user.codeLogin)); // 4-digit-code accounts lock after 5 wrong tries (15 min)
+    return sendError(conn, 'bad_credentials', 'Incorrect username, password or code.', 'auth');
   }
   loginFailures.delete(key);
   if (msg.avatar) user.avatar = String(msg.avatar).slice(0, 40);
@@ -640,7 +646,7 @@ function handleLogout(conn, msg) {
 /** Gifts wait in the receiver's inbox until their app confirms it added them (works while they're offline). */
 function deliverGiftInbox(user) {
   for (const g of user.giftInbox || []) {
-    sendToUser(user.id, 'gift', { giftId: g.giftId, lions: g.lions, diamonds: g.diamonds, fromName: g.fromName });
+    sendToUser(user.id, 'gift', { giftId: g.giftId, lions: g.lions, diamonds: g.diamonds, item: g.item || null, fromName: g.fromName });
   }
 }
 
@@ -655,7 +661,7 @@ function attachUser(conn, user, newSession) {
 
   sendTo(conn, 'welcome', {
     user: { id: user.id, username: user.username, avatar: user.avatar, unlimited: Boolean(user.unlimited), hasPin: Boolean(user.pinHash) },
-    profile: user.profile || null, // { data, updatedAt } — Lions, Diamonds, items & stats saved for this account
+    profile: user.profile || null, // { data, updatedAt } — Coins, Diamonds, items & stats saved for this account
     session: newSession
   });
   deliverGiftInbox(user);
@@ -785,7 +791,7 @@ const handlers = {
   },
 
   'profile:sync'(conn, msg) {
-    // The account's progress (Lions, Diamonds, owned items, stats). Devices send changes on top of the
+    // The account's progress (Coins, Diamonds, owned items, stats). Devices send changes on top of the
     // version they last saw; if another device saved in between, they get the newer copy to rebase on.
     const user = getUser(conn.userId);
     const data = msg.profile;
@@ -913,24 +919,74 @@ const handlers = {
   },
 
   'gift:send'(conn, msg) {
-    // 🎁 Lions / Diamonds to any player by username or id (balances live on players' devices;
-    // the server keeps the gift in their inbox until their app adds it, even if they're offline)
+    // 🎁 Coins / Diamonds / an owned design to any registered player (by username or id).
+    // The server checks the sender's saved balance & items, takes them from the sender, and
+    // keeps the gift in the receiver's inbox until their app adds it — exactly once, even offline.
     const giftId = String(msg.giftId || '').replace(/[^a-f0-9]/g, '').slice(0, 40);
     const lions = Math.floor(Number(msg.lions) || 0);
     const diamonds = Math.floor(Number(msg.diamonds) || 0);
+    const item = msg.item && typeof msg.item === 'object' && GIFT_ITEM_KINDS[msg.item.kind] && /^[a-z0-9_]{2,40}$/.test(String(msg.item.id || ''))
+      ? { kind: msg.item.kind, id: String(msg.item.id) } : null;
     const fail = (message) => sendTo(conn, 'error', { code: 'gift_failed', giftId, message, scope: 'gift' });
     const me = getUser(conn.userId);
     const to = getUser(msg.userId) || getUser(usernameIndex.get(String(msg.username || '').trim().toLowerCase()));
-    if (!giftId || lions < 0 || diamonds < 0 || lions > 1e9 || diamonds > 1e9 || lions + diamonds === 0) return fail('That gift amount isn’t valid.');
-    if (!to) return fail('No Spades Royale player has that username — gift returned.');
+    if (!giftId || !Number.isSafeInteger(lions) || !Number.isSafeInteger(diamonds) || lions < 0 || diamonds < 0 || lions > 1e15 || diamonds > 1e15) return fail('That gift amount isn’t valid.');
+    if (lions + diamonds === 0 && !item) return fail('Choose Coins, Diamonds or an item to send.');
+    if (msg.item && !item) return fail('That item can’t be gifted.');
+    if (!to) return fail('No Spades Arena player has that username.');
     if (to.id === me.id) return fail('You can’t send a gift to yourself.');
+    me.sentGiftIds = me.sentGiftIds || [];
+    if (me.sentGiftIds.includes(giftId)) return; // already sent (retry) — never take it twice
+
+    const viaUsername = msg.username !== undefined && !msg.userId;
+    const serverChecked = viaUsername || item;
+    if (serverChecked && !me.unlimited) {
+      // Check & take from the sender's saved progress on the server
+      const data = me.profile && me.profile.data;
+      if (!data) return fail('Your account hasn’t synced yet — open the app online for a moment and try again.');
+      if ((Number(data.coins) || 0) < lions) return fail('You don’t have that many Coins.');
+      if ((Number(data.diamonds) || 0) < diamonds) return fail('You don’t have that many Diamonds.');
+      if (item) {
+        const list = Array.isArray(data[GIFT_ITEM_KINDS[item.kind]]) ? data[GIFT_ITEM_KINDS[item.kind]] : [];
+        if (!list.includes(item.id) || GIFT_DEFAULT_ITEMS.has(item.id)) return fail('You can only gift paid items you own.');
+      }
+    }
+    if (item) {
+      const rdata = to.profile && to.profile.data;
+      const rlist = rdata && Array.isArray(rdata[GIFT_ITEM_KINDS[item.kind]]) ? rdata[GIFT_ITEM_KINDS[item.kind]] : [];
+      const pending = (to.giftInbox || []).some(g => g.item && g.item.kind === item.kind && g.item.id === item.id);
+      if (rlist.includes(item.id) || pending) return fail(`${to.username} already owns that item.`);
+    }
     to.giftInbox = to.giftInbox || [];
     if (to.giftInbox.some(g => g.giftId === giftId)) return;
-    if (to.giftInbox.length >= 200) return fail(`${to.username}’s gift box is full right now — gift returned.`);
-    to.giftInbox.push({ giftId, lions, diamonds, fromName: me.username, at: Date.now() });
+    if (to.giftInbox.length >= 200) return fail(`${to.username}’s gift box is full right now.`);
+
+    if (serverChecked && !me.unlimited) {
+      const data = me.profile.data;
+      data.coins = (Number(data.coins) || 0) - lions;
+      data.diamonds = (Number(data.diamonds) || 0) - diamonds;
+      if (item) {
+        const key = GIFT_ITEM_KINDS[item.kind];
+        data[key] = data[key].filter(x => x !== item.id);
+        const sel = { avatar: 'selectedAvatar', card: 'selectedCardSkin', table: 'selectedTableTheme' }[item.kind];
+        if (data[sel] === item.id) data[sel] = { avatar: 'av_panther', card: 'classic', table: 'emerald' }[item.kind];
+      }
+      me.profile.updatedAt = Math.max(Date.now(), me.profile.updatedAt + 1);
+      for (const c of userConns.get(me.id) || []) sendTo(c, 'profile:state', me.profile); // every device of the sender updates
+    }
+    me.sentGiftIds = [...me.sentGiftIds, giftId].slice(-200);
+    to.giftInbox.push({ giftId, lions, diamonds, item, fromName: me.username, at: Date.now() });
+    const entry = (dir, other) => ({ at: Date.now(), dir, with: other, lions, diamonds, item });
+    me.giftLog = [entry('sent', to.username), ...(me.giftLog || [])].slice(0, 60);
+    to.giftLog = [entry('received', me.username), ...(to.giftLog || [])].slice(0, 60);
     saveDbSoon();
-    if (isOnline(to.id)) sendToUser(to.id, 'gift', { giftId, lions, diamonds, fromName: me.username });
-    sendTo(conn, 'gift:sent', { giftId, toName: to.username, lions, diamonds, queued: !isOnline(to.id) });
+    if (isOnline(to.id)) sendToUser(to.id, 'gift', { giftId, lions, diamonds, item, fromName: me.username });
+    sendTo(conn, 'gift:sent', { giftId, toName: to.username, lions, diamonds, item, queued: !isOnline(to.id), serverChecked: Boolean(serverChecked) });
+  },
+
+  'gift:history'(conn) {
+    const me = getUser(conn.userId);
+    sendTo(conn, 'gift:history', { log: (me.giftLog || []).slice(0, 60) });
   },
 
   'gift:ack'(conn, msg) {
@@ -1298,7 +1354,7 @@ setInterval(() => {
 }, 60000).unref();
 
 /**
- * Owner account with unlimited Lions & Diamonds. Set SPADES_ADMIN_USERNAME (+ SPADES_ADMIN_PASSWORD to create it
+ * Owner account with unlimited Coins & Diamonds. Set SPADES_ADMIN_USERNAME (+ SPADES_ADMIN_PASSWORD to create it
  * if it doesn't exist yet). The password lives only in the server's environment, never in the code.
  */
 function ensureAdminAccount() {
@@ -1344,7 +1400,7 @@ async function boot() {
   }
   ensureAdminAccount();
   httpServer.listen(PORT, HOST, () => {
-    log(`Spades Royale server running → http://localhost:${PORT}  (WebSocket: ws://<host>:${PORT}/ws)`);
+    log(`Spades Arena server running → http://localhost:${PORT}  (WebSocket: ws://<host>:${PORT}/ws)`);
     log(`${Object.keys(db.users).length} registered players loaded${cloudEnabled ? ' (cloud backup on)' : ` from ${DB_PATH}`}`);
   });
 }

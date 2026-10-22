@@ -1,5 +1,5 @@
 /**
- * Spades Royale - Free Worldwide Rooms (peer-to-peer, the host's phone is the server)
+ * Spades Arena - Free Worldwide Rooms (peer-to-peer, the host's phone is the server)
  * ============================================================================
  * The player who creates a room runs this RoomHost on their own device. Friends
  * anywhere connect straight to it over WebRTC (PeerJS): the free public PeerJS
@@ -472,7 +472,7 @@
         }
 
         case 'gift:send': {
-          // 🎁 Lions / Diamonds from one player in the room to another (the sender's app already took them)
+          // 🎁 Coins / Diamonds from one player in the room to another (the sender's app already took them)
           const giftId = String(msg.giftId || '').slice(0, 40);
           const lions = Math.floor(Number(msg.lions) || 0);
           const diamonds = Math.floor(Number(msg.diamonds) || 0);

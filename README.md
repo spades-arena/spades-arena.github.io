@@ -1,4 +1,4 @@
-# Spades Royale: Offline Multiplayer
+# Spades Arena: Offline Multiplayer
 
 *Play. Win. Rule.* — made by Hadzz.
 

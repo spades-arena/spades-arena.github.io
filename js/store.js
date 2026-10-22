@@ -1,15 +1,17 @@
 /**
- * Spades Royale - Persistent Local Storage Store
- * Manages profile, 🦁 Lions (the coin currency, starting at 50), 💎 Diamonds (starting at 5), avatar &
+ * Spades Arena - Persistent Local Storage Store
+ * Manages profile, 🦁 Coins (the coin currency, starting at 50), 💎 Diamonds (starting at 5), avatar &
  * card-design ownership, profile photo, entry fees, daily / win bonuses, gifts, the anti-duplicate
- * reward ledger, and settings. (Internally the Lions balance is stored as `coins`.)
+ * reward ledger, and settings. (Internally the Coins balance is stored as `coins`.)
  */
 (function (root) {
   const SH = (root.SpadesHadzz = root.SpadesHadzz || {});
   // v2 = fresh start for everyone (new balances: 50 🦁 + 5 💎)
   const STORAGE_KEY = 'spades_royale_state_v2';
-  const UNLIMITED_BALANCE = 1000000000; // owner account: 1B Lions & 1B Diamonds
+  const UNLIMITED_BALANCE = 1000000000; // owner account: 1B Coins & 1B Diamonds
   const NAME_CHANGE_DIAMONDS = 50;
+  const OWNED_LIST = { avatar: 'ownedAvatars', card: 'ownedCardSkins', table: 'ownedTableThemes' };
+  const DEFAULT_ITEM = { avatar: 'av_panther', card: 'classic', table: 'emerald' };
   // Saved on the server for online accounts so purchases & progress follow you to every device
   const SYNC_FIELDS = [
     'coins', 'diamonds', 'selectedAvatar', 'ownedAvatars', 'ownedCardSkins', 'selectedCardSkin',
@@ -34,8 +36,8 @@
     return {
       profile: {
         username: 'HadzzPlayer',
-        selectedAvatar: 'free_ace',
-        coins: 50, // 🦁 Lions
+        selectedAvatar: 'av_panther', // free signature avatar
+        coins: 50, // 🦁 Coins
         diamonds: 5, // 💎 Diamonds
         photo: null, // profile picture (small JPEG data URL) chosen from the gallery
         winStreak: 0,
@@ -205,7 +207,7 @@
 
     /**
      * Server copy changed AND this device changed too: start from the server copy and replay this
-     * device's Lions/Diamonds changes on top; owned items & best stats from both are kept.
+     * device's Coins/Diamonds changes on top; owned items & best stats from both are kept.
      */
     rebaseSyncProfile(data, version) {
       if (!data || typeof data !== 'object') return;
@@ -269,7 +271,7 @@
       this.save();
     }
 
-    /** Owner account (flagged by the server): unlimited Lions & Diamonds while signed in; normal balance comes back after. */
+    /** Owner account (flagged by the server): unlimited Coins & Diamonds while signed in; normal balance comes back after. */
     setUnlimited(on) {
       const p = this.state.profile;
       if (on && !p.unlimited) {
@@ -333,10 +335,10 @@
         return { ok: true, action: 'equipped', message: `Equipped "${avatar.name}".` };
       }
 
-      // Diamond avatars are bought with 💎, everything else with 🦁 Lions
+      // Diamond avatars are bought with 💎, everything else with 🦁 Coins
       const useDiamonds = avatar.currency === 'diamonds';
       const balance = useDiamonds ? this.state.profile.diamonds : this.state.profile.coins;
-      const unit = useDiamonds ? '💎 Diamonds' : '🦁 Lions';
+      const unit = useDiamonds ? '💎 Diamonds' : '🦁 Coins';
       if (balance < avatar.price) {
         const needed = avatar.price - balance;
         return {
@@ -351,7 +353,7 @@
       this.state.profile.ownedAvatars.push(avatarId);
       this.state.profile.selectedAvatar = avatarId;
       this.save();
-      const tierName = { mythic: 'Mythic', diamond: 'Diamond' }[avatar.tier] || 'Legendary';
+      const tierName = { mythic: 'Mythic', diamond: 'Diamond', arena: 'Arena' }[avatar.tier] || 'Legendary';
       return {
         ok: true,
         action: 'purchased',
@@ -359,7 +361,7 @@
       };
     }
 
-    /** Card designs (Profile shop): equip owned ones, buy others with 🦁 Lions. */
+    /** Card designs (Profile shop): equip owned ones, buy others with 🦁 Coins. */
     selectOrBuyCardSkin(skinId) {
       const skin = (SH.CARD_SKINS || []).find(s => s.id === skinId);
       if (!skin) return { ok: false, message: 'Card design not found.' };
@@ -373,17 +375,17 @@
         return {
           ok: false,
           action: 'insufficient_funds',
-          message: `Not enough 🦁 Lions for "${skin.name}" — you need ${skin.price - p.coins} more (${skin.price} total).`
+          message: `Not enough 🦁 Coins for "${skin.name}" — you need ${skin.price - p.coins} more (${skin.price} total).`
         };
       }
       p.coins -= skin.price;
       p.ownedCardSkins.push(skinId);
       p.selectedCardSkin = skinId;
       this.save();
-      return { ok: true, action: 'purchased', message: `Unlocked "${skin.name}" cards for ${skin.price} 🦁 Lions!` };
+      return { ok: true, action: 'purchased', message: `Unlocked "${skin.name}" cards for ${skin.price} 🦁 Coins!` };
     }
 
-    /** Table colours (Shop): equip owned ones, buy others with 🦁 Lions. */
+    /** Table colours (Shop): equip owned ones, buy others with 🦁 Coins. */
     selectOrBuyTableTheme(themeId) {
       const theme = (SH.TABLE_THEMES || []).find(t => t.id === themeId);
       if (!theme) return { ok: false, message: 'Table colour not found.' };
@@ -396,14 +398,14 @@
       const diamonds = theme.currency === 'diamonds';
       const balance = diamonds ? (p.diamonds || 0) : p.coins;
       if (balance < theme.price) {
-        return { ok: false, action: 'insufficient_funds', message: `Not enough ${diamonds ? '💎 Diamonds' : '🦁 Lions'} for "${theme.name}" — you need ${theme.price - balance} more (${theme.price} total).` };
+        return { ok: false, action: 'insufficient_funds', message: `Not enough ${diamonds ? '💎 Diamonds' : '🦁 Coins'} for "${theme.name}" — you need ${theme.price - balance} more (${theme.price} total).` };
       }
       if (diamonds) p.diamonds -= theme.price;
       else p.coins -= theme.price;
       p.ownedTableThemes.push(themeId);
       p.selectedTableTheme = themeId;
       this.save();
-      return { ok: true, action: 'purchased', message: `Unlocked the ${theme.name} table for ${theme.price} ${diamonds ? '💎 Diamonds' : '🦁 Lions'}!` };
+      return { ok: true, action: 'purchased', message: `Unlocked the ${theme.name} table for ${theme.price} ${diamonds ? '💎 Diamonds' : '🦁 Coins'}!` };
     }
 
     /**
@@ -474,7 +476,7 @@
       return diamonds;
     }
 
-    /** Lions for winning a full game: 250-point game +50, 500-point game +80. */
+    /** Coins for winning a full game: 250-point game +50, 500-point game +80. */
     gameWinLions(targetScore) {
       return Number(targetScore) === 250 ? 50 : 80;
     }
@@ -487,14 +489,14 @@
       return true;
     }
 
-    /** Adds Lions / Diamonds (gift refunds). */
+    /** Adds Coins / Diamonds (gift refunds). */
     credit({ lions = 0, diamonds = 0 } = {}) {
       this.state.profile.coins += Math.max(0, Math.floor(lions));
       this.state.profile.diamonds += Math.max(0, Math.floor(diamonds));
       this.save();
     }
 
-    /** Takes Lions / Diamonds for a gift. Returns false (and takes nothing) if the balance is too low. */
+    /** Takes Coins / Diamonds for a gift. Returns false (and takes nothing) if the balance is too low. */
     debitForGift({ lions = 0, diamonds = 0 }) {
       const p = this.state.profile;
       const l = Math.max(0, Math.floor(lions));
@@ -507,18 +509,65 @@
     }
 
     /** A gift arrived from another player (counted once per gift id). */
-    receiveGift(giftId, { lions = 0, diamonds = 0 }) {
+    receiveGift(giftId, { lions = 0, diamonds = 0, item = null }) {
       const key = `gift_${giftId}`;
       if (!giftId || this.state.profile.rewardedIds.includes(key)) return false;
-      this.state.profile.rewardedIds.push(key);
-      this.state.profile.coins += Math.max(0, Math.min(1e9, Math.floor(lions)));
-      this.state.profile.diamonds += Math.max(0, Math.min(1e9, Math.floor(diamonds)));
+      const p = this.state.profile;
+      p.rewardedIds.push(key);
+      p.coins += Math.max(0, Math.min(1e9, Math.floor(lions)));
+      p.diamonds += Math.max(0, Math.min(1e9, Math.floor(diamonds)));
+      if (item && OWNED_LIST[item.kind]) {
+        const list = p[OWNED_LIST[item.kind]] || (p[OWNED_LIST[item.kind]] = []);
+        if (this.itemDef(item.kind, item.id) && !list.includes(item.id)) list.push(item.id);
+        p.giftedToMe = Array.from(new Set([...(p.giftedToMe || []), `${item.kind}:${item.id}`])).slice(-100);
+      }
       this.save();
       return true;
     }
 
+    // ------------------------------------------------------------ Arena Shop: inventory helpers
+
+    itemDef(kind, id) {
+      const list = kind === 'avatar' ? SH.AVATARS : kind === 'card' ? SH.CARD_SKINS : kind === 'table' ? SH.TABLE_THEMES : [];
+      return (list || []).find(x => x.id === id) || null;
+    }
+
+    owns(kind, id) {
+      const list = this.state.profile[OWNED_LIST[kind]] || [];
+      return list.includes(id);
+    }
+
+    equipped(kind) {
+      const p = this.state.profile;
+      return kind === 'avatar' ? p.selectedAvatar : kind === 'card' ? (p.selectedCardSkin || 'classic') : (p.selectedTableTheme || 'emerald');
+    }
+
+    /** Unequip = go back to the category's free item. */
+    unequip(kind) {
+      const p = this.state.profile;
+      const def = DEFAULT_ITEM[kind];
+      if (!def) return { ok: false, message: 'Nothing to unequip.' };
+      if (kind === 'avatar') p.selectedAvatar = def;
+      else if (kind === 'card') p.selectedCardSkin = def;
+      else p.selectedTableTheme = def;
+      this.save();
+      return { ok: true, message: 'Unequipped — back to the free one.' };
+    }
+
+    /** Paid items you own that can be gifted to someone else (free items can't be gifted). */
+    giftableItems() {
+      const out = [];
+      for (const kind of ['table', 'card', 'avatar']) {
+        for (const id of this.state.profile[OWNED_LIST[kind]] || []) {
+          const d = this.itemDef(kind, id);
+          if (d && d.price > 0) out.push({ kind, id, name: d.name, price: d.price, currency: d.currency || 'coins' });
+        }
+      }
+      return out;
+    }
+
     /**
-     * Awards 🦁 Lions for winning a round (+10) or full game (+50 at 250 pts / +80 at 500 pts).
+     * Awards 🦁 Coins for winning a round (+10) or full game (+50 at 250 pts / +80 at 500 pts).
      * Uses a unique key per match/round to prevent duplicate claims.
      */
     claimReward(rewardKey, amount, statsUpdate = {}) {
@@ -557,7 +606,7 @@
       return { ok: true, message: `Sold "${av.name}" for ${refund} ${av.currency === 'diamonds' ? '💎' : '🦁'}.` };
     }
 
-    /** Sell an owned card design back for half price (the free Royale Classic can't be sold). */
+    /** Sell an owned card design back for half price (the free Arena Classic can't be sold). */
     sellCardSkin(skinId) {
       const p = this.state.profile;
       const skin = (SH.CARD_SKINS || []).find(s => s.id === skinId);

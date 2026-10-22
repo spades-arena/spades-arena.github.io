@@ -1,4 +1,4 @@
-// Spades Royale — fast browser smoke test (~1–2 min)
+// Spades Arena — fast browser smoke test (~1–2 min)
 // Setup once:  cd tests && npm install        Run:  node tests/ui.e2e.mjs
 // Uses your installed Chrome (override with CHROME_PATH). Starts its own game server.
 import puppeteer from 'puppeteer-core';
@@ -54,8 +54,8 @@ try {
     topbar: document.getElementById('app-topbar').classList.contains('hidden'),
     nav: document.getElementById('android-bottom-nav').classList.contains('hidden')
   }));
-  ok(loading.screen === 'screen-loading' && /Play · Win · Rule/.test(loading.sub) && /no-ad/.test(loading.noads) && /data:image\/png/.test(loading.sig) && /Made by Hadzz/i.test(loading.madeBy) && loading.topbar && loading.nav,
-    'opening screen: Spades Royale · Play · Win · Rule, "no-ad game", gold Hadzz signature + "Made by Hadzz", no bars');
+  ok(loading.screen === 'screen-loading' && /Premium · Fierce · Competitive/.test(loading.sub) && /no-ad/.test(loading.noads) && /data:image\/png/.test(loading.sig) && /Made by Hadzz/i.test(loading.madeBy) && loading.topbar && loading.nav,
+    'opening screen: Spades Arena · Premium · Fierce · Competitive, "no-ad game", gold Hadzz signature + "Made by Hadzz", no bars');
   await shot(A, '01-loading');
   await waitScreen(A, 'screen-login', 9000);
   const loadMs = Date.now() - t0;
@@ -81,16 +81,16 @@ try {
   // 3) Top bar & bottom bar
   const bars = await A.evaluate(() => ({
     difficulty: Boolean(document.querySelector('[data-hud-difficulty]:not(.menu-quick-status *)') && document.querySelector('#app-topbar [data-hud-difficulty]')),
-    shop: Boolean(document.querySelector('#app-topbar [data-nav="shop"]')),
+    gift: Boolean(document.querySelector('#app-topbar [data-nav="gift"]')),
     avatar: Boolean(document.querySelector('#app-topbar .hud-avatar-btn[data-nav="profile"]')),
     sig: Boolean(document.querySelector('#app-topbar .hadzz-signature')),
     navItems: [...document.querySelectorAll('#android-bottom-nav .bnav-item')].map(b => b.dataset.nav)
   }));
-  ok(!bars.difficulty && bars.shop && bars.avatar && bars.sig, 'top bar: no "Medium · 500 pts", 🛍 Shop button, your avatar opens Profile, small signature');
-  ok(!bars.navItems.includes('profile') && bars.navItems.length <= 5, `bottom bar shortened: ${bars.navItems.join(', ')}`);
+  ok(!bars.difficulty && bars.gift && bars.avatar && bars.sig, 'top bar: 🎁 Gift button, your avatar opens Profile, small signature');
+  ok(!bars.navItems.includes('profile') && bars.navItems.join() === 'menu,game,multiplayer,friends,shop,settings', `bottom bar has SHOP right before Settings: ${bars.navItems.join(', ')}`);
 
   // 4) Reload keeps you where you were (no loading screen)
-  await tap(A, '#app-topbar [data-nav="shop"]');
+  await tap(A, '#android-bottom-nav [data-nav="shop"]');
   await waitScreen(A, 'screen-shop');
   const r0 = Date.now();
   await A.reload();
@@ -98,23 +98,27 @@ try {
   ok(Date.now() - r0 < 3500, `reloading the page returns straight to the Shop (${Date.now() - r0} ms, no loading screen)`);
 
   // 5) Shop: buy, not-enough → soft chime, Profile: sell for half price, photo, name
-  await tap(A, '[data-shop-avatar="free_panda"]');
+  const grid = await A.evaluate(() => [...document.querySelectorAll('.arena-cat')].map(c => `${c.querySelectorAll('.arena-item:not(.locked)').length}+${c.querySelectorAll('.arena-item.locked').length}`).join(' '));
+  ok(grid === '8+2 8+2 8+2', `shop: 3 categories × 8 items + 2 Coming Soon (${grid})`);
+  await A.evaluate(() => { SpadesHadzz.store.credit({ lions: 80 }); });
+  await A.waitForSelector('[data-shop-buy^="card:cd_gold"]');
+  await tap(A, '[data-shop-buy^="card:cd_gold"]');
   await yes(A);
   await sleep(200);
-  ok((await prof(A)).coins === 20, 'bought a Classic avatar for 30 🦁 (50 → 20)');
+  ok((await prof(A)).coins === 30 && await A.evaluate(() => SpadesHadzz.store.getProfile().selectedCardSkin === 'cd_gold'), 'bought & equipped Royal Gold cards for 100 🦁 (130 → 30)');
   const chime = await A.evaluate(() => {
     let soft = 0; const o = SpadesHadzz.audio.notEnoughFunds; SpadesHadzz.audio.notEnoughFunds = () => { soft++; };
-    document.querySelector('[data-shop-avatar="myth_cat"]').click();
+    document.querySelector('[data-shop-buy^="avatar:av_legend"]').click();
     SpadesHadzz.audio.notEnoughFunds = o; return soft;
   });
-  ok(chime === 1, 'can’t afford → soft "need Lions" chime');
+  ok(chime === 1, 'can’t afford → soft "need Coins" chime');
   await shot(A, '03-shop');
   await tap(A, '.hud-avatar-btn');
   await waitScreen(A, 'screen-profile');
-  await tap(A, '[data-sell-avatar="free_panda"]');
+  await tap(A, '[data-sell-skin="cd_gold"]');
   await yes(A);
   await sleep(200);
-  ok((await prof(A)).coins === 35, 'sold it back for half price (+15 🦁)');
+  ok((await prof(A)).coins === 80, 'sold it back for half price (+50 🦁)');
   const png = path.join(OUT, 'me.png');
   fs.writeFileSync(png, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEklEQVR4nGP4z8CAFWEXHbQEAA/jB/l8IqiyAAAAAElFTkSuQmCC', 'base64'));
   const input = await A.$('#photo-input');
@@ -130,7 +134,7 @@ try {
   await tap(A, '#android-bottom-nav [data-nav="menu"]');
   await tap(A, '.menu-tile[data-offline-seats="4"]');
   await waitScreen(A, 'screen-game');
-  ok((await prof(A)).coins === 33, 'starting a game costs 🦁 2 (35 → 33)');
+  ok((await prof(A)).coins === 78, 'starting a game costs 🦁 2 (80 → 78)');
   ok(await A.evaluate(() => Boolean(document.querySelector('.game-intro .hadzz-signature')) && /Made by Hadzz/i.test(document.querySelector('.game-intro').textContent)), 'game-start intro shows the gold signature + Made by Hadzz');
   const i0 = Date.now();
   await A.waitForFunction(() => !document.querySelector('.game-intro'), { timeout: 8000 });
@@ -165,7 +169,8 @@ try {
   });
   await A.waitForSelector('#collect-reward-btn', { timeout: 3000 });
   const collectText = await A.$eval('#collect-reward-btn', el => el.textContent.replace(/\s+/g, ' '));
-  ok(/Collect 🦁 \+92/.test(collectText) && /\+80 Game Win/.test(collectText) && /2 entry back/.test(collectText), `win shows "${collectText.trim()}"`);
+  const coinIcon = await A.$eval('#collect-reward-btn', el => Boolean(el.querySelector('.cur-icon.cur-coin')));
+  ok(coinIcon && /Collect\s*\+92/.test(collectText) && /\+80 Game Win/.test(collectText) && /2 entry back/.test(collectText), `win shows "${collectText.trim()}" with the gold coin icon`);
   ok(Boolean(await A.waitForSelector('.confetti-layer', { timeout: 3000 }).catch(() => null)), '🎉 confetti celebration on a game win');
   const c0 = (await prof(A)).coins;
   await tap(A, '#collect-reward-btn');
@@ -175,13 +180,13 @@ try {
   await shot(A, '06-collected');
   ok(await A.evaluate(() => SpadesHadzz.store.gameWinLions(250) === 50 && SpadesHadzz.store.gameWinLions(500) === 80), 'game win prize: 50 🦁 at 250 pts, 80 🦁 at 500 pts');
 
-  // 10) Not enough Lions for a game → must sell something (half price)
+  // 10) Not enough Coins for a game → must sell something (half price)
   await A.evaluate(() => { const p = SpadesHadzz.store.getProfile(); p.coins = 1; p.ownedCardSkins.push('frost'); SpadesHadzz.store.save(); });
   await tap(A, '[data-nav="menu"]');
   await tap(A, '.menu-tile[data-offline-seats="4"]');
   await A.waitForSelector('.choice-overlay', { timeout: 3000 });
   const dlg = await A.$eval('.choice-card', el => el.textContent);
-  ok(/Not enough Lions/.test(dlg) && /half/.test(dlg), 'can’t afford a game → asked to sell an avatar or card design for half price');
+  ok(/Not enough Coins/.test(dlg) && /half/.test(dlg), 'can’t afford a game → asked to sell an avatar or card design for half price');
   await yes(A);
   await waitScreen(A, 'screen-profile');
   await tap(A, '[data-sell-skin="frost"]');

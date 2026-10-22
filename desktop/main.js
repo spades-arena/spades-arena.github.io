@@ -1,5 +1,5 @@
 /**
- * Spades Royale — desktop app (Windows & Mac) built with Electron.
+ * Spades Arena — desktop app (Windows & Mac) built with Electron.
  * Opens the same self-contained game (index.html) in its own window, works offline,
  * and opens outside links (e.g. WhatsApp share) in the normal browser.
  */
@@ -13,7 +13,7 @@ function createWindow() {
     minWidth: 380,
     minHeight: 640,
     backgroundColor: '#0b0b0d',
-    title: 'Spades Royale',
+    title: 'Spades Arena',
     icon: path.join(__dirname, 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: {
@@ -34,6 +34,9 @@ function createWindow() {
     }
   });
 }
+
+// Renamed to Spades Arena: keep using the old data folder so players keep their saved games & settings
+app.setPath('userData', path.join(app.getPath('appData'), 'Spades Royale'));
 
 app.whenReady().then(() => {
   if (process.platform !== 'darwin') Menu.setApplicationMenu(null);

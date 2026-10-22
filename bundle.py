@@ -42,11 +42,12 @@ for asset in ('assets/logo.jpg', 'assets/mark.jpg', 'assets/signature.png'):
     css = css.replace(f'url("{asset}")', f'url("data:{mime};base64,{data}")')
 
 # Embed the classic court pictures (J/Q/K) so cards work offline in every app
-cards_dir = root / 'assets' / 'cards'
-if cards_dir.is_dir():
-    for f in sorted(cards_dir.glob('*.webp')):
-        data = base64.b64encode(f.read_bytes()).decode('ascii')
-        js_bundle = js_bundle.replace(f"'assets/cards/{f.name}'", f"'data:image/webp;base64,{data}'")
+for sub in ('cards', 'avatars'):
+    img_dir = root / 'assets' / sub
+    if img_dir.is_dir():
+        for f in sorted(img_dir.glob('*.webp')):
+            data = base64.b64encode(f.read_bytes()).decode('ascii')
+            js_bundle = js_bundle.replace(f"'assets/{sub}/{f.name}'", f"'data:image/webp;base64,{data}'")
 
 # Point the app at the free cloud server when building for release (GitHub Actions sets this)
 import os
@@ -56,6 +57,9 @@ if server_url:
 app_version = os.environ.get('SPADES_APP_VERSION', '').strip()
 if app_version:
     js_bundle = js_bundle.replace("const APP_VERSION = 'dev';", f"const APP_VERSION = {app_version!r};", 1)
+display_version = os.environ.get('SPADES_DISPLAY_VERSION', '').strip()
+if display_version:
+    js_bundle = js_bundle.replace("const DISPLAY_VERSION = 'dev';", f"const DISPLAY_VERSION = {display_version!r};", 1)
 
 new_html = (
     html[:style_start]

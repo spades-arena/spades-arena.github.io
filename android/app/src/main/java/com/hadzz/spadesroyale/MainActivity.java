@@ -15,7 +15,7 @@ import android.webkit.WebViewClient;
 import androidx.webkit.WebViewAssetLoader;
 
 /**
- * Spades Royale for Android: a full-screen WebView running the bundled game (assets/index.html).
+ * Spades Arena for Android: a full-screen WebView running the bundled game (assets/index.html).
  * The game is served from https://appassets.androidplatform.net so it gets a secure origin
  * (needed for logins, saved games and online rooms). Outside links open in the phone's browser.
  */

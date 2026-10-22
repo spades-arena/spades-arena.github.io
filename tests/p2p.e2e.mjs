@@ -1,4 +1,4 @@
-// Spades Royale — worldwide peer-to-peer rooms test (no game server running!)
+// Spades Arena — worldwide peer-to-peer rooms test (no game server running!)
 // Opens index.html from file:// in separate Chrome sessions ("phones") that connect
 // through the free public PeerJS service. Needs internet + `cd tests && npm install`.
 // Run:  node tests/p2p.e2e.mjs
@@ -83,7 +83,7 @@ try {
   ok(seatsB.some(n => n.includes('Ali')) && seatsB.some(n => n.includes('Bilal (You)')), `Bilal joined over WebRTC; seats: ${seatsB.join(' | ')}`);
   await shot(B, '02-guest-joined');
 
-  // 🎁 Ali gifts Bilal 25 Lions + 1 Diamond from the lobby
+  // 🎁 Ali gifts Bilal 25 Coins + 1 Diamond from the lobby
   await A.evaluate(() => { const p = SpadesHadzz.store.getProfile(); p.coins = 100; p.diamonds = 3; SpadesHadzz.store.save(); });
   const before = await B.evaluate(() => ({ l: SpadesHadzz.store.getProfile().coins, d: SpadesHadzz.store.getProfile().diamonds }));
   await tap(A, '[data-gift-room]');

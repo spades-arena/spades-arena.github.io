@@ -1,4 +1,4 @@
-// Spades Royale — friends & gifts browser test (~30s)
+// Spades Arena — friends & gifts browser test (~30s)
 // Add Friend from the table (✓ / ✗ popup for 8 seconds) and Shop → Send a Gift by username.
 // Setup once:  cd tests && npm install        Run:  node tests/social.e2e.mjs
 import puppeteer from 'puppeteer-core';
@@ -48,17 +48,23 @@ async function register(page, name) {
 }
 
 async function giftByName(page, name) {
-  await page.evaluate(() => window.spadesApp.navigateTo('shop'));
-  await waitScreen(page, 'screen-shop');
+  await page.evaluate(() => { window.spadesApp.giftState = null; window.spadesApp.navigateTo('gift'); });
+  await waitScreen(page, 'screen-gift');
   await page.evaluate((n) => {
-    document.querySelector('#gift-user-name').value = n;
-    document.querySelector('#gift-user-form').requestSubmit();
+    document.querySelector('#gift-find-name').value = n;
+    document.querySelector('#gift-find').requestSubmit();
   }, name);
 }
 const status = (p) => p.waitForFunction(() => {
-  const el = document.querySelector('#gift-user-status');
+  const el = document.querySelector('.gift-user-status');
   return el && /good|bad/.test(el.className) ? { cls: el.className, text: el.textContent } : null;
 }, { timeout: 8000 }).then(h => h.jsonValue());
+async function sendAmount(page, type, amount) {
+  await page.evaluate((t) => document.querySelector(`[data-gift-type="${t}"]`).click(), type);
+  await page.evaluate((a) => { const i = document.querySelector('#gift-amount'); i.value = String(a); i.dispatchEvent(new Event('input')); document.querySelector('#gift-review').click(); }, amount);
+  await page.waitForSelector('.choice-overlay [data-choice-tone="yes"]', { timeout: 3000 });
+  await page.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());
+}
 
 try {
   for (let i = 0; i < 40; i++) { try { if ((await fetch(BASE + 'healthz')).ok) break; } catch (e) {} await sleep(100); }
@@ -67,31 +73,49 @@ try {
   await Promise.all([register(A, 'Ali'), register(B, 'Bea')]);
   const a0 = await prof(A);
 
-  // 1) Shop → Send a Gift: unknown usernames are rejected
+  // 1) 🎁 GIFT screen (top bar button): unknown usernames are rejected
+  ok(Boolean(await B.$('#app-topbar [data-nav="gift"]')), 'top bar has a 🎁 Gift button');
   await giftByName(B, 'nobody_xyz');
   const miss = await status(B);
-  ok(/bad/.test(miss.cls) && /No Spades Royale player/.test(miss.text), `unknown username rejected: "${miss.text}"`);
-  ok(!(await B.$('.gift-card')), 'no gift popup for an unknown player');
+  ok(/bad/.test(miss.cls) && /No Spades Arena player/.test(miss.text), `unknown username rejected: "${miss.text}"`);
 
-  // 2) Real player → "what do you want to send" → Lions + Diamonds
+  // 2) Real player → Coins, then Diamonds (server-checked: taken from the sender by the server)
   await giftByName(B, 'ali');
   const hit = await status(B);
-  await B.waitForSelector('.gift-card', { timeout: 3000 });
-  ok(/good/.test(hit.cls) && /Ali/.test(hit.text), `real player found: "${hit.text}" and the Lions / Diamonds popup opens`);
-  await shot(B, '01-shop-gift-dialog');
-  await B.evaluate(() => {
-    document.querySelector('#gift-lions').value = '10';
-    document.querySelector('#gift-diamonds').value = '1';
-    document.querySelector('[data-gift-send]').click();
-  });
-  await A.waitForFunction((c) => SpadesHadzz.store.getProfile().coins === c + 10, { timeout: 6000 }, a0.coins);
+  ok(/good/.test(hit.cls) && /Ali/.test(hit.text), `real player found: "${hit.text}"`);
+  await shot(B, '01-gift-screen');
+  await sendAmount(B, 'coins', 10);
+  await A.waitForFunction((c) => SpadesHadzz.store.getProfile().coins === c + 10, { timeout: 8000 }, a0.coins);
+  await sendAmount(B, 'diamonds', 1);
+  await A.waitForFunction((d) => SpadesHadzz.store.getProfile().diamonds === d + 1, { timeout: 8000 }, a0.diamonds);
   const a1 = await prof(A);
   const toastA = await A.$eval('#app-toast', el => el.textContent);
   ok(a1.coins === a0.coins + 10 && a1.diamonds === a0.diamonds + 1, `Ali received 🦁 10 + 💎 1 (now 🦁 ${a1.coins}, 💎 ${a1.diamonds})`);
   ok(/Bea sent you/.test(toastA), `Ali got the notification: "${toastA}"`);
   await shot(A, '02-gift-received');
-  const b1 = await prof(B);
-  ok(b1.coins === 40 && b1.diamonds === 4, `Bea paid for the gift (🦁 ${b1.coins}, 💎 ${b1.diamonds})`);
+  await B.waitForFunction(() => { const p = SpadesHadzz.store.getProfile(); return p.coins === 40 && p.diamonds === 4; }, { timeout: 8000 });
+  ok(true, 'Bea’s balance was reduced by the server (🦁 40, 💎 4)');
+
+  // 2b) Gift an owned design: it leaves Bea and is unlocked for Ali straight away (no claiming)
+  await B.evaluate(() => { SpadesHadzz.store.credit({ lions: 300 }); SpadesHadzz.store.selectOrBuyTableTheme('arena_gold'); });
+  await B.waitForFunction(() => SpadesHadzz.store.getProfile().syncDirty === false, { timeout: 8000 });
+  await giftByName(B, 'Ali');
+  await status(B);
+  await B.evaluate(() => document.querySelector('[data-gift-type="item"]').click());
+  await B.waitForSelector('[data-gift-item="table:arena_gold"]', { timeout: 3000 });
+  await B.evaluate(() => document.querySelector('[data-gift-item="table:arena_gold"]').click());
+  await B.evaluate(() => document.querySelector('#gift-review').click());
+  await B.waitForSelector('.choice-overlay [data-choice-tone="yes"]');
+  await B.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());
+  await A.waitForFunction(() => SpadesHadzz.store.owns('table', 'arena_gold'), { timeout: 8000 });
+  await B.waitForFunction(() => !SpadesHadzz.store.owns('table', 'arena_gold') && SpadesHadzz.store.getProfile().selectedTableTheme === 'emerald', { timeout: 8000 });
+  ok(true, 'gifted Royal Gold table moved from Bea to Ali (Bea’s table went back to the free one)');
+  await A.evaluate(() => window.spadesApp.navigateTo('shop'));
+  await A.waitForSelector('[data-shop-item="table:arena_gold"] .ai-flag.gifted', { timeout: 4000 });
+  ok(await A.$eval('[data-shop-item="table:arena_gold"]', el => /GIFTED/.test(el.textContent) && /Equip/.test(el.textContent)), 'Ali’s shop shows it as 🎁 GIFTED and ready to Equip — no claim step');
+  await B.evaluate(() => { window.spadesApp.giftState = null; window.spadesApp.navigateTo('gift'); });
+  await B.waitForFunction(() => document.querySelectorAll('.gh-row.sent').length === 3, { timeout: 8000 });
+  ok(true, 'Bea’s gift history lists her 3 sent gifts');
 
   // 3) Gift while the other player is offline → arrives when they open the app
   const ctxA = A.browserContext();
@@ -100,12 +124,11 @@ try {
   for (let i = 0; i < 80; i++) { online = (await (await fetch(BASE + 'healthz')).json()).online; if (online === 1) break; await sleep(100); }
   await giftByName(B, 'Ali');
   await status(B);
-  await B.waitForSelector('.gift-card', { timeout: 3000 });
-  await B.evaluate(() => { document.querySelector('#gift-lions').value = '5'; document.querySelector('[data-gift-send]').click(); });
+  await sendAmount(B, 'coins', 5);
   const queuedToast = await B.waitForFunction(() => {
     const t = document.querySelector('#app-toast').textContent;
     return /Gift of/.test(t) ? t : null;
-  }, { timeout: 6000 }).then(h => h.jsonValue());
+  }, { timeout: 8000 }).then(h => h.jsonValue());
   ok(/next time they open/.test(queuedToast), `gift to an offline player is kept for them: "${queuedToast}"`);
   A = await ctxA.newPage();
   await A.setViewport({ width: 420, height: 880 });
@@ -147,7 +170,7 @@ try {
   ok(secs > 7 && secs < 9.5, `request popup closes by itself after ~8 seconds (${secs.toFixed(1)}s)`);
   ok(await B.evaluate(() => SpadesHadzz.networkAdapter.state.incomingRequests.some(r => r.username === 'Cy')), 'unanswered request is still in Friends → Requests');
 
-  // 6) Owner account (set on the server) has unlimited Lions & Diamonds; sign out → normal balance returns
+  // 6) Owner account (set on the server) has unlimited Coins & Diamonds; sign out → normal balance returns
   const before = await prof(C);
   await C.evaluate(() => window.spadesApp.signOut());
   await waitScreen(C, 'screen-login');
@@ -163,7 +186,7 @@ try {
   await C.waitForFunction(() => SpadesHadzz.store.isUnlimited, { timeout: 6000 });
   const hud = await C.$eval('#app-topbar [data-hud-coins]', el => el.textContent);
   const hudD = await C.$eval('#app-topbar [data-hud-diamonds]', el => el.textContent);
-  ok(hud === '1B' && hudD === '1B', `owner account shows unlimited Lions ${hud} and Diamonds ${hudD}`);
+  ok(hud === '∞' && hudD === '∞', `owner account shows unlimited Coins ${hud} and Diamonds ${hudD}`);
   const bought = await C.evaluate(() => SpadesHadzz.store.selectOrBuyAvatar('myth_cat').ok && SpadesHadzz.store.selectOrBuyAvatar('dia_icedragon').ok);
   const after = await prof(C);
   ok(bought && after.coins === 1000000000 && after.diamonds === 1000000000, 'buying the priciest items never runs the owner out');

@@ -60,7 +60,7 @@
     bad_credentials: 'Login Failed',
     no_pin: 'No Recovery PIN',
     bad_pin: 'PIN Must Be 4 Numbers',
-    update_required: 'Update Spades Royale',
+    update_required: 'Update Spades Arena',
     weak_password: 'Password Too Short',
     locked: 'Account Temporarily Locked',
     session_expired: 'Session Expired',
@@ -406,8 +406,8 @@
       this.authenticate('auth:login', username, password);
     }
 
-    register(username, password, pin) {
-      this.authenticate('auth:register', username, password, { pin: String(pin || '') });
+    register(username, password, pin, useCode = false) {
+      this.authenticate('auth:register', username, password, { pin: String(pin || ''), ...(useCode ? { useCode: true } : {}) });
     }
 
     /** Forgot password: username + 4-digit recovery PIN → new password (and you're logged in). */
@@ -433,7 +433,7 @@
         return;
       }
       if (!this.isOpen() && type === 'auth:reset') {
-        this.state.authAlert = { type: 'error', title: 'Needs the Internet', detail: 'Resetting a password with your PIN needs a connection to the Spades Royale server.' };
+        this.state.authAlert = { type: 'error', title: 'Needs the Internet', detail: 'Resetting a password with your PIN needs a connection to the Spades Arena server.' };
         this.emit();
         return;
       }
@@ -461,7 +461,7 @@
         this.state.authBusy = true;
         this.state.authAlert = {
           type: 'info',
-          title: 'Connecting to Spades Royale…',
+          title: 'Connecting to Spades Arena…',
           detail: 'Waking up the free login server — this can take up to a minute the first time. Keep this screen open.'
         };
         this.emit();
@@ -739,14 +739,14 @@
           break;
 
         case 'gift': {
-          // 🎁 Someone sent us Lions / Diamonds
+          // 🎁 Someone sent us Coins / Diamonds
           const lions = Math.max(0, Math.floor(Number(msg.lions) || 0));
           const diamonds = Math.max(0, Math.floor(Number(msg.diamonds) || 0));
+          const item = msg.item && msg.item.kind && msg.item.id ? { kind: msg.item.kind, id: msg.item.id } : null;
           if (msg.giftId) this.send('gift:ack', { giftId: msg.giftId }); // added (or already had it) — clear the server inbox
-          if (SH.store && SH.store.receiveGift(msg.giftId, { lions, diamonds })) {
-            const parts = [lions ? `🦁 ${lions} Lions` : '', diamonds ? `💎 ${diamonds} Diamond${diamonds > 1 ? 's' : ''}` : ''].filter(Boolean).join(' + ');
-            this.fire('gift_received', { fromName: msg.fromName, lions, diamonds });
-            this.fire('notice', { tone: 'success', message: `🎁 ${msg.fromName || 'A friend'} sent you ${parts}!` });
+          if (SH.store && SH.store.receiveGift(msg.giftId, { lions, diamonds, item })) {
+            this.fire('gift_received', { fromName: msg.fromName, lions, diamonds, item });
+            this.fire('notice', { tone: 'success', message: `🎁 ${msg.fromName || 'A friend'} sent you ${this.giftLabel({ lions, diamonds, item })}!${item ? ' It’s unlocked now.' : ''}` });
           }
           break;
         }
@@ -756,14 +756,22 @@
           if (pending) {
             clearTimeout(pending.timer);
             this.pendingGifts.delete(msg.giftId);
-            const parts = [pending.lions ? `🦁 ${pending.lions}` : '', pending.diamonds ? `💎 ${pending.diamonds}` : ''].filter(Boolean).join(' + ');
+            const parts = this.giftLabel(pending);
+            this.fire('gift_sent', { giftId: msg.giftId, toName: msg.toName });
             this.fire('notice', {
               tone: 'success',
               message: msg.queued
-                ? `🎁 Gift of ${parts} sent to ${msg.toName}! They’ll get it next time they open Spades Royale.`
+                ? `🎁 Gift of ${parts} sent to ${msg.toName}! They’ll get it next time they open Spades Arena.`
                 : `🎁 Gift of ${parts} sent to ${msg.toName}!`
             });
           }
+          break;
+        }
+
+        case 'gift:history': {
+          const w = this.pendingGiftHistory;
+          this.pendingGiftHistory = null;
+          if (w) { clearTimeout(w.timer); w.resolve({ ok: true, log: Array.isArray(msg.log) ? msg.log : [] }); }
           break;
         }
 
@@ -1478,23 +1486,50 @@
     }
 
     /**
-     * 🎁 Gift Lions / Diamonds to a player in your room (via: 'room', to = their player id)
+     * 🎁 Gift Coins / Diamonds to a player in your room (via: 'room', to = their player id)
      * or to a friend (via: 'friend', to = their account id). The amount is taken now and
      * refunded if the gift can't be delivered.
      */
-    sendGift({ via, to, lions = 0, diamonds = 0 }) {
+    /**
+     * 🎁 Send Coins / Diamonds / an owned item.
+     * - By username (Gift screen & Shop): the server checks your saved balance & items and takes them —
+     *   nothing is taken on this device first; your balance updates when the server confirms.
+     * - To someone in your room (P2P): taken here first and refunded if it can't be delivered.
+     */
+    sendGift({ via, to, lions = 0, diamonds = 0, item = null }) {
       lions = Math.max(0, Math.floor(Number(lions) || 0));
       diamonds = Math.max(0, Math.floor(Number(diamonds) || 0));
-      if (lions + diamonds === 0) return { ok: false, message: 'Choose how many Lions or Diamonds to send.' };
-      if (!SH.store.debitForGift({ lions, diamonds })) return { ok: false, funds: true, message: 'You don’t have that many Lions / Diamonds.' };
+      if (lions + diamonds === 0 && !item) return { ok: false, message: 'Choose Coins, Diamonds or an item to send.' };
+      const p = SH.store.getProfile();
       const buf = new Uint8Array(8);
       root.crypto.getRandomValues(buf);
       const giftId = Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
-      const sent = via === 'friend'
-        ? this.send('gift:send', { userId: to, lions, diamonds, giftId })
-        : via === 'username'
-          ? this.send('gift:send', { username: to, lions, diamonds, giftId })
-          : this.roomSend('gift:send', { toId: to, lions, diamonds, giftId });
+      const serverChecked = via === 'username' || via === 'friend' || Boolean(item);
+      if (serverChecked) {
+        if (!p.unlimited && (p.coins < lions || p.diamonds < diamonds)) return { ok: false, funds: true, message: 'You don’t have that many Coins / Diamonds.' };
+        if (item && !SH.store.owns(item.kind, item.id)) return { ok: false, message: 'You can only gift items you own.' };
+        if (!this.isOnlineReady()) return { ok: false, message: 'Gifting needs a connection to the Spades Arena server.' };
+        this.pendingGifts = this.pendingGifts || new Map();
+        const timer = setTimeout(() => this.refundGift(giftId, 'The gift couldn’t be confirmed — nothing was taken. Try again.'), 20000);
+        this.pendingGifts.set(giftId, { lions, diamonds, item, timer, noDebit: true });
+        const target = via === 'friend' ? { userId: to } : { username: to };
+        const sendNow = () => this.send('gift:send', { ...target, lions, diamonds, item, giftId });
+        // Make sure the server has this device's latest balance & items before it checks them
+        if (SH.store.getProfile().syncDirty) {
+          this.uploadProfileNow();
+          const started = Date.now();
+          const wait = () => {
+            if (!SH.store.getProfile().syncDirty || Date.now() - started > 6000) sendNow();
+            else setTimeout(wait, 200);
+          };
+          setTimeout(wait, 200);
+        } else {
+          sendNow();
+        }
+        return { ok: true };
+      }
+      if (!SH.store.debitForGift({ lions, diamonds })) return { ok: false, funds: true, message: 'You don’t have that many Coins / Diamonds.' };
+      const sent = this.roomSend('gift:send', { toId: to, lions, diamonds, giftId });
       if (!sent) {
         SH.store.credit({ lions, diamonds });
         return { ok: false, message: 'Not connected — your gift wasn’t sent.' };
@@ -1503,6 +1538,28 @@
       const timer = setTimeout(() => this.refundGift(giftId, 'The gift couldn’t be delivered — returned to you.'), 15000);
       this.pendingGifts.set(giftId, { lions, diamonds, timer });
       return { ok: true };
+    }
+
+    /** Your sent & received gifts (from the server). Resolves { ok, log }. */
+    getGiftHistory() {
+      if (!this.isOnlineReady()) return Promise.resolve({ ok: false, log: [] });
+      if (this.pendingGiftHistory) { clearTimeout(this.pendingGiftHistory.timer); this.pendingGiftHistory.resolve({ ok: false, log: [] }); }
+      return new Promise((resolve) => {
+        const timer = setTimeout(() => { this.pendingGiftHistory = null; resolve({ ok: false, log: [] }); }, 8000);
+        this.pendingGiftHistory = { resolve, timer };
+        this.send('gift:history');
+      });
+    }
+
+    giftLabel({ lions = 0, diamonds = 0, item = null }) {
+      const parts = [];
+      if (lions) parts.push(`🦁 ${Number(lions).toLocaleString('en-US')} Coins`);
+      if (diamonds) parts.push(`💎 ${Number(diamonds).toLocaleString('en-US')} Diamond${diamonds > 1 ? 's' : ''}`);
+      if (item) {
+        const d = SH.store && SH.store.itemDef(item.kind, item.id);
+        parts.push(`${{ table: 'the table', card: 'the card design', avatar: 'the avatar' }[item.kind] || ''} “${d ? d.name : item.id}”`);
+      }
+      return parts.join(' + ');
     }
 
     /**
@@ -1573,12 +1630,12 @@
       });
     }
 
-    /** Checks that a username is a real Spades Royale player. Resolves { ok, found, self, user } or { ok: false, message }. */
+    /** Checks that a username is a real Spades Arena player. Resolves { ok, found, self, user } or { ok: false, message }. */
     lookupUser(username) {
       const query = String(username || '').trim().slice(0, 24);
       if (query.length < 2) return Promise.resolve({ ok: false, message: 'Type the player’s username (at least 2 letters).' });
       if (!this.isOnlineReady()) {
-        return Promise.resolve({ ok: false, message: this.isOnlineAccount() ? 'Can’t reach the Spades Royale server — try again in a moment.' : 'Gifts by username need an online account — log in while connected to the server.' });
+        return Promise.resolve({ ok: false, message: this.isOnlineAccount() ? 'Can’t reach the Spades Arena server — try again in a moment.' : 'Gifts by username need an online account — log in while connected to the server.' });
       }
       this.pendingLookups = this.pendingLookups || new Map();
       const key = query.toLowerCase();
@@ -1599,8 +1656,9 @@
       if (!pending) return;
       clearTimeout(pending.timer);
       this.pendingGifts.delete(giftId);
-      SH.store.credit({ lions: pending.lions, diamonds: pending.diamonds });
+      if (!pending.noDebit) SH.store.credit({ lions: pending.lions, diamonds: pending.diamonds }); // server-checked gifts took nothing here
       this.fire('notice', { tone: 'error', message: message || 'Gift returned to you.' });
+      this.fire('gift_failed', { giftId });
     }
 
     /** Typed chat message to everyone or just your team ('all' | 'team'). */

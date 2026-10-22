@@ -10,14 +10,15 @@
   const REDEAL_COST = 350; // 🦁 to redeal only your own hand (offline, before you bid)
   const LOADING_SCREEN_MS = 3000; // opening screen (3 seconds)
   // Release builds get their version stamped in by bundle.py (SPADES_APP_VERSION); 'dev' = local copy
-  const APP_VERSION = 'dev';
+  const APP_VERSION = 'dev'; // hidden build number (update checks)
+  const DISPLAY_VERSION = 'dev'; // public version, e.g. 1.0.0
   const UPDATE_SITE = 'https://spades-royale.github.io';
   const GAME_INTRO_MS = 5000; // cat-in-a-hat intro when a game starts
   const SCREEN_SESSION_KEY = 'spades_royale_screen'; // where you were, for page reloads
 
   // Shown by the cat in the hat while each new game is shuffled & dealt (one at random)
   const INTRO_FACTS = [
-    'Spades Royale is the first ever game made by Hadzz — and one of the best Spades games out there! ♠',
+    'Spades Arena is the first ever game made by Hadzz — and one of the best Spades games out there! ♠',
     'This is the first Spades game made with 3 players! 🔴🔵🟡',
     'Spades is known as one of the 10 hardest card games. 🧠',
     'Spades is known for intelligent minds — so if you’re playing, you’re very intelligent! 😎',
@@ -119,6 +120,7 @@
         this.syncHeaderHud();
         if (this.currentScreen === 'profile') this.renderProfileScreen();
         if (this.currentScreen === 'shop') this.renderShopScreen();
+        if (this.currentScreen === 'gift') this.renderGiftScreen();
         if (this.currentScreen === 'settings') this.renderSettingsScreen();
       });
 
@@ -130,7 +132,7 @@
         if (this.currentScreen === 'menu') this.renderMenuResume();
       });
       net.on('signed_in', ({ user, freshLogin }) => {
-        if (freshLogin) this.showToast(`👑 Welcome, ${user.username}! You're a Spades Royale VIP.`, 'success');
+        if (freshLogin) this.showToast(`👑 Welcome, ${user.username}! You're a Spades Arena VIP.`, 'success');
         if (this.currentScreen === 'login') this.navigateTo(this.afterLoginScreen || 'menu');
         this.afterLoginScreen = null;
         setTimeout(() => this.maybeShowLoginStreak(), 700);
@@ -147,6 +149,7 @@
       net.on('notice', (n) => this.showToast(n.message, n.tone));
       net.on('friend_request', (req) => this.showFriendRequestPopup(req));
       net.on('update_required', () => this.checkForUpdate(true));
+      net.on('gift_sent', () => { if (this.giftState) this.giftState.historyLoaded = false; if (this.currentScreen === 'gift') this.renderGiftScreen(); });
       net.on('account_result', ({ ok, message }) => {
         if (!ok) SH.audio.notEnoughFunds();
         this.showToast(message, ok ? 'success' : 'error');
@@ -194,6 +197,7 @@
       this.applyAutoLayout();
       window.addEventListener('resize', () => this.applyAutoLayout());
       this.bindGlobalNavigation();
+      this.installCurrencyIcons();
       this.syncHeaderHud();
 
       // 💎 +1 Diamond the first time you open the game each day
@@ -204,7 +208,7 @@
         }, 1600);
       }
 
-      // Opening the app: 5-second Spades Royale screen (the "no ads" note can't be skipped).
+      // Opening the app: 5-second Spades Arena screen (the "no ads" note can't be skipped).
       // Reloading the page in the same session goes straight back to where you were.
       let lastScreen = null;
       try { lastScreen = sessionStorage.getItem(SCREEN_SESSION_KEY); } catch (e) { /* ignore */ }
@@ -270,11 +274,11 @@
       overlay.innerHTML = `
         <div class="choice-card update-card" role="alertdialog" aria-modal="true" aria-label="Update required">
           <div class="royale-logo update-logo" aria-hidden="true"></div>
-          <h3>✨ New version${info ? ` — v${esc(info.version)}` : ''}</h3>
+          <h3>✨ New version${info ? ` — v${esc(info.displayVersion || info.version)}` : ''}</h3>
           <p>${platform
-            ? `Please update Spades Royale to keep playing. ${platform === 'android' ? 'Download it, open the file and tap <strong>Install</strong>.' : 'Download it and install it over this one.'} Your account, Lions, Diamonds and items stay.`
-            : 'A new version of Spades Royale is ready. Tap below to load it — your account stays.'}</p>
-          <p class="update-have">You have v${esc(APP_VERSION)}</p>
+            ? `Please update Spades Arena to keep playing. ${platform === 'android' ? 'Download it, open the file and tap <strong>Install</strong>.' : 'Download it and install it over this one.'} Your account, Coins, Diamonds and items stay.`
+            : 'A new version of Spades Arena is ready. Tap below to load it — your account stays.'}</p>
+          <p class="update-have">You have v${esc(DISPLAY_VERSION === 'dev' ? APP_VERSION : DISPLAY_VERSION)}</p>
           <div class="choice-actions"><button type="button" class="btn-yes" data-update-now>${platform ? '⬇️ Download update' : '🔄 Load the new version'}</button></div>
         </div>
       `;
@@ -371,8 +375,8 @@
       if (typeof document === 'undefined') return;
       const profile = SH.store.getProfile();
       const settings = SH.store.getSettings();
-      document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = profile.unlimited ? '1B' : String(profile.coins); });
-      document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = profile.unlimited ? '1B' : String(profile.diamonds || 0); });
+      document.querySelectorAll('[data-hud-coins]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.coins); });
+      document.querySelectorAll('[data-hud-diamonds]').forEach(el => { el.textContent = profile.unlimited ? '∞' : String(profile.diamonds || 0); });
       document.body.setAttribute('data-card-skin', profile.selectedCardSkin || 'classic');
       document.body.setAttribute('data-table-theme', profile.selectedTableTheme || 'emerald');
       document.querySelectorAll('[data-hud-username]').forEach(el => { el.textContent = profile.username; });
@@ -391,6 +395,50 @@
       document.querySelectorAll('[data-hud-avatar]').forEach(el => { el.innerHTML = SH.renderAvatarSVG(profile.selectedAvatar, 36); });
       document.querySelectorAll('[data-hud-difficulty]').forEach(el => { el.textContent = settings.botDifficulty; });
       document.querySelectorAll('[data-hud-target]').forEach(el => { el.textContent = `${settings.targetScore} pts`; });
+    }
+
+    /**
+     * Currency icons: every 🦁 (coins) and 💎 (diamonds) shown anywhere in the app is drawn as the
+     * premium gold coin / faceted diamond icon — including toasts and popups added later.
+     */
+    installCurrencyIcons() {
+      if (typeof document === 'undefined' || typeof MutationObserver === 'undefined' || this.currencyObserver) return;
+      const RE = /(🦁|💎)/;
+      const SKIP = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'OPTION', 'TITLE', 'svg']);
+      const fix = (node) => {
+        if (node.nodeType !== 3 || !RE.test(node.nodeValue)) return;
+        const parent = node.parentNode;
+        if (!parent || SKIP.has(parent.nodeName) || parent.closest && parent.closest('svg')) return;
+        const frag = document.createDocumentFragment();
+        for (const part of node.nodeValue.split(RE)) {
+          if (part === '🦁' || part === '💎') {
+            const i = document.createElement('span');
+            i.className = `cur-icon ${part === '🦁' ? 'cur-coin' : 'cur-diamond'}`;
+            i.setAttribute('role', 'img');
+            i.setAttribute('aria-label', part === '🦁' ? 'coins' : 'diamonds');
+            frag.appendChild(i);
+          } else if (part) {
+            frag.appendChild(document.createTextNode(part));
+          }
+        }
+        parent.replaceChild(frag, node);
+      };
+      const walk = (root) => {
+        if (root.nodeType === 3) return fix(root);
+        if (root.nodeType !== 1 || SKIP.has(root.nodeName)) return;
+        const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const found = [];
+        while (w.nextNode()) if (RE.test(w.currentNode.nodeValue)) found.push(w.currentNode);
+        found.forEach(fix);
+      };
+      walk(document.body);
+      this.currencyObserver = new MutationObserver((muts) => {
+        for (const m of muts) {
+          if (m.type === 'characterData') fix(m.target);
+          m.addedNodes && m.addedNodes.forEach(walk);
+        }
+      });
+      this.currencyObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
     }
 
     showToast(message, tone = 'info') {
@@ -511,6 +559,8 @@
         this.renderProfileScreen();
       } else if (screen === 'shop') {
         this.renderShopScreen();
+      } else if (screen === 'gift') {
+        this.renderGiftScreen();
       } else if (screen === 'settings') {
         this.renderSettingsScreen();
       } else if (screen === 'rules') {
@@ -776,7 +826,7 @@
             `).join('')}
           </div>
 
-          <p class="field-help pp-note">Target ${settings.targetScore} pts · Bots: ${esc(settings.botDifficulty)} · Speed: ${esc(this.getPace().label)} (change in Settings). 🦁 Lions go to ${esc(cfg.names[0] || profile.username)} (this device’s profile).</p>
+          <p class="field-help pp-note">Target ${settings.targetScore} pts · Bots: ${esc(settings.botDifficulty)} · Speed: ${esc(this.getPace().label)} (change in Settings). 🦁 Coins go to ${esc(cfg.names[0] || profile.username)} (this device’s profile).</p>
           <button type="button" class="btn-primary pp-start-btn" id="pp-start-btn">♠ Start Pass &amp; Play</button>
         </div>
       `;
@@ -838,7 +888,7 @@
       overlay.className = 'game-intro';
       overlay.style.setProperty('--intro-ms', `${durationMs}ms`);
       overlay.innerHTML = `
-        <div class="royale-logo intro-logo" role="img" aria-label="Spades Royale"></div>
+        <div class="royale-logo intro-logo" role="img" aria-label="Spades Arena"></div>
         <div class="intro-cat">${CAT_IN_HAT_SVG}</div>
         <div class="intro-speech" role="status" aria-live="polite"><p>${esc(INTRO_FACTS[idx])}</p></div>
         <div class="intro-progress" aria-hidden="true"><div></div></div>
@@ -1624,10 +1674,10 @@
         return av && av.tier !== 'free' && av.currency !== 'diamonds';
       }).length + p.ownedCardSkins.filter(id => id !== 'classic').length;
       this.showChoiceDialog({
-        title: 'Not enough Lions',
+        title: 'Not enough Coins',
         message: sellable
-          ? `A game costs 🦁 ${SH.store.entryFee} and you have ${p.coins}. Sell an avatar or card design for half its price to get more Lions.`
-          : `A game costs 🦁 ${SH.store.entryFee} and you have ${p.coins}. You don’t own anything you can sell yet — open the game tomorrow for your daily 💎, or ask a friend to 🎁 gift you Lions.`,
+          ? `A game costs 🦁 ${SH.store.entryFee} and you have ${p.coins}. Sell an avatar or card design for half its price to get more Coins.`
+          : `A game costs 🦁 ${SH.store.entryFee} and you have ${p.coins}. You don’t own anything you can sell yet — open the game tomorrow for your daily 💎, or ask a friend to 🎁 gift you Coins.`,
         actions: sellable
           ? [{ label: '💰 Sell something (half price)', tone: 'yes', onClick: () => this.openSellSection() }, { label: 'Not now', tone: 'no' }]
           : [{ label: 'OK', tone: 'no' }]
@@ -1649,14 +1699,14 @@
       const coins = SH.store.getProfile().coins;
       if (coins < REDEAL_COST) {
         SH.audio.notEnoughFunds();
-        this.showToast(`A redeal costs 🦁 ${REDEAL_COST.toLocaleString('en-US')} Lions — you have ${coins}. Win rounds (+10) and games (+50 / +80) to earn more.`, 'error');
+        this.showToast(`A redeal costs 🦁 ${REDEAL_COST.toLocaleString('en-US')} Coins — you have ${coins}. Win rounds (+10) and games (+50 / +80) to earn more.`, 'error');
         return;
       }
       this.showChoiceDialog({
         title: 'Redeal this round?',
-        message: `Swap your hand for a fresh one for 🦁 ${REDEAL_COST} Lions. Only your cards change — scores stay the same.`,
+        message: `Swap your hand for a fresh one for 🦁 ${REDEAL_COST} Coins. Only your cards change — scores stay the same.`,
         actions: [
-          { label: `🔀 Redeal for ${REDEAL_COST.toLocaleString('en-US')} Lions`, primary: true, onClick: () => this.redealCurrentRound() },
+          { label: `🔀 Redeal for ${REDEAL_COST.toLocaleString('en-US')} Coins`, primary: true, onClick: () => this.redealCurrentRound() },
           { label: 'Keep my cards', subtle: true }
         ]
       });
@@ -1697,7 +1747,7 @@
         const delay = Math.random() * 0.9;
         const dur = 2.2 + Math.random() * 1.6;
         const size = 0.8 + Math.random() * 1.1;
-        const colors = ['#f5d36b', '#fff1b8', '#d4af37', '#e3242b', '#1877f2', '#ffffff'];
+        const colors = ['#2bff88', '#12b85f', '#e6fff1', '#c9d1cd', '#0fb35d', '#ffffff'];
         return `<span style="left:${left}%;animation-delay:${delay}s;animation-duration:${dur}s;font-size:${size}rem;color:${colors[i % colors.length]}">${pieces[i % pieces.length]}</span>`;
       }).join('');
       host.appendChild(layer);
@@ -2017,7 +2067,7 @@
     }
 
     /**
-     * Works out a round's rewards (stats & win streak update now). The Lions are paid when the
+     * Works out a round's rewards (stats & win streak update now). The Coins are paid when the
      * player taps "Collect" (or automatically when they move on), exactly once.
      */
     planRewards({ roundKey, wonRound, matchKey, matchFinished, wonMatch, target, feeRefund = 0, myBid = null, myTricks = 0 }) {
@@ -2228,7 +2278,7 @@
           ${renderTableEdgeMarker(solo ? 2 : 3, 'seat-east')}
 
           <div class="trick-mat" aria-label="Current Trick Area">
-            <div class="trick-mat-watermark">♠ SPADES ROYALE ♠</div>
+            <div class="trick-mat-watermark">♠ SPADES ARENA ♠</div>
             ${solo ? '' : renderTrickCard(2, 'slot-north')}
             ${renderTrickCard(1, 'slot-west')}
             ${renderTrickCard(solo ? 2 : 3, 'slot-east')}
@@ -2562,18 +2612,18 @@
           <h3>${title}</h3>
           ${totalCoinsEarned > 0 ? (s.reward && s.reward.collected ? `
             <div class="coin-reward-banner reward-collected" id="reward-collected">
-              ✓ Collected 🦁 +${s.reward.collectedLions || totalCoinsEarned} Lions${s.reward.matchDiamonds ? ` &amp; 💎 +${s.reward.matchDiamonds}` : ''}
+              ✓ Collected 🦁 +${s.reward.collectedLions || totalCoinsEarned} Coins${s.reward.matchDiamonds ? ` &amp; 💎 +${s.reward.matchDiamonds}` : ''}
             </div>
           ` : `
             <button type="button" class="collect-btn" id="collect-reward-btn">
-              🎁 Collect 🦁 +${totalCoinsEarned} Lions
+              🎁 Collect 🦁 +${totalCoinsEarned} Coins
               <span>(${s.roundCoinsAwarded ? '+10 Round Win' : ''}${s.roundCoinsAwarded && s.matchCoinsAwarded ? ' & ' : ''}${s.matchCoinsAwarded ? `+${s.matchCoinsAwarded - ((s.reward && s.reward.feeRefund) || 0)} Game Win${s.reward && s.reward.feeRefund ? ` + ${s.reward.feeRefund} entry back` : ''}` : ''})</span>
             </button>
           `) : `
             <p class="summary-subnote">
               ${s.matchFinished
                 ? `Target score of ${s.targetScore} reached.`
-                : `Win a round with a positive score higher than ${foeName} to earn +10 🦁 Lions (winning the game: +${SH.store.gameWinLions(s.targetScore)} 🦁).`}
+                : `Win a round with a positive score higher than ${foeName} to earn +10 🦁 Coins (winning the game: +${SH.store.gameWinLions(s.targetScore)} 🦁).`}
             </p>
           `}
           ${s.reward && s.reward.matchDiamonds > 0 ? `<div class="coin-reward-banner diamond-reward-banner">💎 +${s.reward.matchDiamonds} Diamonds — ${s.targetScore === 250 ? 'every 2 wins at 250' : 'every 2 wins at 500'}!</div>` : ''}
@@ -2651,7 +2701,7 @@
 
       const html = `
         <div class="auth-hero">
-          <div class="royale-logo auth-logo" role="img" aria-label="Spades Royale"></div>
+          <div class="royale-logo auth-logo" role="img" aria-label="Spades Arena"></div>
         </div>
         ${this.renderAlert(net.authAlert)}
 
@@ -2666,7 +2716,7 @@
                 ? 'Welcome back! Log in to play.'
                 : mode === 'reset'
                 ? '🔑 Forgot your password? Enter your username, your 4-digit recovery PIN and a new password.'
-                : 'New here? Pick a username (2–18 letters, numbers, _ - .), a password (6+ characters) and a 4-digit recovery PIN. You start with 🦁 50 Lions and 💎 5 Diamonds.'}
+                : 'New here? Pick a username (2–18 letters, numbers, _ - .), a password (6+ characters) and a 4-digit recovery PIN. You start with 🦁 50 Coins and 💎 5 Diamonds.'}
             </p>
             <form id="auth-form" class="auth-form" autocomplete="on">
               <label for="auth-username">Username</label>
@@ -2676,11 +2726,17 @@
                 <label for="auth-pin">Recovery PIN</label>
                 <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="4 numbers" required />
               ` : ''}
-              <label for="auth-password">${mode === 'reset' ? 'New Password' : 'Password'}</label>
+              ${mode === 'register' ? `
+                <div class="segmented-control auth-cred-type" role="group" aria-label="Sign in with">
+                  <button type="button" class="seg-btn ${this.registerWithCode ? '' : 'active'}" data-cred-type="password">Password</button>
+                  <button type="button" class="seg-btn ${this.registerWithCode ? 'active' : ''}" data-cred-type="code">4-digit code</button>
+                </div>` : ''}
+              <label for="auth-password">${mode === 'reset' ? 'New Password' : mode === 'login' ? 'Password or 4-digit code' : this.registerWithCode ? '4-digit login code' : 'Password'}</label>
               <input id="auth-password" type="password" name="password" maxlength="128"
+                ${mode === 'register' && this.registerWithCode ? 'inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="e.g. 7391"' : ''}
                 autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}" required />
               ${mode !== 'login' ? `
-                <label for="auth-password2">Confirm ${mode === 'reset' ? 'New ' : ''}Password</label>
+                <label for="auth-password2">Confirm ${mode === 'reset' ? 'New Password' : this.registerWithCode && mode === 'register' ? 'Code' : 'Password'}</label>
                 <input id="auth-password2" type="password" maxlength="128" autocomplete="new-password" required />
               ` : ''}
               ${mode === 'register' ? `
@@ -2706,6 +2762,11 @@
       // Never keep typed passwords around between renders of a different tab
       mount.querySelectorAll('input[type="password"]').forEach(el => { if (net.authBusy) el.value = ''; });
 
+      mount.querySelectorAll('[data-cred-type]').forEach(btn => btn.addEventListener('click', () => {
+        SH.audio.uiClick();
+        this.registerWithCode = btn.getAttribute('data-cred-type') === 'code';
+        this.renderLoginScreen();
+      }));
       mount.querySelectorAll('[data-auth-mode]').forEach(btn => {
         btn.addEventListener('click', () => {
           SH.audio.uiClick();
@@ -2736,8 +2797,13 @@
               this.renderLoginScreen();
               return;
             }
+            if (mode === 'register' && this.registerWithCode && !/^\d{4}$/.test(password)) {
+              net.authAlert = { type: 'error', title: 'Login Code Must Be 4 Numbers', detail: 'Type exactly 4 numbers, like 7391. (A password is safer — a code is just quicker.)' };
+              this.renderLoginScreen();
+              return;
+            }
             if (mode === 'reset') adapter.resetPassword(username, pin, password);
-            else adapter.register(username, password, pin);
+            else adapter.register(username, password, pin, Boolean(this.registerWithCode));
           } else {
             adapter.login(username, password);
           }
@@ -3048,7 +3114,7 @@
                     <button type="button" class="btn-secondary" id="mp-start-match-btn">▶ Start Match</button>
                   ` : ''}
                 </div>
-                <p class="field-help">Send the code to your friends (WhatsApp, SMS…) — they open Spades Royale, tap Lobby and enter it. The match starts once all ${room.capacity} players are Ready.</p>
+                <p class="field-help">Send the code to your friends (WhatsApp, SMS…) — they open Spades Arena, tap Lobby and enter it. The match starts once all ${room.capacity} players are Ready.</p>
               `}
               <button type="button" class="btn-secondary btn-sm" id="mp-leave-room-btn">${playing ? '🏳 Quit Match' : '🚪 Leave Room'}</button>
             ` : `
@@ -3147,9 +3213,9 @@
       if (shareBtn && room) {
         shareBtn.addEventListener('click', () => {
           SH.audio.uiClick();
-          const text = `Join my Spades Royale game! 🦁♠ Open the app, tap Lobby and enter code: ${room.code}`;
+          const text = `Join my Spades Arena game! 🦁♠ Open the app, tap Lobby and enter code: ${room.code}`;
           if (navigator.share) {
-            navigator.share({ title: 'Spades Royale', text }).catch(() => {});
+            navigator.share({ title: 'Spades Arena', text }).catch(() => {});
           } else {
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
           }
@@ -3620,7 +3686,7 @@
               </div>
             `).join('')}
           </div>
-          <p class="streak-won">You got <strong>🦁 ${reward.lions} Lions${reward.diamonds ? ` + 💎 ${reward.diamonds} Diamond` : ''}</strong> today!</p>
+          <p class="streak-won">You got <strong>🦁 ${reward.lions} Coins${reward.diamonds ? ` + 💎 ${reward.diamonds} Diamond` : ''}</strong> today!</p>
           <div class="choice-actions"><button type="button" class="btn-yes" data-streak-close>Collect</button></div>
         </div>
       `;
@@ -3710,8 +3776,8 @@
       overlay.innerHTML = `
         <div class="choice-card gift-card" role="dialog" aria-modal="true" aria-label="Send a gift">
           <h3>🎁 Send a gift to ${esc(name)}</h3>
-          <p>You have 🦁 <strong>${profile.coins.toLocaleString('en-US')}</strong> Lions · 💎 <strong>${(profile.diamonds || 0).toLocaleString('en-US')}</strong> Diamonds · no sending limit</p>
-          <label class="gift-row">🦁 Lions
+          <p>You have 🦁 <strong>${profile.coins.toLocaleString('en-US')}</strong> Coins · 💎 <strong>${(profile.diamonds || 0).toLocaleString('en-US')}</strong> Diamonds · no sending limit</p>
+          <label class="gift-row">🦁 Coins
             <input type="number" id="gift-lions" inputmode="numeric" min="0" value="0" />
           </label>
           <div class="gift-quick">${[10, 100, 500, 1000, 10000].map(v => `<button type="button" class="chip-btn" data-gift-quick-lions="${v}">+${v.toLocaleString('en-US')}</button>`).join('')}${profile.unlimited ? '' : '<button type="button" class="chip-btn" data-gift-all-lions>All</button>'}</div>
@@ -3784,7 +3850,7 @@
             <h3>${esc(profile.username)}</h3>
             <span class="account-pill signed-in">🔐 ${online ? 'Online account' : 'Account on this phone'}</span>
             <div class="profile-badges">
-              <span class="coin-pill">🦁 <strong>${profile.coins}</strong> Lions</span>
+              <span class="coin-pill">🦁 <strong>${profile.coins}</strong> Coins</span>
               <span class="coin-pill diamond-pill">💎 <strong>${profile.diamonds || 0}</strong> Diamonds</span>
             </div>
             <div class="profile-badges">
@@ -3870,10 +3936,25 @@
           </div>
         </div>
 
+        <div class="avatar-section table-theme-section">
+          <div class="section-head"><h3>🎨 My Tables</h3><span>Tap a table to play on it</span></div>
+          <div class="theme-grid">
+            ${SH.TABLE_THEMES.filter(t => (profile.ownedTableThemes || ['emerald']).includes(t.id)).map(t => {
+              const inUse = (profile.selectedTableTheme || 'emerald') === t.id;
+              return `
+                <button type="button" class="theme-card ${inUse ? 'in-use' : ''}" data-table-id="${t.id}">
+                  <span class="theme-swatch" data-table-swatch="${t.id}" style="--sw1:${t.swatch[0]};--sw2:${t.swatch[1]}"><span>♠</span></span>
+                  <span class="skin-name">${esc(t.name)}</span>
+                  <span class="skin-price ${inUse ? 'owned' : ''}">${inUse ? '✓ In use' : 'Use'}</span>
+                </button>`;
+            }).join('')}
+          </div>
+        </div>
+
         <div class="avatar-section sell-section">
           <div class="section-head">
             <h3>💰 Sell for half price</h3>
-            <span>Short on Lions? Sell something you own — you get half of what it cost.</span>
+            <span>Short on Coins? Sell something you own — you get half of what it cost.</span>
           </div>
           ${sellAvatars.length + sellSkins.length ? `
             <div class="sell-list">
@@ -4014,7 +4095,7 @@
           SH.audio.uiClick();
           this.showChoiceDialog({
             title: 'Sign out?',
-            message: 'Your 🦁 Lions, 💎 Diamonds, avatars and saved games stay on this phone.',
+            message: 'Your 🦁 Coins, 💎 Diamonds, avatars and saved games stay on this phone.',
             actions: [
               { label: 'Yes, sign out', tone: 'yes', onClick: () => { this.signOut(); } },
               { label: 'No, stay', tone: 'no' }
@@ -4023,6 +4104,13 @@
         });
       }
 
+      mount.querySelectorAll('[data-table-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const res = SH.store.selectOrBuyTableTheme(btn.getAttribute('data-table-id'));
+          SH.audio.uiClick();
+          this.showToast(res.message, res.ok ? 'success' : 'error');
+        });
+      });
       mount.querySelectorAll('[data-avatar-id]').forEach(btn => {
         btn.addEventListener('click', () => {
           const res = SH.store.selectOrBuyAvatar(btn.getAttribute('data-avatar-id'));
@@ -4081,178 +4169,227 @@
       const mount = document.getElementById('shop-mount');
       if (!mount) return;
       const profile = SH.store.getProfile();
-      const sample = [{ id: 'AS', suit: 'S', rank: 14, label: 'A', symbol: '♠' }, { id: 'KH', suit: 'H', rank: 13, label: 'K', symbol: '♥' }];
-      const tierInfo = [
-        { tier: 'classic', title: '🙂 Classic Avatars', note: 'Fun characters — 30 🦁 each', ribbon: 'CLASSIC', cls: 'classic-card' },
-        { tier: 'legendary', title: '👑 Legendary Avatars', note: '60 – 100 🦁', ribbon: 'LEGENDARY', cls: 'legendary-card' },
-        { tier: 'mythic', title: '✨ Mythic Avatars', note: '150 – 1,000 🦁 — the rarest looks', ribbon: 'MYTHIC', cls: 'legendary-card mythic-card' },
-        { tier: 'diamond', title: '💎 Diamond Avatars', note: 'Bought with 💎 — earn them daily and from win streaks', ribbon: 'DIAMOND', cls: 'legendary-card diamond-card' }
+      const st = SH.store;
+      const tab = this.shopTab || 'tables';
+      const coin = (n) => `🦁 ${Number(n).toLocaleString('en-US')}`;
+      const sampleA = { id: 'AS', suit: 'S', rank: 14, label: 'A', symbol: '♠' };
+      const sampleK = { id: 'KH', suit: 'H', rank: 13, label: 'K', symbol: '♥' };
+      const gifted = new Set(profile.giftedToMe || []);
+      const cats = [
+        { key: 'tables', kind: 'table', title: 'ARENA TABLES', note: 'Equip a table and it’s used in every game' },
+        { key: 'cards', kind: 'card', title: 'CARD DESIGNS', note: 'Same simple cards — new colours & card backs' },
+        { key: 'avatars', kind: 'avatar', title: 'PLAYER AVATARS', note: 'Realistic portraits for your profile & table' }
       ];
-      const avatarCard = (av, ribbon, cls) => {
-        const owned = profile.ownedAvatars.includes(av.id);
-        const balance = av.currency === 'diamonds' ? (profile.diamonds || 0) : profile.coins;
-        const unit = av.currency === 'diamonds' ? '💎' : '🦁';
-        return `
-          <button type="button" class="avatar-card ${cls} ${owned ? 'owned-item' : balance < av.price ? 'unaffordable' : ''}" data-shop-avatar="${av.id}">
-            <span class="leg-ribbon">${ribbon}</span>
-            <div class="av-art">${SH.renderAvatarSVG(av.id, 64)}</div>
-            <div class="av-name">${esc(av.name)}</div>
-            <div class="av-status ${owned ? 'status-owned' : balance >= av.price ? 'status-buy' : 'status-locked'}">${owned ? '✓ Owned' : `${av.price} ${unit}`}</div>
-          </button>
-        `;
-      };
-
-      mount.innerHTML = `
-        <div class="shop-balance-bar">
-          <span class="coin-pill">🦁 <strong>${profile.coins}</strong> Lions</span>
-          <span class="coin-pill diamond-pill">💎 <strong>${profile.diamonds || 0}</strong> Diamonds</span>
-          <button type="button" class="btn-secondary btn-sm" data-nav="profile">👑 My Profile</button>
-        </div>
-
-        ${[
-          { title: '🎨 Table Colours', note: 'Change the felt on every table you play', list: SH.TABLE_THEMES.filter(t => !t.vip) },
-          { title: '💎 VIP Tables', note: 'Luxury tables bought with Diamonds', list: SH.TABLE_THEMES.filter(t => t.vip), vip: true }
-        ].map(sec => `
-        <div class="avatar-section table-theme-section ${sec.vip ? 'vip-theme-section' : ''}">
-          <div class="section-head">
-            <h3>${sec.title}</h3>
-            <span>${sec.note}</span>
-          </div>
-          <div class="theme-grid">
-            ${sec.list.map(t => {
-              const owned = profile.ownedTableThemes.includes(t.id);
-              const inUse = (profile.selectedTableTheme || 'emerald') === t.id;
-              const dia = t.currency === 'diamonds';
-              const balance = dia ? (profile.diamonds || 0) : profile.coins;
-              return `
-                <button type="button" class="theme-card ${t.vip ? 'vip-theme' : ''} ${inUse ? 'in-use' : ''} ${owned ? 'owned-item' : balance < t.price ? 'unaffordable' : ''}" data-shop-theme="${t.id}">
-                  ${t.vip ? '<span class="leg-ribbon vip-ribbon">VIP</span>' : ''}
-                  <span class="theme-swatch" data-table-swatch="${t.id}" style="--sw1:${t.swatch[0]};--sw2:${t.swatch[1]}"><span>♠</span></span>
-                  <span class="skin-name">${esc(t.name)}</span>
-                  <span class="skin-desc">${esc(t.desc)}</span>
-                  <span class="skin-price ${owned ? 'owned' : ''}">${inUse ? '✓ In use' : owned ? 'Owned — tap to use' : `${t.price.toLocaleString('en-US')} ${dia ? '💎' : '🦁'}`}</span>
-                </button>
-              `;
-            }).join('')}
-          </div>
-        </div>
-        `).join('')}
-
-        <div class="avatar-section card-skin-section">
-          <div class="section-head">
-            <h3>🃏 Card Designs</h3>
-            <span>Premium decks for every table</span>
-          </div>
-          <div class="skin-grid">
-            ${SH.CARD_SKINS.filter(s => s.price > 0).map(skin => {
-              const owned = profile.ownedCardSkins.includes(skin.id);
-              return `
-                <button type="button" class="skin-card ${owned ? 'owned-item' : profile.coins < skin.price ? 'unaffordable' : ''}" data-shop-skin="${skin.id}">
-                  <div class="skin-preview" data-card-skin="${skin.id}">
-                    ${sample.map(c => `<div class="playing-card modern-card suit-${c.suit}">${SH.renderModernCardInnerHTML(c)}</div>`).join('')}
-                  </div>
-                  <span class="skin-name">${esc(skin.name)}</span>
-                  <span class="skin-desc">${esc(skin.desc)}</span>
-                  <span class="skin-price ${owned ? 'owned' : ''}">${owned ? '✓ Owned' : `${skin.price.toLocaleString('en-US')} 🦁`}</span>
-                </button>
-              `;
-            }).join('')}
-          </div>
-        </div>
-
-        ${tierInfo.map(t => `
-          <div class="avatar-section ${t.tier}-section">
-            <div class="section-head"><h3>${t.title}</h3><span>${t.note}</span></div>
-            <div class="avatar-grid">
-              ${SH.AVATARS.filter(a => a.tier === t.tier).map(av => avatarCard(av, t.ribbon, t.cls)).join('')}
-            </div>
-          </div>
-        `).join('')}
-
-        <div class="avatar-section gift-user-section">
-          <div class="section-head"><h3>🎁 Send a Gift</h3><span>Send Lions, Diamonds or both to any Spades Royale player</span></div>
-          <form class="gift-user-form" id="gift-user-form" autocomplete="off">
-            <input type="text" id="gift-user-name" maxlength="24" placeholder="Enter their username" aria-label="Username" spellcheck="false" autocapitalize="off" />
-            <button type="submit" class="btn-primary" id="gift-user-check">Check player</button>
-          </form>
-          <p class="gift-user-status" id="gift-user-status" aria-live="polite"></p>
-        </div>
-      `;
-
-      const giftForm = mount.querySelector('#gift-user-form');
-      if (giftForm) {
-        giftForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const input = mount.querySelector('#gift-user-name');
-          const status = mount.querySelector('#gift-user-status');
-          const checkBtn = mount.querySelector('#gift-user-check');
-          const name = input.value.trim();
-          SH.audio.uiClick();
-          status.className = 'gift-user-status';
-          status.textContent = 'Checking…';
-          checkBtn.disabled = true;
-          SH.networkAdapter.lookupUser(name).then((res) => {
-            checkBtn.disabled = false;
-            if (!res.ok) {
-              status.className = 'gift-user-status bad';
-              status.textContent = res.message;
-              return;
-            }
-            if (!res.found) {
-              SH.audio.notEnoughFunds();
-              status.className = 'gift-user-status bad';
-              status.textContent = `✗ No Spades Royale player called “${name}”. Check the spelling.`;
-              return;
-            }
-            if (res.self) {
-              status.className = 'gift-user-status bad';
-              status.textContent = 'That’s you! Enter someone else’s username.';
-              return;
-            }
-            status.className = 'gift-user-status good';
-            status.textContent = `✓ ${res.user.username} is a Spades Royale player.`;
-            this.showGiftDialog({ via: 'username', to: res.user.username, name: res.user.username });
-          });
-        });
-      }
-
-      const pick = (kind, id) => (kind === 'avatar' ? SH.store.selectOrBuyAvatar(id) : kind === 'theme' ? SH.store.selectOrBuyTableTheme(id) : SH.store.selectOrBuyCardSkin(id));
-      const buy = (kind, id) => {
-        const item = kind === 'avatar' ? SH.AVATARS.find(a => a.id === id) : kind === 'theme' ? SH.TABLE_THEMES.find(t => t.id === id) : SH.CARD_SKINS.find(s => s.id === id);
-        const owned = kind === 'avatar' ? profile.ownedAvatars.includes(id) : kind === 'theme' ? profile.ownedTableThemes.includes(id) : profile.ownedCardSkins.includes(id);
-        if (owned) {
-          const res = pick(kind, id);
-          SH.audio.uiClick();
-          this.showToast(res.message, 'success');
-          return;
+      const preview = (kind, id) => {
+        if (kind === 'table') return `<div class="table-preview" data-table-preview="${id}"></div>`;
+        if (kind === 'card') {
+          return `<div class="ai-cards" data-card-skin="${id}">
+            <div class="playing-card modern-card suit-S">${SH.renderModernCardInnerHTML(sampleA)}</div>
+            <div class="playing-card modern-card suit-H">${SH.renderModernCardInnerHTML(sampleK)}</div>
+            <div class="card-back" aria-label="Card back"></div>
+          </div>`;
         }
-        const unit = item.currency === 'diamonds' ? '💎' : '🦁';
-        const balance = unit === '💎' ? (profile.diamonds || 0) : profile.coins;
-        if (balance < item.price) {
+        return `<div class="ai-avatar">${SH.renderAvatarArt(id, 92)}</div>`;
+      };
+      const itemCard = (cat, id, idx) => {
+        const d = st.itemDef(cat.kind, id);
+        if (!d) return '';
+        const owned = st.owns(cat.kind, id) || d.price === 0;
+        const isOn = st.equipped(cat.kind) === id;
+        const price = SH.SHOP_PRICES[cat.key][idx];
+        const free = price === 0;
+        const flag = isOn ? '<span class="ai-flag equipped">EQUIPPED</span>'
+          : gifted.has(`${cat.kind}:${id}`) ? '<span class="ai-flag gifted">🎁 GIFTED</span>'
+          : (owned && !free) ? '<span class="ai-flag owned">OWNED</span>' : '';
+        let btn;
+        if (isOn) btn = free ? '<button type="button" class="ai-btn equip cant" disabled>✓ Equipped</button>'
+          : `<button type="button" class="ai-btn unequip" data-shop-unequip="${cat.kind}">✓ Equipped · Unequip</button>`;
+        else if (owned) btn = `<button type="button" class="ai-btn equip" data-shop-equip="${cat.kind}:${id}">Equip</button>`;
+        else btn = `<button type="button" class="ai-btn buy ${profile.coins < price && !profile.unlimited ? 'cant' : ''}" data-shop-buy="${cat.kind}:${id}:${idx}">Buy</button>`;
+        return `
+          <div class="arena-item ${isOn ? 'equipped' : ''}" data-shop-item="${cat.kind}:${id}">
+            ${flag}
+            <div class="ai-preview">${preview(cat.kind, id)}</div>
+            <div class="ai-name">${esc(d.name)}</div>
+            <div class="ai-desc">${esc(d.desc || '')}</div>
+            <div class="ai-price ${free ? 'free' : ''}">${free ? 'FREE' : coin(price)}</div>
+            ${btn}
+          </div>`;
+      };
+      const soonCard = (name) => `
+        <div class="arena-item locked" aria-disabled="true">
+          <div class="ai-preview">🔒</div>
+          <div class="ai-name">${esc(name)}</div>
+          <div class="ai-desc">Locked — arriving in a future update</div>
+          <div class="ai-price">COMING SOON</div>
+          <button type="button" class="ai-btn equip cant" disabled>Locked</button>
+        </div>`;
+
+      const html = `
+        <div class="shop-balance-bar">
+          <span class="coin-pill">🦁 <strong>${profile.unlimited ? '∞' : profile.coins.toLocaleString('en-US')}</strong> Coins</span>
+          <span class="coin-pill diamond-pill">💎 <strong>${profile.unlimited ? '∞' : (profile.diamonds || 0).toLocaleString('en-US')}</strong> Diamonds</span>
+          <button type="button" class="btn-secondary btn-sm" data-nav="gift">🎁 Gift</button>
+        </div>
+        <div class="arena-shop-tabs" role="tablist">
+          ${cats.map(c => `<button type="button" role="tab" class="${tab === c.key ? 'active' : ''}" data-shop-tab="${c.key}">${c.title}</button>`).join('')}
+        </div>
+        ${cats.map(c => `
+          <section class="arena-cat" id="arena-cat-${c.key}" aria-label="${c.title}">
+            <div class="arena-cat-head"><h3>${c.title}</h3><span>${c.note}</span></div>
+            <div class="arena-grid">
+              ${SH.SHOP_CATALOG[c.key].map((id, idx) => itemCard(c, id, idx)).join('')}
+              ${SH.SHOP_COMING_SOON[c.key].map(soonCard).join('')}
+            </div>
+          </section>`).join('')}
+      `;
+      if (mount._lastHtml === html) return;
+      mount._lastHtml = html;
+      mount.innerHTML = html;
+
+      mount.querySelectorAll('[data-shop-tab]').forEach(b => b.addEventListener('click', () => {
+        SH.audio.uiClick();
+        this.shopTab = b.getAttribute('data-shop-tab');
+        const sec = mount.querySelector(`#arena-cat-${this.shopTab}`);
+        mount.querySelectorAll('[data-shop-tab]').forEach(x => x.classList.toggle('active', x === b));
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }));
+      const equip = (kind, id) => (kind === 'avatar' ? st.selectOrBuyAvatar(id) : kind === 'card' ? st.selectOrBuyCardSkin(id) : st.selectOrBuyTableTheme(id));
+      mount.querySelectorAll('[data-shop-equip]').forEach(b => b.addEventListener('click', () => {
+        const [kind, id] = b.getAttribute('data-shop-equip').split(':');
+        SH.audio.uiClick();
+        const res = equip(kind, id);
+        this.showToast(res.message, res.ok ? 'success' : 'error');
+      }));
+      mount.querySelectorAll('[data-shop-unequip]').forEach(b => b.addEventListener('click', () => {
+        SH.audio.uiClick();
+        const res = st.unequip(b.getAttribute('data-shop-unequip'));
+        this.showToast(res.message, res.ok ? 'success' : 'error');
+      }));
+      mount.querySelectorAll('[data-shop-buy]').forEach(b => b.addEventListener('click', () => {
+        const [kind, id, idx] = b.getAttribute('data-shop-buy').split(':');
+        const d = st.itemDef(kind, id);
+        const price = SH.SHOP_PRICES[kind === 'table' ? 'tables' : kind === 'card' ? 'cards' : 'avatars'][Number(idx)];
+        if (!d || st.owns(kind, id)) return;
+        const bal = SH.store.getProfile().coins;
+        if (bal < price) {
           SH.audio.notEnoughFunds();
-          this.showToast(`You need ${item.price - balance} more ${unit} for “${item.name}”.`, 'error');
+          this.showToast(`You need 🦁 ${(price - bal).toLocaleString('en-US')} more Coins for “${d.name}”.`, 'error');
           return;
         }
         this.showChoiceDialog({
-          title: `Buy ${item.name}?`,
-          message: `Costs ${item.price} ${unit}. You have ${balance} ${unit}.`,
+          title: `Buy ${d.name}?`,
+          message: `Costs 🦁 ${price.toLocaleString('en-US')} Coins. You have 🦁 ${SH.store.getProfile().unlimited ? '∞' : bal.toLocaleString('en-US')}.`,
           actions: [
-            {
-              label: `Yes, buy for ${item.price} ${unit}`,
-              tone: 'yes',
-              onClick: () => {
-                const res = pick(kind, id);
-                if (res.ok) SH.audio.coinReward(); else SH.audio.notEnoughFunds();
-                this.showToast(res.message, res.ok ? 'success' : 'error');
-              }
-            },
+            { label: 'Yes, buy & equip', tone: 'yes', onClick: () => {
+              if (st.owns(kind, id)) return; // never charge twice
+              const res = equip(kind, id);
+              if (res.ok) SH.audio.coinReward(); else SH.audio.notEnoughFunds();
+              this.showToast(res.message, res.ok ? 'success' : 'error');
+            } },
             { label: 'No', tone: 'no' }
           ]
         });
-      };
-      mount.querySelectorAll('[data-shop-avatar]').forEach(btn => btn.addEventListener('click', () => buy('avatar', btn.getAttribute('data-shop-avatar'))));
-      mount.querySelectorAll('[data-shop-skin]').forEach(btn => btn.addEventListener('click', () => buy('skin', btn.getAttribute('data-shop-skin'))));
-      mount.querySelectorAll('[data-shop-theme]').forEach(btn => btn.addEventListener('click', () => buy('theme', btn.getAttribute('data-shop-theme'))));
+      }));
+    }
+
+    /** 🎁 Gift screen: find a player → Coins / Diamonds / an owned item → confirm → sent (server-checked). */
+    renderGiftScreen() {
+      if (typeof document === 'undefined') return;
+      const mount = document.getElementById('gift-mount');
+      if (!mount) return;
+      const gs = this.giftState || (this.giftState = { type: 'coins', recipient: null, item: null });
+      const profile = SH.store.getProfile();
+      const items = SH.store.giftableItems();
+      const kindLabel = { table: 'Table', card: 'Card design', avatar: 'Avatar' };
+      const fmt = (n) => (profile.unlimited ? '∞' : Number(n).toLocaleString('en-US'));
+      const html = `
+        <div class="gift-wrap">
+          <div class="mp-card gift-step">
+            <h3>1 · Who is it for?</h3>
+            <form id="gift-find" class="gift-user-form" autocomplete="off">
+              <input type="text" id="gift-find-name" maxlength="24" placeholder="Their exact username" aria-label="Username" spellcheck="false" autocapitalize="off" value="${esc(gs.query || '')}" />
+              <button type="submit" class="btn-primary">Find player</button>
+            </form>
+            <p class="gift-user-status ${gs.recipient ? 'good' : gs.findError ? 'bad' : ''}">${gs.recipient ? `✓ Sending to <strong>${esc(gs.recipient.username)}</strong>` : esc(gs.findError || 'Gifts go to registered Spades Arena players only.')}</p>
+          </div>
+          <div class="mp-card gift-step ${gs.recipient ? '' : 'disabled'}">
+            <h3>2 · What do you want to send?</h3>
+            <div class="segmented-control gift-types">
+              ${[['coins', '🦁 Coins'], ['diamonds', '💎 Diamonds'], ['item', '🎨 Item']].map(([k, l]) => `<button type="button" class="seg-btn ${gs.type === k ? 'active' : ''}" data-gift-type="${k}" ${gs.recipient ? '' : 'disabled'}>${l}</button>`).join('')}
+            </div>
+            ${gs.type === 'item' ? (items.length ? `
+              <div class="gift-items">
+                ${items.map(it => `<button type="button" class="gift-item ${gs.item && gs.item.kind === it.kind && gs.item.id === it.id ? 'picked' : ''}" data-gift-item="${it.kind}:${it.id}" ${gs.recipient ? '' : 'disabled'}>
+                  <span class="gi-kind">${kindLabel[it.kind]}</span><strong>${esc(it.name)}</strong></button>`).join('')}
+              </div>` : '<p class="field-help">You don’t own any paid tables, card designs or avatars to gift yet. Free items can’t be gifted.</p>') : `
+              <label class="gift-row">${gs.type === 'coins' ? '🦁 Coins' : '💎 Diamonds'} to send
+                <input type="number" id="gift-amount" inputmode="numeric" min="1" step="1" value="${esc(gs.amount || '')}" placeholder="Amount" ${gs.recipient ? '' : 'disabled'} />
+              </label>
+              <p class="field-help">You have ${gs.type === 'coins' ? '🦁' : '💎'} ${fmt(gs.type === 'coins' ? profile.coins : profile.diamonds)}${profile.unlimited ? ' — owner account, no limit' : ''}.</p>`}
+            <button type="button" class="btn-yes gift-send-btn" id="gift-review" ${gs.recipient ? '' : 'disabled'}>Review gift</button>
+          </div>
+          <div class="mp-card gift-step">
+            <h3>🎁 Gift history</h3>
+            <div class="gift-history">${(gs.history || []).length ? gs.history.map(h => `
+              <div class="gh-row ${h.dir}">
+                <span class="gh-dir">${h.dir === 'sent' ? '↗ Sent to' : '↘ From'} <strong>${esc(h.with)}</strong></span>
+                <span class="gh-what">${esc(SH.networkAdapter.giftLabel(h))}</span>
+                <span class="gh-when">${new Date(h.at).toLocaleDateString()}</span>
+              </div>`).join('') : `<p class="field-help">${gs.historyLoaded ? 'No gifts yet.' : 'Loading…'}</p>`}</div>
+          </div>
+        </div>`;
+      if (mount._lastHtml === html) return;
+      mount._lastHtml = html;
+      const restore = this.captureInputs(mount);
+      mount.innerHTML = html;
+      restore();
+      if (!gs.historyLoaded && !gs.historyLoading) {
+        gs.historyLoading = true;
+        SH.networkAdapter.getGiftHistory().then((r) => { gs.historyLoading = false; gs.historyLoaded = true; gs.history = r.log || []; if (this.currentScreen === 'gift') this.renderGiftScreen(); });
+      }
+      mount.querySelector('#gift-find').addEventListener('submit', (e) => {
+        e.preventDefault();
+        SH.audio.uiClick();
+        const name = mount.querySelector('#gift-find-name').value.trim();
+        gs.query = name; gs.recipient = null; gs.findError = 'Checking…';
+        this.renderGiftScreen();
+        SH.networkAdapter.lookupUser(name).then((res) => {
+          gs.findError = !res.ok ? res.message : !res.found ? `✗ No Spades Arena player called “${name}”.` : res.self ? 'That’s you — enter someone else’s username.' : '';
+          gs.recipient = res.ok && res.found && !res.self ? res.user : null;
+          if (this.currentScreen === 'gift') this.renderGiftScreen();
+        });
+      });
+      mount.querySelectorAll('[data-gift-type]').forEach(b => b.addEventListener('click', () => {
+        SH.audio.uiClick(); gs.type = b.getAttribute('data-gift-type'); gs.item = null; this.renderGiftScreen();
+      }));
+      mount.querySelectorAll('[data-gift-item]').forEach(b => b.addEventListener('click', () => {
+        const [kind, id] = b.getAttribute('data-gift-item').split(':');
+        SH.audio.uiClick(); gs.item = { kind, id }; this.renderGiftScreen();
+      }));
+      const amt = mount.querySelector('#gift-amount');
+      if (amt) amt.addEventListener('input', () => { gs.amount = amt.value; });
+      mount.querySelector('#gift-review').addEventListener('click', () => {
+        if (!gs.recipient) return;
+        const amount = Math.floor(Number(gs.amount) || 0);
+        const payload = gs.type === 'item' ? { item: gs.item } : gs.type === 'coins' ? { lions: amount } : { diamonds: amount };
+        if (gs.type === 'item' && !gs.item) { this.showToast('Pick an item to send.', 'error'); return; }
+        if (gs.type !== 'item' && amount < 1) { this.showToast('Enter how many to send.', 'error'); return; }
+        const what = SH.networkAdapter.giftLabel(payload);
+        this.showChoiceDialog({
+          title: '🎁 Confirm your gift',
+          message: `Send ${what} to ${gs.recipient.username}? ${gs.type === 'item' ? 'The item moves to their account and is unlocked for them right away.' : ''}`,
+          actions: [
+            { label: 'Yes, send it', tone: 'yes', onClick: () => {
+              const res = SH.networkAdapter.sendGift({ via: 'username', to: gs.recipient.username, ...payload });
+              if (!res.ok) { SH.audio.notEnoughFunds(); this.showToast(res.message, 'error'); return; }
+              this.showToast(`🎁 Sending ${what} to ${gs.recipient.username}…`, 'info');
+              gs.amount = ''; gs.item = null; gs.historyLoaded = false;
+            } },
+            { label: 'Cancel', tone: 'no' }
+          ]
+        });
+      });
     }
 
     renderSettingsScreen() {
@@ -4283,7 +4420,7 @@
             <strong>${esc(profile.username)}</strong>
             <span>${signedIn ? '🔐 Signed in' : '👤 Guest on this device'}</span>
             <div class="sa-balances">
-              <span class="coin-pill">🦁 <strong>${profile.coins}</strong> Lions</span>
+              <span class="coin-pill">🦁 <strong>${profile.coins}</strong> Coins</span>
               <span class="coin-pill diamond-pill">💎 <strong>${profile.diamonds || 0}</strong> Diamonds</span>
             </div>
             <span class="sa-daily">${dailyDone ? '✅ Daily 💎 collected — come back tomorrow for another' : '💎 Open the game each day for +1 Diamond'}</span>
@@ -4368,7 +4505,7 @@
           <div class="setting-row">
             <div>
               <h4>Sound Effects</h4>
-              <p>Soft paper card swoosh, trick wins, Lions &amp; Diamond chimes.</p>
+              <p>Soft paper card swoosh, trick wins, Coins &amp; Diamond chimes.</p>
             </div>
             <button type="button" class="toggle-switch ${s.sound ? 'on' : 'off'}" id="toggle-sound-btn" aria-pressed="${s.sound}">
               ${s.sound ? 'ON' : 'OFF'}
@@ -4426,10 +4563,10 @@
         </div>
 
         <div class="settings-card settings-section settings-about">
-          <div class="royale-logo about-logo" role="img" aria-label="Spades Royale"></div>
+          <div class="royale-logo about-logo" role="img" aria-label="Spades Arena"></div>
           <div>
-            <h3>Spades Royale</h3>
-            <p class="field-help">Offline Multiplayer · Play. Win. Rule.<br/>Made by Hadzz · Version 1.0</p>
+            <h3>Spades Arena</h3>
+            <p class="field-help">Premium. Fierce. Competitive.<br/>Made by Hadzz · Version ${esc(DISPLAY_VERSION === 'dev' ? 'dev' : DISPLAY_VERSION)}</p>
             <button type="button" class="btn-secondary btn-sm" data-nav="rules">📖 How to play &amp; scoring</button>
           </div>
         </div>
@@ -4461,7 +4598,7 @@
           SH.audio.uiClick();
           this.showChoiceDialog({
             title: 'Sign out?',
-            message: 'You can log back in any time. Your 🦁 Lions, 💎 Diamonds, avatars and saved games stay on this device.',
+            message: 'You can log back in any time. Your 🦁 Coins, 💎 Diamonds, avatars and saved games stay on this device.',
             actions: [
               {
                 label: 'Yes, sign out',
@@ -4603,10 +4740,10 @@
           </div>
 
           <div class="mp-card">
-            <h3>🦁 Lions, 💎 Diamonds &amp; Fair Bot AI</h3>
+            <h3>🦁 Coins, 💎 Diamonds &amp; Fair Bot AI</h3>
             <ul class="rules-list">
-              <li><strong>Starting Balance:</strong> Every player starts with <strong>60 🦁 Lions</strong> (the game’s coins).</li>
-              <li><strong>What is a Round?</strong> A <em>Round</em> is one complete 13-trick hand. If Team Red scores more net points than Team Blue (with a positive round score), you earn <strong>+10 🦁 Lions</strong>.</li>
+              <li><strong>Starting Balance:</strong> Every player starts with <strong>60 🦁 Coins</strong> (the game’s coins).</li>
+              <li><strong>What is a Round?</strong> A <em>Round</em> is one complete 13-trick hand. If Team Red scores more net points than Team Blue (with a positive round score), you earn <strong>+10 🦁 Coins</strong>.</li>
               <li><strong>Full Game Victory:</strong> Reaching the target score ahead of Team Blue awards <strong>+50 🦁</strong> in a 250-point game or <strong>+80 🦁</strong> in a 500-point game.</li><li><strong>💎 Diamonds:</strong> +1 every day you open the game, +2 for every 2 wins at 250 points and +5 for every 2 wins at 500 points. Spend them on Diamond avatars. Each round and match has a unique ID so duplicate rewards are prevented.</li>
               <li><strong>Fair Bot Difficulty:</strong> Choose <em>Beginner, Easy, Medium, Hard,</em> or <em>Impossible</em>. Bots only know their own hand, bids, and cards already played—they never peek at hidden hands.</li>
             </ul>
@@ -4618,6 +4755,7 @@
 
   SH.SpadesApp = SpadesApp;
   SH.APP_VERSION = APP_VERSION;
+  SH.DISPLAY_VERSION = DISPLAY_VERSION;
 
   function bootSpadesApp() {
     if (window.spadesApp) return;

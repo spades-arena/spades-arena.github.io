@@ -1,4 +1,4 @@
-// Spades Royale — login streak, table colours, stats, leaderboard & rematch (~40s)
+// Spades Arena — login streak, table colours, stats, leaderboard & rematch (~40s)
 // Setup once:  cd tests && npm install        Run:  node tests/features.e2e.mjs
 import puppeteer from 'puppeteer-core';
 import { spawn } from 'node:child_process';
@@ -102,44 +102,45 @@ try {
   });
   ok(await A.evaluate(() => SpadesHadzz.store.claimLoginStreak().day === 1), 'missing a day starts the streak again at Day 1');
 
-  // 2) 🎨 Table colours in the Shop
+  // 2) 🛍 THE ARENA SHOP: 3 categories × (8 items + 2 Coming Soon), free first, rising prices
+  const cat = await A.evaluate(() => {
+    const SH = SpadesHadzz;
+    return ['tables', 'cards', 'avatars'].map(k => ({ k, ids: SH.SHOP_CATALOG[k].length, soon: SH.SHOP_COMING_SOON[k].length, prices: SH.SHOP_PRICES[k] }));
+  });
+  ok(cat.every(c => c.ids === 8 && c.soon === 2), '24 items + 6 Coming Soon slots in the catalogue');
+  ok(cat.every(c => c.prices[0] === 0 && c.prices.slice(1).every((p, i) => p > c.prices[i]) && c.prices[7] === Math.max(...c.prices)), `item 1 free, items 2–8 rise, item 8 most expensive (${cat.map(c => c.prices.join('/')).join(' | ')})`);
   await A.evaluate(() => window.spadesApp.navigateTo('shop'));
   await waitScreen(A, 'screen-shop');
-  ok(await A.$$eval('.table-theme-section:not(.vip-theme-section) [data-shop-theme]', els => els.length) === 6, 'Shop shows 6 table colours for Lions (incl. Midnight Black 100)');
-  ok(await A.$$eval('.vip-theme-section [data-shop-theme]', els => els.length) === 6, 'Shop shows 6 💎 VIP tables');
-  await A.$eval('[data-shop-theme="royal"]', el => el.click());
+  await A.waitForSelector('.arena-cat');
+  const layout = await A.evaluate(() => [...document.querySelectorAll('.arena-cat')].map(c => ({ items: c.querySelectorAll('.arena-item:not(.locked)').length, locked: c.querySelectorAll('.arena-item.locked').length, free: /FREE/.test(c.querySelector('.arena-item .ai-price').textContent), lockedBtn: [...c.querySelectorAll('.arena-item.locked button')].every(b => b.disabled) })));
+  ok(layout.length === 3 && layout.every(l => l.items === 8 && l.locked === 2 && l.free && l.lockedBtn), 'shop shows 3 sections, each 8 items + 2 locked COMING SOON (first one FREE)');
+  ok(await A.$$eval('[data-shop-buy], [data-shop-equip], [data-shop-unequip]', b => b.every(x => !x.closest('.locked'))), 'Coming Soon slots have no buy/equip buttons');
+  await A.evaluate(() => { SpadesHadzz.store.credit({ lions: 1000 }); });
+  const c0 = (await prof(A)).coins;
+  await A.waitForSelector('[data-shop-buy^="table:arena_purple"]');
+  await A.$eval('[data-shop-buy^="table:arena_purple"]', el => el.click());
   await A.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());
-  await sleep(200);
-  ok(await A.evaluate(() => document.body.getAttribute('data-table-theme')) === 'royal', 'bought Royal Blue (150 🦁) and it is in use');
-  await shot(A, '02-shop-table-colours');
+  await sleep(250);
+  const c1 = (await prof(A)).coins;
+  ok(c1 === c0 - 800 && await A.evaluate(() => document.body.getAttribute('data-table-theme')) === 'arena_purple', `bought Midnight Purple for 🦁 800 (${c0} → ${c1}) and it's equipped`);
+  ok(!(await A.$('[data-shop-buy^="table:arena_purple"]')) && await A.evaluate((c) => SpadesHadzz.store.selectOrBuyTableTheme('arena_purple').action === 'equipped' && SpadesHadzz.store.getProfile().coins === c, c1), 'owning it means no Buy button and no second charge');
+  await A.evaluate(() => SpadesHadzz.store.selectOrBuyCardSkin('cd_panther') && 0);
+  ok((await prof(A)).coins === c1, 'can’t buy Emerald Panther cards (🦁 2,000) without enough Coins — nothing taken');
+  await A.evaluate(() => { SpadesHadzz.store.credit({ lions: 100 }); SpadesHadzz.store.selectOrBuyCardSkin('cd_gold'); });
+  await shot(A, '02-arena-shop');
   await A.evaluate(() => window.spadesApp.navigateTo('game', true));
   await waitScreen(A, 'screen-game');
   await A.waitForSelector('.felt-arena', { timeout: 8000 });
-  const bg = await A.$eval('.felt-arena', el => getComputedStyle(el).backgroundImage);
-  ok(/29, 78, 216/.test(bg), 'the game table is now royal blue');
-  await sleep(6500); // past the 5-second "cat in a hat" intro
-  await shot(A, '03-blue-table');
-
-  // 2b) 💎 VIP table bought with Diamonds (Ali has 6 💎 from the streak)
-  await A.evaluate(() => window.spadesApp.navigateTo('shop'));
+  ok(/58, 26, 102/.test(await A.$eval('.felt-arena', el => getComputedStyle(el).backgroundImage)), 'the game table is now Midnight Purple');
+  await sleep(4500);
+  ok(await A.evaluate(() => getComputedStyle(document.querySelector('.hand-card')).getPropertyValue('--card-frame-line').trim() === '#d4a52c'), 'Royal Gold card theme shows on the cards in the game');
+  await shot(A, '03-purple-table');
+  await A.evaluate(() => { window.spadesApp.game = null; window.spadesApp.navigateTo('shop'); });
   await waitScreen(A, 'screen-shop');
-  const d0 = (await prof(A)).diamonds;
-  await A.$eval('[data-shop-theme="galaxy"]', el => el.click());
-  const vipMsg = await A.$eval('.choice-overlay p', el => el.textContent);
-  await A.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());
+  await A.waitForSelector('[data-shop-unequip="table"]');
+  await A.$eval('[data-shop-unequip="table"]', el => el.click());
   await sleep(200);
-  const d1 = (await prof(A)).diamonds;
-  ok(/💎/.test(vipMsg) && d1 === d0 - 5 && await A.evaluate(() => document.body.getAttribute('data-table-theme')) === 'galaxy', `bought Galaxy Night for 5 💎 (${d0} → ${d1}) and it's in use`);
-  await A.$eval('.vip-theme-section', el => el.scrollIntoView());
-  await sleep(300);
-  await shot(A, '03b-vip-tables');
-  await A.$eval('[data-shop-theme="blackgold"]', el => el.click());
-  ok(await A.evaluate(() => !document.querySelector('.choice-overlay')) && d1 < 25, 'can’t afford Black Gold Throne (25 💎) → no purchase');
-  await A.evaluate(() => window.spadesApp.navigateTo('game', true));
-  await waitScreen(A, 'screen-game');
-  await A.waitForSelector('.felt-arena', { timeout: 8000 });
-  ok(/109, 40, 217|76, 29, 149/.test(await A.$eval('.felt-arena', el => getComputedStyle(el).backgroundImage)), 'the game table is now Galaxy Night');
-  await A.evaluate(() => { window.spadesApp.game = null; });
+  ok(await A.evaluate(() => document.body.getAttribute('data-table-theme')) === 'emerald' && await A.evaluate(() => SpadesHadzz.store.owns('table', 'arena_purple')), 'unequip goes back to Classic Arena (still owned)');
 
   // 3) 📊 Stats
   await A.evaluate(() => {
@@ -190,7 +191,7 @@ try {
   const confirmTaken = await A.$eval('.choice-overlay p', el => el.textContent);
   await A.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());
   await sleep(1200);
-  ok(/💎 50/.test(confirmTaken) && await dia() === 80 && (await prof(A)) && await A.evaluate(() => SpadesHadzz.store.getProfile().username) === 'AliKing', 'second rename asks to pay 💎 50; a taken name charges nothing');
+  ok(/Name changes cost\s*50/.test(confirmTaken) && await dia() === 80 && (await prof(A)) && await A.evaluate(() => SpadesHadzz.store.getProfile().username) === 'AliKing', 'second rename asks to pay 💎 50; a taken name charges nothing');
   await A.evaluate(() => window.spadesApp.navigateTo('profile'));
   await rename('AliTheGreat');
   await A.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());
@@ -200,7 +201,7 @@ try {
   await waitScreen(A, 'screen-profile');
   await A.evaluate(() => { SpadesHadzz.store.getProfile().diamonds = 10; SpadesHadzz.store.save(); });
   await rename('AliAgain');
-  ok(!(await A.$('.choice-overlay')) && await dia() === 10 && /costs 💎 50/.test(await A.$eval('#app-toast', el => el.textContent)), 'with only 💎 10 the next rename is blocked');
+  ok(!(await A.$('.choice-overlay')) && await dia() === 10 && /costs\s*50/.test(await A.$eval('#app-toast', el => el.textContent)), 'with only 💎 10 the next rename is blocked');
 
   ok(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(' | ')}` : ''}`);
 } catch (e) {

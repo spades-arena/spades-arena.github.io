@@ -1,4 +1,4 @@
-// Spades Royale — same account on two devices: purchases & balances follow you (~40s)
+// Spades Arena — same account on two devices: purchases & balances follow you (~40s)
 // Also checks: no gift limit, bots don't reply in chat, new game speeds.
 // Setup once:  cd tests && npm install        Run:  node tests/sync.e2e.mjs
 import puppeteer from 'puppeteer-core';
@@ -134,7 +134,7 @@ try {
   await laptop.evaluate(() => window.spadesApp.showGiftDialog({ via: 'username', to: 'Pal', name: 'Pal' }));
   await laptop.evaluate(() => { document.querySelector('#gift-lions').value = '3000'; document.querySelector('[data-gift-send]').click(); });
   await laptop.waitForFunction(() => /Gift of/.test(document.querySelector('#app-toast').textContent), { timeout: 8000 });
-  ok(/3000/.test(await laptop.$eval('#app-toast', el => el.textContent)), `sent a 🦁 3,000 gift (no 500 limit): "${await laptop.$eval('#app-toast', el => el.textContent)}"`);
+  ok(/3,000/.test(await laptop.$eval('#app-toast', el => el.textContent)), `sent a 🦁 3,000 gift (no 500 limit): "${await laptop.$eval('#app-toast', el => el.textContent)}"`);
 
   // 8) Bots don't reply to your chat
   await laptop.evaluate(() => window.spadesApp.navigateTo('game', true));

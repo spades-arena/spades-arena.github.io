@@ -1,12 +1,12 @@
 {
-  "name": "Spades Royale: Offline Multiplayer",
-  "short_name": "Spades Royale",
-  "description": "Spades Royale \u2014 3 & 4 player Spades with offline Pass & Play and online multiplayer. Play. Win. Rule.",
+  "name": "Spades Arena",
+  "short_name": "Spades Arena",
+  "description": "Spades Arena \u2014 3 & 4 player Spades with offline Pass & Play and online multiplayer. Premium. Fierce. Competitive.",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0b0b0d",
-  "theme_color": "#0b0b0d",
+  "background_color": "#050706",
+  "theme_color": "#050706",
   "icons": [
     {
       "src": "./assets/icon-192.png",

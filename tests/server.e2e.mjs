@@ -23,7 +23,7 @@ const ok = (cond, label) => { console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}`)
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 const server = spawn(process.execPath, [path.join(ROOT, 'server/server.js')], {
-  env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', DATA_DIR, SPADES_FAST_TIMERS: '1', MIN_APP_VERSION: '', SPADES_MSG_LIMIT: '100000', SPADES_TURN_MS: '1500' },
+  env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', DATA_DIR, SPADES_FAST_TIMERS: '1', MIN_APP_VERSION: '', SPADES_ADMIN_USERNAME: 'ChiefTest', SPADES_ADMIN_PASSWORD: 'chief-test-pw', SPADES_MSG_LIMIT: '100000', SPADES_TURN_MS: '1500' },
   stdio: ['ignore', 'pipe', 'pipe']
 });
 let serverLog = '';
@@ -91,7 +91,7 @@ async function main() {
     try { const r = await fetch(`http://127.0.0.1:${PORT}/healthz`); if (r.ok) break; } catch (e) { /* retry */ }
     await sleep(100);
   }
-  const page = await fetch(`http://127.0.0.1:${PORT}/`); ok(page.ok && (await page.text()).includes('Spades Royale'), 'HTTP serves index.html');
+  const page = await fetch(`http://127.0.0.1:${PORT}/`); ok(page.ok && (await page.text()).includes('Spades Arena'), 'HTTP serves index.html');
   const dbLeak = await fetch(`http://127.0.0.1:${PORT}/server/data/db.json`); ok(dbLeak.status === 404, 'HTTP does not expose server data files');
 
   // ---------------- identity
@@ -328,6 +328,17 @@ async function main() {
   Gia.send('user:lookup', { username: 'nobody_here' });
   ok(!(await Gia.waitFor(m => m.t === 'user:lookup:result', 3000, 'lookup miss')).found, 'username lookup reports unknown players');
 
+  // Server-checked gifting: the server uses the sender's synced balance & items
+  Gia.send('gift:send', { username: 'Hal', lions: 25, giftId: 'aa00' });
+  ok(/synced/.test((await Gia.waitFor(m => m.t === 'error' && m.code === 'gift_failed', 3000, 'unsynced gift')).message), 'gift refused until the sender’s account has synced');
+  Gia.send('profile:sync', { profile: { coins: 1000, diamonds: 10, ownedAvatars: [], ownedCardSkins: ['classic', 'cd_gold'], ownedTableThemes: ['emerald'] }, base: 0 });
+  await Gia.waitFor(m => m.t === 'profile:saved', 3000, 'gia synced');
+  Gia.send('gift:send', { username: 'Hal', lions: 5000, giftId: 'ab01' });
+  ok(/don’t have that many/.test((await Gia.waitFor(m => m.t === 'error' && m.code === 'gift_failed', 3000, 'too much')).message), 'can’t gift more Coins than the server says you have (forged amounts refused)');
+  Gia.send('gift:send', { username: 'Hal', item: { kind: 'card', id: 'cd_panther' }, giftId: 'ab02' });
+  ok(/own/.test((await Gia.waitFor(m => m.t === 'error' && m.code === 'gift_failed', 3000, 'not owned')).message), 'can’t gift an item you don’t own');
+  Gia.send('gift:send', { username: 'Hal', lions: -5, giftId: 'ab03' });
+  ok((await Gia.waitFor(m => m.t === 'error' && m.code === 'gift_failed', 3000, 'negative')).giftId === 'ab03', 'negative amounts refused');
   Gia.send('gift:send', { username: 'Hal', lions: 25, diamonds: 2, giftId: 'aa11' });
   const sent = await Gia.waitFor(m => m.t === 'gift:sent', 3000, 'gift sent');
   const got = await Hal.waitFor(m => m.t === 'gift', 3000, 'gift arrives');
@@ -343,6 +354,22 @@ async function main() {
   const late = await Hal2.waitFor(m => m.t === 'gift', 3000, 'queued gift delivered');
   ok(late.giftId === 'bb22' && late.diamonds === 3 && !Hal2.inbox.some(m => m.t === 'gift' && m.giftId === 'aa11'), 'offline gift delivered on next login (acked gifts not repeated)');
   Hal2.send('gift:ack', { giftId: 'bb22' }); await sleep(100);
+  const giaProfile = (await Gia.waitFor(m => m.t === 'profile:state' && m.data && m.data.diamonds === 5, 3000, 'gia balance after gifts')).data;
+  ok(giaProfile.coins === 975 && giaProfile.diamonds === 5, `server took the gifts from the sender (🦁 ${giaProfile.coins}, 💎 ${giaProfile.diamonds})`);
+  Gia.send('gift:send', { username: 'Hal', lions: 25, diamonds: 2, giftId: 'aa11' }); // duplicate retry
+  await sleep(300);
+  ok(!Gia.inbox.some(m => m.t === 'gift:sent' && m.giftId === 'aa11') && !Gia.inbox.some(m => m.t === 'profile:state' && m.data && m.data.coins === 950), 'sending the same gift again never charges twice');
+  Gia.send('gift:send', { username: 'Hal', item: { kind: 'card', id: 'cd_gold' }, giftId: 'ab04' });
+  await Gia.waitFor(m => m.t === 'gift:sent' && m.giftId === 'ab04', 3000, 'item gift');
+  const afterItem = (await Gia.waitFor(m => m.t === 'profile:state' && m.data && !m.data.ownedCardSkins.includes('cd_gold'), 3000, 'item removed')).data;
+  ok(afterItem.ownedCardSkins.join() === 'classic', 'gifted card design is removed from the sender');
+  const itemGift = await Hal2.waitFor(m => m.t === 'gift' && m.giftId === 'ab04', 3000, 'item arrives');
+  ok(itemGift.item && itemGift.item.id === 'cd_gold' && itemGift.fromName === 'Gia', 'the item arrives for the recipient');
+  Hal2.send('gift:ack', { giftId: 'ab04' });
+  Gia.send('gift:history');
+  const hist = await Gia.waitFor(m => m.t === 'gift:history', 3000, 'history');
+  ok(hist.log.length === 3 && hist.log[0].item && hist.log[0].with === 'Hal' && hist.log.every(h => h.dir === 'sent'), `gift history recorded (${hist.log.length} sent)`);
+  await sleep(100);
   Hal2.close(); await sleep(100);
   const Hal3 = new Client('Hal'); await Hal3.connect(); Hal3.login(); await Hal3.waitFor(m => m.t === 'welcome', 3000, 'Hal3 welcome'); await sleep(250);
   ok(!Hal3.inbox.some(m => m.t === 'gift'), 'acknowledged gifts are removed from the inbox');
@@ -355,11 +382,30 @@ async function main() {
   const giaSocial = await Gia.waitFor(m => m.t === 'social:state' && m.friends.some(f => f.username === 'Hal'), 3000, 'friends list');
   ok(Boolean(giaSocial), 'accepting (✓) saves the friendship on the server');
 
+  // Owner account: unlimited, server-authorised — gifts without being charged
+  const Boss = new Client('ChiefTest', 'chief-test-pw'); await Boss.connect(); Boss.login();
+  const bw = await Boss.waitFor(m => m.t === 'welcome', 3000, 'owner welcome');
+  ok(bw.user.unlimited === true, 'owner account is flagged unlimited by the server');
+  Boss.send('gift:send', { username: 'Hal', lions: 500000000000000, diamonds: 500000000000000, giftId: 'cc01' });
+  ok((await Boss.waitFor(m => m.t === 'gift:sent', 3000, 'owner gift')).giftId === 'cc01', 'owner can gift 500 trillion Coins & Diamonds with no balance check');
+  const Imp2 = new Client('Imposter2'); await Imp2.connect(); Imp2.register('chieftest');
+  ok((await Imp2.waitFor(m => m.t === 'error', 3000, 'reserved')).code === 'taken_username', 'nobody else can register the owner username');
+  // 4-digit login code accounts (+ stricter lockout)
+  const Cody = new Client('Cody', '4821'); await Cody.connect(); Cody.send('auth:register', { username: 'Cody', password: '4821', useCode: true, pin: '1111' });
+  ok((await Cody.waitFor(m => m.t === 'welcome', 3000, 'code register')).user.username === 'Cody', 'register with username + 4-digit login code');
+  const Cody2 = new Client('Cody', '4821'); await Cody2.connect(); Cody2.login();
+  ok((await Cody2.waitFor(m => m.t === 'welcome', 3000, 'code login')).user.username === 'Cody', 'log in with the 4-digit code');
+  const Guess = new Client('Cody', '0000'); await Guess.connect();
+  for (let i = 0; i < 5; i++) { Guess.login('Cody', String(1000 + i)); await Guess.waitFor(m => m.t === 'error', 3000, 'bad code'); }
+  Guess.login('Cody', '4821');
+  ok((await Guess.waitFor(m => m.t === 'error', 3000, 'locked')).code === 'locked', '5 wrong codes lock the account (even the right code is refused for a while)');
+  for (const c of [Boss, Imp2, Cody, Cody2, Guess]) c.close();
+
   for (const c of [A, B, C, D, Eve2, Eve3, Gia, Hal3]) c.close();
   await sleep(600);
   const dbFile = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'db.json'), 'utf8'));
   const users = Object.values(dbFile.users);
-  ok(users.length === 9, 'directory persisted (9 accounts)');
+  ok(users.length === 11, `directory persisted (${users.length} accounts)`);
   ok(users.every(u => u.passwordHash && !('password' in u)) && !JSON.stringify(dbFile).includes('pw_Alice_secret') && !JSON.stringify(dbFile).includes(A.session), 'passwords & sessions stored only as hashes');
 }
 
