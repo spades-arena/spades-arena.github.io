@@ -3551,3 +3551,140 @@ body[data-device-frame="phone"] .trick-winner-banner { white-space: nowrap; max-
 /* In a game: messages appear just under the score bar, never over your hand */
 .app-toast.toast-top { bottom: auto; top: 62px; max-width: calc(100vw - 32px); white-space: normal; text-align: center; }
 .app-toast.toast-top { font-size: 0.74rem; padding: 0.4rem 0.8rem; }
+
+/* 💥 Spades broken: a big ♠ smashes into pieces in ~1 second */
+.spades-crack-flash { animation-duration: 1s; }
+.smash-spade { position: absolute; left: 50%; top: 48%; width: 0; height: 0; }
+.smash-half {
+  position: absolute; left: 0; top: 0; transform: translate(-50%, -50%);
+  font-size: 5.5rem; line-height: 1; color: #111; text-shadow: 0 0 2px #fff, 0 0 18px rgba(255, 213, 74, 0.9);
+}
+.smash-left { clip-path: polygon(0 0, 52% 0, 44% 35%, 56% 55%, 46% 100%, 0 100%); animation: smashLeft 1s cubic-bezier(0.3, 0.7, 0.4, 1) forwards; }
+.smash-right { clip-path: polygon(52% 0, 100% 0, 100% 100%, 46% 100%, 56% 55%, 44% 35%); animation: smashRight 1s cubic-bezier(0.3, 0.7, 0.4, 1) forwards; }
+@keyframes smashLeft {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+  18% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  30% { transform: translate(-50%, -50%) scale(1); }
+  100% { transform: translate(calc(-50% - 46px), calc(-50% + 30px)) rotate(-28deg); opacity: 0; }
+}
+@keyframes smashRight {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+  18% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  30% { transform: translate(-50%, -50%) scale(1); }
+  100% { transform: translate(calc(-50% + 46px), calc(-50% + 34px)) rotate(26deg); opacity: 0; }
+}
+.smash-shard {
+  position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; background: #111;
+  clip-path: polygon(50% 0, 100% 60%, 30% 100%, 0 40%); box-shadow: 0 0 6px #ffd54a;
+  opacity: 0; animation: smashShard 0.85s ease-out 0.25s forwards;
+}
+@keyframes smashShard {
+  0% { opacity: 1; transform: rotate(var(--a)) translateX(8px) rotate(0deg); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) rotate(220deg); }
+}
+.spades-crack-flash .crack-spade { display: none; }
+
+/* ==========================================================================
+   v3.2 — TRADITIONAL DECK: corner index in two corners, classic pip layouts,
+   classic court pictures (public-domain), big suit on Aces.
+   ========================================================================== */
+.sc-face, .sc-corner, .sc-big { display: none !important; }
+.playing-card.modern-card .pc-face.tc-face { inset: 0; border: none; border-radius: inherit; }
+.tc-face::after { display: none; }
+.tc-face { color: var(--ink-black); }
+.suit-H .tc-face, .suit-D .tc-face { color: var(--ink-red); }
+.tc-corner { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 0.85; z-index: 2; }
+.tc-tl { left: 4.5%; top: 3.5%; }
+.tc-br { right: 4.5%; bottom: 3.5%; transform: rotate(180deg); }
+.tc-rank { font-family: Georgia, "Times New Roman", "Noto Serif", serif; font-weight: 700; font-size: 17cqh; letter-spacing: -0.05em; }
+.tc-ten .tc-rank { font-size: 14.5cqh; letter-spacing: -0.1em; }
+.tc-csuit { width: 11cqh; height: 11cqh; margin-top: 1.5cqh; }
+.tc-pip { position: absolute; width: 20cqw; height: 20cqw; transform: translate(-50%, -50%); display: flex; }
+.tc-pip.tc-flip { transform: translate(-50%, -50%) rotate(180deg); }
+.tc-pip-suit { width: 100%; height: 100%; }
+.tc-ace { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.tc-ace-suit { width: 46cqw; height: 46cqw; }
+.suit-S .tc-ace-suit { width: 58cqw; height: 58cqw; }
+.tc-court {
+  position: absolute; left: 13.1%; top: 10.5%; width: 73.7%; height: 79%;
+  object-fit: fill; border-radius: 2%; pointer-events: none; user-select: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+/* Phones: overlapped cards only show the left edge — bigger corner index there */
+.player-hand-row.two-rows .tc-tl { left: 5%; top: 3%; }
+.player-hand-row.two-rows .tc-rank { font-size: 24cqh; }
+.player-hand-row.two-rows .tc-ten .tc-rank { font-size: 20cqh; }
+.player-hand-row.two-rows .tc-csuit { width: 20cqh; height: 20cqh; }
+/* Overlapped hands on tablets/laptops: a slightly larger corner too */
+.player-hand-row:not(.two-rows) .tc-rank { font-size: 19cqh; }
+.player-hand-row:not(.two-rows) .tc-csuit { width: 13cqh; height: 13cqh; }
+
+/* Classic Green (free default): bright real-Spades felt with a dark wooden rail */
+body[data-table-theme="emerald"] .felt-arena,
+body:not([data-table-theme]) .felt-arena {
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1.3px) 0 0 / 6px 6px padding-box,
+    radial-gradient(ellipse at center, #33a352 0%, #23843f 45%, #186a31 80%, #0f4f23 100%) padding-box,
+    linear-gradient(135deg, #6b4423 0%, #3b2412 30%, #7a5230 55%, #2e1c0e 80%, #5a3a1c 100%) border-box;
+  box-shadow: inset 0 0 0 3px #1a0f06, inset 0 0 50px rgba(0, 0, 0, 0.45), 0 12px 30px rgba(0, 0, 0, 0.65);
+}
+body[data-table-theme="emerald"] .trick-mat { border-color: rgba(255, 255, 255, 0.28); background: rgba(0, 0, 0, 0.08); }
+/* Midnight Black (100 Lions) */
+body[data-table-theme="midnight"] .felt-arena {
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1.3px) 0 0 / 6px 6px padding-box,
+    radial-gradient(ellipse at center, #2a2a2e 0%, #18181b 50%, #070708 100%) padding-box,
+    linear-gradient(135deg, #fff1b8 0%, #c9971c 22%, #fff1b8 42%, #9a7209 62%, #f3d67a 82%, #b8860b 100%) border-box;
+}
+
+/* ONE overlapping row on phones: keep each card's corner readable in the visible strip */
+body[data-device-frame="phone"] .player-hand-row { --card-h: clamp(112px, 17vh, 150px); }
+body[data-device-frame="phone"] .tc-tl { left: 3.5%; top: 3%; }
+body[data-device-frame="phone"] .player-hand-row .tc-rank { font-size: 16cqh; }
+body[data-device-frame="phone"] .player-hand-row .tc-ten .tc-rank { font-size: 13cqh; letter-spacing: -0.12em; }
+body[data-device-frame="phone"] .player-hand-row .tc-csuit { width: 12cqh; height: 12cqh; }
+
+/* Traditional deck spacing: slim corner indices, pips in the middle, picture well inside the corners */
+.tc-tl { left: 3.5%; top: 3%; }
+.tc-br { right: 3.5%; bottom: 3%; }
+.tc-rank { font-size: 13cqh; }
+.tc-ten .tc-rank { font-size: 11cqh; letter-spacing: -0.12em; }
+.tc-csuit { width: 8.5cqh; height: 8.5cqh; margin-top: 1cqh; }
+.tc-pip { width: 16cqw; height: 16cqw; }
+.tc-court { left: 17%; top: 11%; width: 66%; height: 78%; }
+.player-hand-row:not(.two-rows) .tc-rank { font-size: 14cqh; }
+.player-hand-row:not(.two-rows) .tc-csuit { width: 9.5cqh; height: 9.5cqh; }
+body[data-device-frame="phone"] .player-hand-row .tc-rank { font-size: 15cqh; }
+body[data-device-frame="phone"] .player-hand-row .tc-ten .tc-rank { font-size: 12.5cqh; }
+body[data-device-frame="phone"] .player-hand-row .tc-csuit { width: 11cqh; height: 11cqh; }
+
+/* Phones: each card keeps at least a finger-wide (44px) strip; if 13 don't fit, the row scrolls sideways */
+body[data-device-frame="phone"] .player-hand-row:not(.two-rows) {
+  justify-content: flex-start;
+  overflow-x: auto; overflow-y: hidden;
+  scroll-behavior: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; padding-left: 6px; padding-right: 6px;
+}
+body[data-device-frame="phone"] .player-hand-row:not(.two-rows) .hand-card {
+  margin-left: clamp(
+    calc(44px - var(--card-w)),
+    calc((100% - var(--hand-count, 13) * var(--card-w)) / max(var(--hand-count, 13) - 1, 1)),
+    -6px
+  );
+}
+body[data-device-frame="phone"] .player-hand-row:not(.two-rows) .hand-card:first-child { margin-left: 0; }
+/* Touch screens: a tapped card doesn't stay "pressed up" over its neighbours */
+@media (hover: none) {
+  .hand-card.card-legal-ready:hover { transform: translateY(-14px); z-index: 3; }
+}
+body[data-device-frame="phone"] .hand-card.card-legal-ready { transform: translateY(-10px); }
+/* Playable cards glow & lift but keep their place in the row (never cover the cards after them) */
+.player-hand-row .hand-card.card-legal-ready { z-index: auto; }
+@media (hover: hover) {
+  .player-hand-row .hand-card.card-legal-ready:hover { z-index: 12; }
+}
+/* Phones, 2 rows: big readable corner on every card */
+body[data-device-frame="phone"] .player-hand-row.two-rows .tc-tl { left: 5%; top: 3%; }
+body[data-device-frame="phone"] .player-hand-row.two-rows .tc-rank { font-size: 22cqh; }
+body[data-device-frame="phone"] .player-hand-row.two-rows .tc-ten .tc-rank { font-size: 18cqh; }
+body[data-device-frame="phone"] .player-hand-row.two-rows .tc-csuit { width: 16cqh; height: 16cqh; }

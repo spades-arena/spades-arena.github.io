@@ -2325,7 +2325,7 @@
           ` : ''}
           ${(() => {
             // Phones: 2 rows of cards so every card is wide enough to tap with a finger
-            const twoRows = document.body.getAttribute('data-device-frame') === 'phone' && human.hand.length > 7;
+            const twoRows = document.body.getAttribute('data-device-frame') === 'phone' && human.hand.length > 6; // phones: 2 rows (e.g. 6 + 6)
             const split = Math.ceil(human.hand.length / 2);
             const renderCard = (c, idx) => {
               const isRed = c.suit === 'H' || c.suit === 'D';
@@ -2354,6 +2354,30 @@
           })()}
         </div>
       `;
+      // Keep the hand's sideways scroll position across re-renders; when it's your turn, show your playable cards
+      const handRow = container.querySelector('.player-hand-row');
+      if (handRow && handRow.scrollWidth > handRow.clientWidth + 2) {
+        handRow.scrollLeft = this.handScrollLeft || 0;
+        const myTurnNow = g.phase === 'playing' && g.turnSeat === 0;
+        if (myTurnNow && !this.handScrolledForTurn) {
+          this.handScrolledForTurn = true;
+          const legal = [...handRow.querySelectorAll('.card-legal-ready')];
+          if (legal.length) {
+            const rowBox = handRow.getBoundingClientRect();
+            const first = legal[0].getBoundingClientRect();
+            const last = legal[legal.length - 1].getBoundingClientRect();
+            if (first.left < rowBox.left || last.right > rowBox.right) {
+              // centre the playable cards (or start at the first one if they don't all fit)
+              const span = last.right - first.left;
+              const shift = span <= rowBox.width ? (first.left + last.right) / 2 - (rowBox.left + rowBox.right) / 2 : first.left - rowBox.left - 8;
+              handRow.scrollLeft += shift;
+              this.handScrollLeft = handRow.scrollLeft;
+            }
+          }
+        }
+        if (!myTurnNow) this.handScrolledForTurn = false;
+        handRow.addEventListener('scroll', () => { this.handScrollLeft = handRow.scrollLeft; }, { passive: true });
+      }
 
       container.querySelectorAll('[data-bid-val]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -3557,9 +3581,13 @@
         el.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           <path d="M50 48 L44 30 L47 18 L40 2 M50 48 L62 36 L70 22 L86 10 M50 48 L68 54 L84 50 L99 60 M50 48 L58 66 L54 80 L60 99 M50 48 L36 60 L24 58 L4 72 M50 48 L32 44 L18 34 L2 30 M44 30 L36 24 M70 22 L76 30 M58 66 L68 74 M24 58 L20 66"
             fill="none" stroke="#fff" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-        </svg><span class="crack-spade">♠</span>`;
+        </svg>
+        <div class="smash-spade" aria-hidden="true">
+          <span class="smash-half smash-left">♠</span><span class="smash-half smash-right">♠</span>
+          ${Array.from({ length: 8 }, (_, i) => `<span class="smash-shard" style="--a:${i * 45 + 20}deg;--d:${60 + (i % 3) * 22}px"></span>`).join('')}
+        </div>`;
         document.body.appendChild(el);
-        setTimeout(() => el.remove(), 1300);
+        setTimeout(() => el.remove(), 1050); // quick: ~1 second
       }, 30);
     }
 

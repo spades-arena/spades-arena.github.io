@@ -168,20 +168,58 @@
   };
 
   /**
-   * Card face — simple classic style: a big bold serif letter top-left with the suit under it,
-   * and one large suit at the bottom-right. Clean white card.
-   * Sizes use container units, so it looks the same at every card size; colours come from the
-   * card design's CSS variables, so every design in the Shop still restyles it.
+   * Traditional card faces. J/Q/K pictures: classic court figures from Byron Knoll's
+   * "Vector Playing Cards" (released into the public domain / CC0), cropped to the framed figure.
+   * The bundler swaps these paths for embedded images so every card works offline.
+   */
+  const COURT_ART = {
+    JS: 'assets/cards/JS.webp', JH: 'assets/cards/JH.webp', JD: 'assets/cards/JD.webp', JC: 'assets/cards/JC.webp',
+    QS: 'assets/cards/QS.webp', QH: 'assets/cards/QH.webp', QD: 'assets/cards/QD.webp', QC: 'assets/cards/QC.webp',
+    KS: 'assets/cards/KS.webp', KH: 'assets/cards/KH.webp', KD: 'assets/cards/KD.webp', KC: 'assets/cards/KC.webp'
+  };
+
+  // Classic pip layouts: [x%, y%] on the card; pips in the lower half are drawn upside-down
+  const PIP_LAYOUT = (() => {
+    const L = 34, C = 50, R = 66;
+    const top = 23, bot = 77, mid = 50;
+    const q1 = 41, q3 = 59;
+    return {
+      2: [[C, top], [C, bot]],
+      3: [[C, top], [C, mid], [C, bot]],
+      4: [[L, top], [R, top], [L, bot], [R, bot]],
+      5: [[L, top], [R, top], [C, mid], [L, bot], [R, bot]],
+      6: [[L, top], [R, top], [L, mid], [R, mid], [L, bot], [R, bot]],
+      7: [[L, top], [R, top], [C, 36.5], [L, mid], [R, mid], [L, bot], [R, bot]],
+      8: [[L, top], [R, top], [C, 36.5], [L, mid], [R, mid], [C, 63.5], [L, bot], [R, bot]],
+      9: [[L, top], [R, top], [L, q1], [R, q1], [C, mid], [L, q3], [R, q3], [L, bot], [R, bot]],
+      10: [[L, top], [R, top], [C, 32], [L, q1], [R, q1], [L, q3], [R, q3], [C, 68], [L, bot], [R, bot]]
+    };
+  })();
+
+  /**
+   * Card face — traditional deck: corner index (letter + suit) top-left and, upside-down, bottom-right;
+   * classic pip layouts on 2–10; one big suit on Aces; classic court pictures on J/Q/K.
+   * Sizes use container units (same look at every size); colours come from the card design's
+   * CSS variables, so every design in the Shop still restyles the deck.
    */
   function renderModernCardInnerHTML(card) {
-    const big = suitSVG(card.suit, 'sc-big-suit'); // same plain big suit on every card (no crowns)
+    const corner = (pos) => `<div class="tc-corner tc-${pos}"><span class="tc-rank">${card.label}</span>${suitSVG(card.suit, 'tc-csuit')}</div>`;
+    let middle;
+    if (card.rank >= 11 && card.rank <= 13) {
+      middle = `<img class="tc-court" src="${COURT_ART[card.label + card.suit]}" alt="" draggable="false">`;
+    } else if (card.rank === 14) {
+      middle = `<div class="tc-ace">${suitSVG(card.suit, 'tc-ace-suit')}</div>`;
+    } else {
+      middle = (PIP_LAYOUT[card.rank] || []).map(([x, y]) =>
+        `<span class="tc-pip${y > 50 ? ' tc-flip' : ''}" style="left:${x}%;top:${y}%">${suitSVG(card.suit, 'tc-pip-suit')}</span>`).join('');
+    }
     return `
-      <div class="pc-face sc-face ${card.label === '10' ? 'sc-ten' : ''}">
-        <div class="sc-corner"><span class="sc-rank">${card.label}</span>${suitSVG(card.suit, 'sc-corner-suit')}</div>
-        <div class="sc-big ${card.rank === 14 ? 'sc-big-ace' : ''}">${big}</div>
+      <div class="pc-face tc-face ${card.label === '10' ? 'tc-ten' : ''}">
+        ${corner('tl')}${middle}${corner('br')}
       </div>
     `;
   }
+
 
 
   /** Card designs: one free, five sold in the Profile shop for 🦁 Lions. */
@@ -196,7 +234,8 @@
 
   /** Table colours: the classic green felt is free, the rest are sold in the Shop for 🦁 Lions. */
   const TABLE_THEMES = [
-    { id: 'emerald', name: 'Emerald Felt', price: 0, desc: 'The classic dark green casino table', swatch: ['#11603a', '#062c19'] },
+    { id: 'emerald', name: 'Classic Green', price: 0, desc: 'The real Spades table — bright green felt', swatch: ['#2f9a4a', '#145a2a'] },
+    { id: 'midnight', name: 'Midnight Black', price: 100, desc: 'Sleek black felt with a gold rail', swatch: ['#2a2a2e', '#050506'] },
     { id: 'royal', name: 'Royal Blue', price: 150, desc: 'Deep sapphire felt fit for a king', swatch: ['#1d4ed8', '#0b1a4a'] },
     { id: 'velvet', name: 'Red Velvet', price: 250, desc: 'Rich crimson velvet, high-roller style', swatch: ['#9f1239', '#3b0614'] },
     { id: 'marble', name: 'Black Marble', price: 400, desc: 'Polished black stone with silver veins', swatch: ['#3a3a40', '#0b0b0d'] },

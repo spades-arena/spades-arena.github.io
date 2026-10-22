@@ -105,7 +105,7 @@ try {
   // 2) 🎨 Table colours in the Shop
   await A.evaluate(() => window.spadesApp.navigateTo('shop'));
   await waitScreen(A, 'screen-shop');
-  ok(await A.$$eval('.table-theme-section:not(.vip-theme-section) [data-shop-theme]', els => els.length) === 5, 'Shop shows 5 table colours for Lions');
+  ok(await A.$$eval('.table-theme-section:not(.vip-theme-section) [data-shop-theme]', els => els.length) === 6, 'Shop shows 6 table colours for Lions (incl. Midnight Black 100)');
   ok(await A.$$eval('.vip-theme-section [data-shop-theme]', els => els.length) === 6, 'Shop shows 6 💎 VIP tables');
   await A.$eval('[data-shop-theme="royal"]', el => el.click());
   await A.evaluate(() => document.querySelector('.choice-overlay [data-choice-tone="yes"]').click());

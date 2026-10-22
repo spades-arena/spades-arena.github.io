@@ -41,6 +41,13 @@ for asset in ('assets/logo.jpg', 'assets/mark.jpg', 'assets/signature.png'):
     mime = 'image/png' if asset.endswith('.png') else 'image/jpeg'
     css = css.replace(f'url("{asset}")', f'url("data:{mime};base64,{data}")')
 
+# Embed the classic court pictures (J/Q/K) so cards work offline in every app
+cards_dir = root / 'assets' / 'cards'
+if cards_dir.is_dir():
+    for f in sorted(cards_dir.glob('*.webp')):
+        data = base64.b64encode(f.read_bytes()).decode('ascii')
+        js_bundle = js_bundle.replace(f"'assets/cards/{f.name}'", f"'data:image/webp;base64,{data}'")
+
 # Point the app at the free cloud server when building for release (GitHub Actions sets this)
 import os
 server_url = os.environ.get('SPADES_SERVER_URL', '').strip()
