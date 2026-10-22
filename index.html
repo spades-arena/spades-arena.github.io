@@ -3558,6 +3558,10 @@ body[data-device-frame="phone"] .trick-winner-banner { white-space: nowrap; max-
 .player-hand-row.two-rows .sc-corner-suit { width: 27cqh; height: 27cqh; margin-top: 2cqh; }
 /* Cards you can't play: lightly dimmed so red & black suits stay readable */
 .hand-card.card-illegal-dim { filter: grayscale(0.3) brightness(0.72); }
+/* Phones (2 rows): a glowing playable card must not cover the card next to it */
+.player-hand-row.two-rows .hand-card.card-legal-ready { z-index: auto; }
+.player-hand-row.two-rows .hand-card.card-legal-ready:hover,
+.player-hand-row.two-rows .hand-card.card-legal-ready:active { z-index: 12; }
 
   </style>
 </head>
