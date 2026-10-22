@@ -133,3 +133,23 @@
 - **Colours:** red is the main colour (your team shows as Red). It's display-only: internal team ids are still 'blue' (seats 0/2) and 'red'.
 - **2-player rooms:** the host picks Play Together or Play Against Each Other, and teams are locked.
 - **Still to do:** green "real Spades" theme (asked for, not started); Render Deploy Hook.
+
+## SPADES ARENA v1.0.0 — 22 Oct 2026 (rebrand of Spades Royale)
+- **Brand:** black panther logo (`assets/brand-src/spades-arena-logo.png`, user-supplied). Matte black, emerald & neon green, silver; coins are gold bars, diamonds are faceted.
+  - "Lions" are now called "Coins" (code ids unchanged).
+  - Storage keys, app ids (`com.hadzz.spadesroyale`), the repo/site URL and the Electron data folder ("Spades Royale") are deliberately unchanged, so data survives.
+- **Versions:**
+  - Hidden build = `4.0.<run>` (used by update checks and the server's `MIN_APP_VERSION`, default 4.0.0).
+  - Public = `1.0.<run-28>`; the GitHub Release is tagged `v1.0.x`.
+  - Never lower the build number.
+- **Arena Shop:** `SHOP_PRICES` / `SHOP_CATALOG` / `SHOP_COMING_SOON` in `js/engine.js` (prices are configurable there).
+  - 8 tables (`emerald` free + `arena_*`), 8 card colour themes (`classic` + `cd_*`), 8 avatars (`av_*`).
+  - Old items stay owned and usable via Profile.
+- **Avatars:** only **av_panther** has a real image (a crop of the logo).
+  - av_champion … av_legend need photo-realistic portraits in `assets/avatars/<id>.webp` (256px). The bundler embeds them; until then they fall back to the drawn style.
+  - The user must approve spending Everygen credits first.
+- **Gifting:** Gift screen (top bar). By username = server-checked: the server checks the sender's synced balance and items, deducts them, delivers via inbox, logs `giftLog`, and refuses duplicate gift ids. The owner (unlimited) is never charged.
+- **Login:** password OR 4-digit code (`useCode`); code accounts lock after 5 wrong tries for 15 min.
+- **Owner:** "hadzz" keeps its existing strong password. The brief asked for the initial password "Hadzz", but that was NOT applied, for security.
+- **Old Royale apps** (< 4.0.0) get "Spades Royale has shut down — download SPADES ARENA" at login.
+- **Backend work still open:** the economy (balances, purchases) is still client-side and synced. Full anti-cheat needs server-side purchases/rewards.
