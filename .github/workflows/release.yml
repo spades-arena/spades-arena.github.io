@@ -20,8 +20,8 @@ concurrency:
 env:
   # Hidden build number (always rises, so update checks work): 4.0.<run>
   VERSION: 4.0.${{ github.run_number }}
-  # Public version shown to players: Spades Arena v1.0.0 = the first Arena build (run 28)
-  DISPLAY_BASE_RUN: 28
+  # Public version shown to players: Spades Arena v1.0.0 = the first Arena build (run 29)
+  DISPLAY_BASE_RUN: 29
   # Set this repo variable once the free Render server is up, e.g. wss://spades-royale.onrender.com/ws
   SPADES_SERVER_URL: ${{ vars.SPADES_SERVER_URL }}
 
@@ -151,7 +151,7 @@ jobs:
             ## SPADES ARENA v${{ env.DISPLAY_VERSION }}
             Premium. Fierce. Competitive. — the all-new Spades Arena (formerly Spades Royale). Made by Hadzz.
 
-            **Downloads:** Android (.apk) · Windows (.exe) · Mac (.dmg) below, or play in the browser at https://spades-royale.github.io/play/
+            **Downloads:** Android (.apk) · Windows (.exe) · Mac (.dmg) below, or play in the browser at https://spades-arena.github.io/play/
 
             **What's new in Spades Arena**
             - Brand-new black-panther identity: matte black, emerald & neon green, metallic silver

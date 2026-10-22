@@ -497,7 +497,7 @@ function versionTooOld(v) {
   return false;
 }
 function requireUpdate(conn) {
-  sendError(conn, 'update_required', '⚠️ Spades Royale has shut down. Download the all-new SPADES ARENA to keep playing — spades-royale.github.io (your account, Coins, Diamonds and items come with you).', 'auth');
+  sendError(conn, 'update_required', '⚠️ Spades Royale has shut down. Download the all-new SPADES ARENA to keep playing — spades-arena.github.io (your account, Coins, Diamonds and items come with you).', 'auth');
 }
 
 /** Recovery PIN (any 4 digits) — stored hashed like a password; used only to reset a forgotten password. */

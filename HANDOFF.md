@@ -5,10 +5,10 @@
 ## Links
 | What | Where |
 |---|---|
-| Download page (Android / Windows / Mac / iPhone) | https://spades-royale.github.io |
-| Play in a browser (iPhone & iPad) | https://spades-royale.github.io/play/ |
-| Code on GitHub (account `spades-royale`) | https://github.com/spades-royale/spades-royale.github.io |
-| Build status | https://github.com/spades-royale/spades-royale.github.io/actions |
+| Download page (Android / Windows / Mac / iPhone) | https://spades-arena.github.io |
+| Play in a browser (iPhone & iPad) | https://spades-arena.github.io/play/ |
+| Code on GitHub (account `spades-arena`) | https://github.com/spades-arena/spades-arena.github.io |
+| Build status | https://github.com/spades-arena/spades-arena.github.io/actions |
 | Online login server (Render, free) | https://spades-royale.onrender.com (dashboard.render.com → spades-royale) |
 | Account storage (Upstash, free) | console.upstash.com → database `spades` |
 

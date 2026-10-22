@@ -1,5 +1,5 @@
 # Free Render web service for Spades Royale logins, friends, invites and gifts.
-# One click: https://render.com/deploy?repo=https://github.com/spades-royale/spades-royale.github.io
+# One click: https://render.com/deploy?repo=https://github.com/spades-arena/spades-arena.github.io
 services:
   - type: web
     name: spades-royale

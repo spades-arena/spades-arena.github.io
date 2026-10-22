@@ -12,7 +12,7 @@
   // Release builds get their version stamped in by bundle.py (SPADES_APP_VERSION); 'dev' = local copy
   const APP_VERSION = 'dev'; // hidden build number (update checks)
   const DISPLAY_VERSION = 'dev'; // public version, e.g. 1.0.0
-  const UPDATE_SITE = 'https://spades-royale.github.io';
+  const UPDATE_SITE = 'https://spades-arena.github.io';
   const GAME_INTRO_MS = 5000; // cat-in-a-hat intro when a game starts
   const SCREEN_SESSION_KEY = 'spades_royale_screen'; // where you were, for page reloads
 
@@ -268,7 +268,7 @@
     /** Full-screen "please update" that can't be dismissed. */
     showUpdateRequired(info, platform) {
       if (typeof document === 'undefined' || document.querySelector('.update-required-overlay')) return;
-      const url = info && platform ? info.downloads[platform] : (platform ? 'https://spades-royale.github.io' : null);
+      const url = info && platform ? info.downloads[platform] : (platform ? 'https://spades-arena.github.io' : null);
       const overlay = document.createElement('div');
       overlay.className = 'choice-overlay update-required-overlay';
       overlay.innerHTML = `
