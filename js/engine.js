@@ -168,40 +168,28 @@
   };
 
   /**
-   * Card face: modern corner indices (rank + suit), a big clean centre pip,
-   * framed monogram court cards with a crown, and the lion crest on the Ace of Spades.
-   * Colours come from CSS variables, so purchasable card designs restyle every card.
+   * Card face — simple classic style: a big bold serif letter top-left with the suit under it,
+   * and one large suit (or a gold crown on J/Q/K) at the bottom-right. Clean white card.
+   * Sizes use container units, so it looks the same at every card size; colours come from the
+   * card design's CSS variables, so every design in the Shop still restyles it.
    */
   function renderModernCardInnerHTML(card) {
     const isCourt = card.rank >= 11 && card.rank <= 13;
-    const isAce = card.rank === 14;
-    let center;
-    if (isAce && card.suit === 'S') {
-      center = '<div class="pc-ace-crest" aria-hidden="true"></div>';
-    } else if (isAce) {
-      center = `<div class="pc-ace">${suitSVG(card.suit, 'pc-pip-xl')}</div>`;
-    } else if (isCourt) {
-      center = `
-        <div class="pc-court">
-          <svg class="pc-crown" viewBox="0 0 100 48" fill="currentColor" aria-hidden="true">${COURT_CROWN[card.rank]}</svg>
-          <span class="pc-court-letter">${card.label}</span>
-          ${suitSVG(card.suit, 'pc-pip-sm')}
-        </div>`;
-    } else {
-      center = `<div class="pc-pip">${suitSVG(card.suit, 'pc-pip-lg')}</div>`;
-    }
+    const big = isCourt
+      ? `<svg class="sc-crown" viewBox="0 0 100 48" aria-hidden="true">${COURT_CROWN[card.rank]}</svg>${suitSVG(card.suit, 'sc-court-suit')}`
+      : suitSVG(card.suit, 'sc-big-suit');
     return `
-      <div class="pc-face ${card.suit === 'S' ? 'pc-trump' : ''}">
-        <div class="pc-index pc-tl"><span class="pc-rank">${card.label}</span>${suitSVG(card.suit, 'pc-index-suit')}</div>
-        <div class="pc-center">${center}</div>
-        <div class="pc-index pc-br"><span class="pc-rank">${card.label}</span>${suitSVG(card.suit, 'pc-index-suit')}</div>
+      <div class="pc-face sc-face ${card.label === '10' ? 'sc-ten' : ''}">
+        <div class="sc-corner"><span class="sc-rank">${card.label}</span>${suitSVG(card.suit, 'sc-corner-suit')}</div>
+        <div class="sc-big ${isCourt ? 'sc-big-court' : ''} ${card.rank === 14 ? 'sc-big-ace' : ''}">${big}</div>
       </div>
     `;
   }
 
+
   /** Card designs: one free, five sold in the Profile shop for 🦁 Lions. */
   const CARD_SKINS = [
-    { id: 'classic', name: 'Royale Classic', price: 0, desc: 'Clean premium ivory with deep ink & ruby' },
+    { id: 'classic', name: 'Royale Classic', price: 0, desc: 'Clean white classic cards — simple & easy to read' },
     { id: 'frost', name: 'Frost Pearl', price: 200, desc: 'Pearl white with icy sapphire & violet' },
     { id: 'nebula', name: 'Neon Nebula', price: 400, desc: 'Deep-space purple with neon cyan & pink' },
     { id: 'obsidian', name: 'Obsidian Emerald', price: 600, desc: 'Black card with glowing emerald & coral' },

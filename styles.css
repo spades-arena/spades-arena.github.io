@@ -3501,3 +3501,38 @@ body[data-device-frame="phone"] .trick-winner-banner { white-space: nowrap; max-
 /* Winner's name tag: stays in place (no pop-out) — just turns gold */
 .table-edge-seat.trick-winner-seat { transform: none !important; }
 .trick-plus { display: none; }
+
+/* ==========================================================================
+   v3.1 — SIMPLE CLASSIC CARDS (like a real Spades app): white card, big serif
+   letter top-left with the suit under it, one big suit bottom-right.
+   ========================================================================== */
+:root,
+[data-card-skin="classic"] {
+  --card-bg: #ffffff;
+  --card-edge: #c9ced6;
+  --ink-black: #111111;
+  --ink-red: #d6001c;
+}
+.playing-card.modern-card { container-type: size; background: var(--card-bg); border: 1px solid var(--card-edge); border-radius: 9% / 6.5%; }
+.playing-card.modern-card .pc-face.sc-face { inset: 0; border: none; border-radius: inherit; }
+.sc-face::after { display: none; }
+.sc-face { color: var(--ink-black); }
+.suit-H .sc-face, .suit-D .sc-face { color: var(--ink-red); }
+.sc-corner {
+  position: absolute; left: 7%; top: 4%;
+  display: flex; flex-direction: column; align-items: center; line-height: 0.82;
+}
+.sc-rank {
+  font-family: Georgia, "Times New Roman", "Noto Serif", serif; font-weight: 700;
+  font-size: 30cqh; letter-spacing: -0.04em;
+}
+.sc-ten .sc-rank { font-size: 25cqh; letter-spacing: -0.09em; }
+.sc-corner-suit { width: 17cqh; height: 17cqh; margin-top: 3cqh; }
+.sc-big { position: absolute; right: 7%; bottom: 6%; display: flex; align-items: flex-end; justify-content: flex-end; }
+.sc-big-suit { width: 46cqw; height: 46cqw; }
+.sc-big-ace .sc-big-suit { width: 62cqw; height: 62cqw; }
+.sc-big-court { flex-direction: column; align-items: center; gap: 2cqh; }
+.sc-crown { width: 50cqw; height: auto; fill: #f2b705; stroke: #7a5200; stroke-width: 3; paint-order: stroke; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.25)); }
+.sc-court-suit { width: 30cqw; height: 30cqw; }
+/* old fancy-card pieces are no longer used */
+.playing-card.modern-card .pc-index, .playing-card.modern-card .pc-center { display: none; }
