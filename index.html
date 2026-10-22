@@ -3551,6 +3551,14 @@ body[data-device-frame="phone"] .trick-winner-banner { white-space: nowrap; max-
 /* old fancy-card pieces are no longer used */
 .playing-card.modern-card .pc-index, .playing-card.modern-card .pc-center { display: none; }
 
+/* Phones: overlapped cards only show their left edge — make the letter + suit there big and clear */
+.player-hand-row.two-rows .sc-corner { left: 6%; top: 3%; }
+.player-hand-row.two-rows .sc-rank { font-size: 27cqh; }
+.player-hand-row.two-rows .sc-ten .sc-rank { font-size: 23cqh; }
+.player-hand-row.two-rows .sc-corner-suit { width: 27cqh; height: 27cqh; margin-top: 2cqh; }
+/* Cards you can't play: lightly dimmed so red & black suits stay readable */
+.hand-card.card-illegal-dim { filter: grayscale(0.3) brightness(0.72); }
+
   </style>
 </head>
 <body data-device-frame="full">
