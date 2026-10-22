@@ -153,3 +153,19 @@
 - **Owner:** "hadzz" keeps its existing strong password. The brief asked for the initial password "Hadzz", but that was NOT applied, for security.
 - **Old Royale apps** (< 4.0.0) get "Spades Royale has shut down — download SPADES ARENA" at login.
 - **Backend work still open:** the economy (balances, purchases) is still client-side and synced. Full anti-cheat needs server-side purchases/rewards.
+
+## ✅ LIVE — Spades Arena v1.0.0 (22 Oct 2026)
+- **Website:** https://spades-arena.github.io (the old spades-royale.github.io is dead since the GitHub account was renamed to **spades-arena**).
+- **Code:** https://github.com/spades-arena/spades-arena.github.io (build run 29 = public v1.0.0, hidden build 4.0.29).
+- **Server:** Render "spades-royale" was redeployed and verified.
+  - Old Royale apps get the "Spades Royale has shut down — download SPADES ARENA" message.
+  - Arena apps log in.
+  - The owner **Hadzz** is unlimited and has a PIN.
+  - 4-digit code sign-up works.
+- **Mac:** /Applications/Spades Arena.app v1.0.0 (Spades Royale.app removed).
+- **Accounts on the server (22 Oct):** Hadzz (owner), Ahnaf, Spades-Royale, ateeq, irij.aa, kav, Saf. Passwords are hashed and can't be shown.
+- **Next:**
+  - 7 realistic avatar portraits (needs the OK to spend Everygen credits);
+  - optional owner tool to reset a player's password;
+  - server-side purchases/rewards for full anti-cheat;
+  - Render Deploy Hook.
