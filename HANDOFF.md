@@ -169,3 +169,17 @@
   - optional owner tool to reset a player's password;
   - server-side purchases/rewards for full anti-cheat;
   - Render Deploy Hook.
+
+## v1.0.1 — 23 Oct 2026 (live, Render deployed)
+- **Login:** PIN-only sign-up (username + any 4 digits). There's no recovery PIN: "Forgot your PIN?" → WhatsApp +971 50 845 0815. Old password accounts can still log in with their password.
+- **Owner Hadzz:** PIN is **9595** (set & verified 23 Oct). The owner locks for 6 h after 5 wrong PINs.
+- **WhatsApp:** Settings has Inquiry / Problem / Forgot PIN buttons with pre-written messages.
+- **Table menu:** the bottom-nav ♠ opens 4p / 3p / Pass & Play / Multiplayer / Saved Games (red ✕). There's a Saved Games tile on Home.
+- **Saved games:** save-on-leave asks Yes (saved with date & time) or No (deleted). Games left before bidding are kept, and resuming keeps the same cards.
+- **Cards:** 15 card designs, including Diamond Edition & Champions Edition. The new colours are full-colour cards.
+- **Old Royale items:** avatars & tables are retired and removed from accounts.
+- **Loading:** 2 s opening screen, 4 s game intro.
+- **Coin:** yellow with an emerald ring.
+- **TODO:** the 7 shop avatars still show the placeholder.
+  - Everygen has no subscription.
+  - The DiceBear "lorelei" CC0 ones were tried, but the user said "later".
