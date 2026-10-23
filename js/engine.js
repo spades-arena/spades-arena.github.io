@@ -212,36 +212,41 @@
    */
   const SHOP_PRICES = {
     tables: [0, 150, 300, 500, 800, 1200, 1800, 3000],
-    cards: [0, 100, 200, 350, 500, 750, 1100, 2000],
+    cards: [0, 200, 400, 600, 800, 1000, 1150, 1300, 1450, 1600, 1800, 2000, 2200, 2600, 3200],
     avatars: [0, 100, 200, 300, 450, 650, 900, 1500]
   };
   const SHOP_CATALOG = {
     tables: ['emerald', 'arena_gold', 'arena_crimson', 'arena_arctic', 'arena_purple', 'arena_inferno', 'arena_shadow', 'arena_panther'],
-    cards: ['classic', 'cd_gold', 'cd_crimson', 'cd_ocean', 'cd_purple', 'cd_silver', 'cd_shadow', 'cd_panther'],
+    cards: ['classic', 'frost', 'nebula', 'obsidian', 'imperial', 'vip', 'cd_purple', 'cd_silver', 'cd_shadow', 'cd_panther', 'cd_ocean', 'cd_crimson', 'cd_gold', 'cd_diamond', 'cd_champions'],
     avatars: ['av_panther', 'av_champion', 'av_strategist', 'av_veteran', 'av_ace', 'av_phantom', 'av_elite', 'av_legend']
   };
   const SHOP_COMING_SOON = {
     tables: ['Arena X', 'Champions Arena'],
-    cards: ['Diamond Edition', 'Champions Edition'],
+    cards: [],
     avatars: ['The Commander', 'The Legend Returns']
   };
 
   /** Card designs: one free, five sold in the Profile shop for 🦁 Coins. */
   const CARD_SKINS = [
     { id: 'classic', name: 'Classic White', price: 0, desc: 'Traditional white cards with a clean back' },
-    { id: 'cd_gold', name: 'Royal Gold', price: SHOP_PRICES.cards[1], desc: 'White faces, elegant gold-accented backs', shop: true },
-    { id: 'cd_crimson', name: 'Crimson Red', price: SHOP_PRICES.cards[2], desc: 'Deep-red card backs', shop: true },
-    { id: 'cd_ocean', name: 'Ocean Blue', price: SHOP_PRICES.cards[3], desc: 'Rich-blue card backs', shop: true },
-    { id: 'cd_purple', name: 'Royal Purple', price: SHOP_PRICES.cards[4], desc: 'Dark-purple card backs', shop: true },
-    { id: 'cd_silver', name: 'Silver Steel', price: SHOP_PRICES.cards[5], desc: 'Metallic silver card backs', shop: true },
-    { id: 'cd_shadow', name: 'Shadow Black', price: SHOP_PRICES.cards[6], desc: 'Black backs with charcoal accents', shop: true },
-    { id: 'cd_panther', name: 'Emerald Panther', price: SHOP_PRICES.cards[7], desc: 'Black & emerald backs with a spade emblem', shop: true },
+    { id: 'cd_gold', name: 'Royal Gold', price: 0, desc: 'Full gold cards with dark symbols', shop: true },
+    { id: 'cd_crimson', name: 'Crimson Red', price: 0, desc: 'Full deep-red cards', shop: true },
+    { id: 'cd_ocean', name: 'Ocean Blue', price: 0, desc: 'Full rich-blue cards', shop: true },
+    { id: 'cd_purple', name: 'Royal Purple', price: 0, desc: 'Full dark-purple cards', shop: true },
+    { id: 'cd_silver', name: 'Silver Steel', price: 0, desc: 'Full metallic-silver cards', shop: true },
+    { id: 'cd_shadow', name: 'Shadow Black', price: 0, desc: 'Full black cards with charcoal tones', shop: true },
+    { id: 'cd_diamond', name: 'Diamond Edition', price: 0, desc: 'Full sparkling diamond-blue cards', shop: true },
+    { id: 'cd_champions', name: 'Champions Edition', price: 0, desc: 'Elite black cards with gold foil & emerald fire', shop: true },
+    { id: 'cd_panther', name: 'Emerald Panther', price: 0, desc: 'Full black cards with neon-emerald symbols', shop: true },
     { id: 'frost', name: 'Frost Pearl', price: 200, desc: 'Pearl white with icy sapphire & violet' },
     { id: 'nebula', name: 'Neon Nebula', price: 400, desc: 'Deep-space purple with neon cyan & pink' },
     { id: 'obsidian', name: 'Obsidian Emerald', price: 600, desc: 'Black card with glowing emerald & coral' },
     { id: 'imperial', name: 'Imperial Gold', price: 800, desc: 'Dark shiny gold with sapphire & royal red' },
     { id: 'vip', name: 'VIP Black Gold', price: 1000, desc: 'Pure black, gold symbols & letters — VIP only' }
   ];
+
+  // Card-design prices come from SHOP_PRICES (in shop order)
+  SHOP_CATALOG.cards.forEach((id, i) => { const c = CARD_SKINS.find(x => x.id === id); if (c) c.price = SHOP_PRICES.cards[i]; });
 
   // Avatar prices also come from SHOP_PRICES (avatars.js loads first)
   if (SH.AVATARS) SHOP_CATALOG.avatars.forEach((id, i) => { const a = SH.AVATARS.find(x => x.id === id); if (a) a.price = SHOP_PRICES.avatars[i]; });
@@ -269,6 +274,8 @@
     { id: 'platinum', name: 'Platinum VIP', price: 15, currency: 'diamonds', vip: true, desc: 'Brushed platinum with a silver glow', swatch: ['#94a3b8', '#1e293b'] },
     { id: 'blackgold', name: 'Black Gold Throne', price: 25, currency: 'diamonds', vip: true, desc: 'The ultimate: black velvet, glowing gold rail', swatch: ['#facc15', '#000000'] }
   ];
+  // Old Spades Royale tables are retired (removed from accounts; kept only so old data loads safely)
+  TABLE_THEMES.forEach(t => { if (t.id !== 'emerald' && !t.id.startsWith('arena_')) t.legacy = true; });
 
   function validateCardPlay(card, hand, currentTrick, spadesBroken) {
     if (!card) {

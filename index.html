@@ -3945,6 +3945,92 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
 .arena-item .ai-cards { display: flex; align-items: center; justify-content: center; gap: 4px; }
 .arena-item .ai-cards > * { flex: none; }
 
+/* Card designs: the 7 Arena colours are FULL-colour cards (like VIP Black Gold) — no outline lines */
+.tc-face::before { display: none !important; }
+[data-card-skin="cd_purple"] { --card-bg: linear-gradient(160deg, #6d33b8 0%, #4c1d95 50%, #2a0f59 100%); --card-edge: #8b5cf6; --ink-black: #ffffff; --ink-red: #ff9cc5; --back-1: #4c1d95; --back-2: #1e0b3b; --back-accent: #d8c9f2; }
+[data-card-skin="cd_silver"] { --card-bg: linear-gradient(160deg, #ffffff 0%, #d9dfe3 40%, #a8b2ba 100%); --card-edge: #8a959e; --ink-black: #14181b; --ink-red: #b0001a; --back-1: #c9d1d7; --back-2: #6b757d; --back-accent: #ffffff; }
+[data-card-skin="cd_shadow"] { --card-bg: linear-gradient(160deg, #303437 0%, #1a1c1e 55%, #0a0b0c 100%); --card-edge: #4a5055; --ink-black: #e3e7ea; --ink-red: #ff5a6e; --back-1: #1e2123; --back-2: #050606; --back-accent: #5b6266; }
+[data-card-skin="cd_panther"] { --card-bg: radial-gradient(ellipse at 30% 20%, #10241a 0%, #070c09 60%, #000000 100%); --card-edge: #12b85f; --ink-black: #2bff88; --ink-red: #ff4d6d; --back-1: #0a0f0c; --back-2: #000000; --back-accent: #2bff88; }
+[data-card-skin="cd_ocean"] { --card-bg: linear-gradient(160deg, #2b7bd8 0%, #1d5fb8 45%, #0b2a5c 100%); --card-edge: #5ea2ef; --ink-black: #ffffff; --ink-red: #ffb3bd; --back-1: #1d5fb8; --back-2: #0b2a5c; --back-accent: #cfe1f7; }
+[data-card-skin="cd_crimson"] { --card-bg: linear-gradient(160deg, #c9183a 0%, #a3122a 45%, #4a0712 100%); --card-edge: #e04a64; --ink-black: #ffffff; --ink-red: #ffd166; --back-1: #8f0f24; --back-2: #4a0712; --back-accent: #e9c6cc; }
+[data-card-skin="cd_gold"] { --card-bg: linear-gradient(160deg, #fff3c4 0%, #f0c44c 35%, #c8901a 75%, #8a5a06 100%); --card-edge: #b07d00; --ink-black: #1a1407; --ink-red: #8f0012; --back-1: #e3b341; --back-2: #7a4f05; --back-accent: #fff3c4; }
+[data-card-skin^="cd_"] .playing-card.modern-card,
+body[data-card-skin^="cd_"] .playing-card.modern-card { background: var(--card-bg); border-color: var(--card-edge); }
+.ai-cards { display: flex; }
+[data-card-skin="frost"] { --back-1: #dbe9ff; --back-2: #7aa7f0; --back-accent: #ffffff; }
+[data-card-skin="nebula"] { --back-1: #45207f; --back-2: #0a0520; --back-accent: #22d3ee; }
+[data-card-skin="obsidian"] { --back-1: #10241a; --back-2: #020403; --back-accent: #34d399; }
+[data-card-skin="imperial"] { --back-1: #c8901a; --back-2: #4a3006; --back-accent: #fff3c4; }
+[data-card-skin="vip"] { --back-1: #121212; --back-2: #000000; --back-accent: #e3b341; }
+
+/* 💎 Diamond Edition: full icy-diamond cards with crisp dark symbols */
+[data-card-skin="cd_diamond"] {
+  --card-bg:
+    linear-gradient(115deg, transparent 0 30%, rgba(255,255,255,.55) 32%, transparent 38% 62%, rgba(255,255,255,.4) 64%, transparent 70%),
+    linear-gradient(60deg, rgba(255,255,255,.25) 0 15%, transparent 15% 50%, rgba(255,255,255,.18) 50% 58%, transparent 58%),
+    linear-gradient(160deg, #e9fbff 0%, #a8e7ff 35%, #63c6f2 70%, #2d8fd0 100%);
+  --card-edge: #e0f7ff; --ink-black: #062a4a; --ink-red: #b1002c;
+  --back-1: #a8e7ff; --back-2: #1b6fb0; --back-accent: #ffffff;
+}
+body[data-card-skin="cd_diamond"] .playing-card.modern-card,
+[data-card-skin="cd_diamond"] .playing-card.modern-card { box-shadow: 0 0 0 1px #e0f7ff, 0 0 10px rgba(127, 210, 255, 0.55), 0 6px 14px rgba(0, 0, 0, 0.5); }
+/* 🏆 Champions Edition: elite black with gold foil edge, gold symbols and an emerald glow */
+[data-card-skin="cd_champions"] {
+  --card-bg:
+    radial-gradient(ellipse at 50% 120%, rgba(43, 255, 136, 0.28), transparent 60%),
+    linear-gradient(160deg, #1b1b1d 0%, #0b0b0c 55%, #000 100%);
+  --card-edge: #f3d06a; --ink-black: #f3d06a; --ink-red: #ff5a6e;
+  --back-1: #0b0b0c; --back-2: #000; --back-accent: #f3d06a;
+}
+body[data-card-skin="cd_champions"] .playing-card.modern-card,
+[data-card-skin="cd_champions"] .playing-card.modern-card {
+  border: 1.5px solid transparent;
+  background: var(--card-bg) padding-box, linear-gradient(135deg, #fff3c4, #d4a52c 30%, #fff3c4 50%, #a47912 70%, #f3d06a) border-box;
+  box-shadow: 0 0 12px rgba(212, 165, 44, 0.45), 0 6px 14px rgba(0, 0, 0, 0.55);
+}
+[data-card-skin="cd_champions"] .tc-rank, [data-card-skin="cd_champions"] .tc-face svg { filter: drop-shadow(0 0 2px rgba(243, 208, 106, 0.6)); }
+
+/* ♠ Table button chooser & 💾 Saved games */
+.play-chooser { max-width: 420px; width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 0.5rem; }
+.pc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.2rem; }
+.pc-head h3 { margin: 0; letter-spacing: 0.12em; }
+.pc-close {
+  width: 38px; height: 38px; border-radius: 50%; border: 2px solid #ff6b6b; cursor: pointer;
+  background: linear-gradient(180deg, #ff4d4d, #b91c1c); color: #fff; font-size: 1.1rem; font-weight: 900;
+  box-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+}
+.pc-opt {
+  display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.75rem 0.85rem; border-radius: 14px; cursor: pointer; text-align: left;
+  background: linear-gradient(135deg, #121a16, #0a0f0c); border: 1px solid rgba(43, 255, 136, 0.35); color: #eef7f1;
+  box-shadow: inset 3px 0 0 #12b85f;
+}
+.pc-opt:hover, .pc-opt:active { border-color: #2bff88; box-shadow: inset 3px 0 0 #2bff88, 0 0 14px rgba(43, 255, 136, 0.25); }
+.pc-ico { flex: none; width: 42px; height: 42px; border-radius: 10px; display: grid; place-items: center; font-weight: 900; color: #2bff88; background: rgba(43, 255, 136, 0.08); border: 1px solid rgba(43, 255, 136, 0.4); }
+.pc-txt { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; }
+.pc-txt small { color: var(--text-muted); font-size: 0.74rem; }
+.pc-go { color: #2bff88; font-size: 1.4rem; font-weight: 900; }
+.sg-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.65rem; border-radius: 12px; background: #0b120e; border: 1px solid rgba(43, 255, 136, 0.3); }
+.sg-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sg-info small { color: var(--text-muted); font-size: 0.74rem; }
+.sg-del { width: auto !important; min-height: 0 !important; padding: 0.4rem 0.6rem; }
+/* WhatsApp contact */
+.whatsapp-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; margin-top: 0.4rem;
+  padding: 0.75rem 1rem; border-radius: 14px; text-decoration: none; font-weight: 900; color: #fff;
+  background: linear-gradient(180deg, #3be47a, #1faa53); border: 1px solid #b8ffd6; box-shadow: 0 0 14px rgba(37, 211, 102, 0.35);
+}
+.wa-number { text-align: center; margin-top: 0.35rem; }
+/* 👁 show/hide password */
+.pw-wrap { position: relative; display: flex; }
+.pw-wrap input { flex: 1; padding-right: 2.8rem !important; }
+.pw-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border: 0; border-radius: 8px; cursor: pointer; background: transparent; font-size: 1.1rem; }
+.pw-eye:hover { background: rgba(43, 255, 136, 0.1); }
+
+/* Coins: bright yellow coin with a glowing emerald ring */
+:root { --coin-icon: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='f' cx='38%25' cy='32%25' r='70%25'%3E%3Cstop offset='0' stop-color='%23fffbd1'/%3E%3Cstop offset='.35' stop-color='%23ffe23d'/%3E%3Cstop offset='.75' stop-color='%23f5b800'/%3E%3Cstop offset='1' stop-color='%23c78a00'/%3E%3C/radialGradient%3E%3ClinearGradient id='r' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff59a'/%3E%3Cstop offset='.5' stop-color='%23e8a600'/%3E%3Cstop offset='1' stop-color='%239a6400'/%3E%3C/linearGradient%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='.72' stop-color='%232bff88' stop-opacity='0'/%3E%3Cstop offset='.86' stop-color='%232bff88' stop-opacity='.55'/%3E%3Cstop offset='1' stop-color='%232bff88' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='32' r='26.5' fill='none' stroke='%232bff88' stroke-width='2.4'/%3E%3Ccircle cx='32' cy='32' r='24' fill='url(%23r)'/%3E%3Ccircle cx='32' cy='32' r='20' fill='url(%23f)' stroke='%23d49a00' stroke-width='1.2'/%3E%3Ccircle cx='32' cy='32' r='17' fill='none' stroke='%23fff7b0' stroke-opacity='.7' stroke-width='1' stroke-dasharray='1.6 1.8'/%3E%3Cpath d='M32 20c0 0-9 7.4-9 12.7 0 3.4 2.8 5.4 5.6 4.6 1.2-.3 2.1-1.1 2.7-2.1-.2 2.3-1.2 4-3.5 5.2h8.4c-2.3-1.2-3.3-2.9-3.5-5.2.6 1 1.5 1.8 2.7 2.1 2.8.8 5.6-1.2 5.6-4.6C41 27.4 32 20 32 20z' fill='%23a86c00'/%3E%3Cellipse cx='25' cy='23' rx='6' ry='3' fill='%23fff' opacity='.6' transform='rotate(-32 25 23)'/%3E%3C/svg%3E"); }
+.cur-icon.cur-coin { width: 1.3em; height: 1.3em; filter: drop-shadow(0 0 3px rgba(43, 255, 136, 0.75)) !important; }
+.hud-coins-pill { background: linear-gradient(180deg, #fffbd1 0%, #ffe23d 35%, #f5b800 75%, #c78a00 100%) !important; border: 1.5px solid #2bff88 !important; box-shadow: 0 0 10px rgba(43, 255, 136, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important; }
+
   </style>
 </head>
 <body data-device-frame="full">
@@ -4037,6 +4123,13 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
               <span class="tile-title">Pass &amp; Play</span>
               <span class="tile-desc">2, 3 or 4 friends on one phone or tablet — no internet needed. Cards stay hidden until it’s your turn.</span>
               <span class="tile-badge">Offline Multiplayer</span>
+            </button>
+
+            <button type="button" class="menu-tile" data-saved-games>
+              <span class="tile-icon" aria-hidden="true">💾</span>
+              <span class="tile-title">Saved Games</span>
+              <span class="tile-desc">Resume or delete any unfinished game.</span>
+              <span class="tile-badge">Resume</span>
             </button>
 
             <button type="button" class="menu-tile" data-nav="multiplayer">
@@ -4167,7 +4260,7 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
           <span class="bnav-icon" aria-hidden="true">🏠</span>
           <span>Home</span>
         </button>
-        <button type="button" class="bnav-item" data-nav="game">
+        <button type="button" class="bnav-item" data-play-menu data-nav-key="game">
           <span class="bnav-icon" aria-hidden="true">♠️</span>
           <span>Table</span>
         </button>
@@ -4270,7 +4363,7 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
   ];
 
   function renderAvatarSVG(avatarId, size = 56) {
-    const item = AVATARS.find(a => a.id === avatarId) || AVATARS[0];
+    const item = AVATARS.find(a => a.id === avatarId) || AVATARS.find(a => a.id === 'free_ace') || AVATARS[0];
     const isLeg = item.tier === 'legendary';
     const isMythic = item.tier === 'mythic';
     const isDiamond = item.tier === 'diamond';
@@ -4524,6 +4617,9 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
    * Any avatar, including the player's own gallery photo ('photo' → their saved picture,
    * shown only on their own device; other players see their chosen fallback).
    */
+  // Old Spades Royale avatars are retired: not sold, not owned, not equippable (kept only to draw old profiles)
+  AVATARS.forEach(a => { if (!a.arena) { a.legacy = true; if (a.tier === 'free') a.tier = 'legacy_free'; } });
+
   // Realistic portrait avatars: shown as a round photo (falls back to the drawn style if the image is missing)
   const AVATAR_BY_ID = new Map(AVATARS.map(a => [a.id, a]));
   function renderImageAvatar(av, size) {
@@ -4539,7 +4635,7 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
       if (url && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(url)) {
         return `<img class="avatar-photo" src="${url}" width="${size}" height="${size}" alt="" style="width:${size}px;height:${size}px"/>`;
       }
-      return renderAvatarSVG('free_ace', size);
+      return renderAvatar('av_panther', size);
     }
     return renderAvatarSVG(avatarId, size);
   }
@@ -4999,7 +5095,7 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
         out.coins = real.coins;
         out.diamonds = real.diamonds;
       }
-      out.selectedAvatar = p.selectedAvatar === 'photo' ? (p.lastNonPhotoAvatar || 'free_ace') : p.selectedAvatar;
+      out.selectedAvatar = p.selectedAvatar === 'photo' ? (p.lastNonPhotoAvatar || 'av_panther') : p.selectedAvatar;
       out.rewardedIds = (p.rewardedIds || []).slice(-60);
       return out;
     }
@@ -5023,6 +5119,20 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
       try { this.save(); } finally { this.applyingRemote = false; }
     }
 
+    /** Removes retired Spades Royale avatars & tables from this account and resets anything equipped from them. */
+    dropRetiredItems() {
+      if (!SH.AVATARS || !SH.TABLE_THEMES) return false; // item lists not loaded yet — never strip anything early
+      const p = this.state.profile;
+      const live = (list, defs) => (list || []).filter(id => { const d = (defs || []).find(x => x.id === id); return d && !d.legacy; });
+      const before = JSON.stringify([p.ownedAvatars, p.ownedTableThemes, p.selectedAvatar, p.selectedTableTheme]);
+      p.ownedAvatars = Array.from(new Set([...getDefaultFreeIds(), ...live(p.ownedAvatars, SH.AVATARS)]));
+      p.ownedTableThemes = Array.from(new Set(['emerald', ...live(p.ownedTableThemes, SH.TABLE_THEMES)]));
+      if (p.selectedAvatar !== 'photo' && !p.ownedAvatars.includes(p.selectedAvatar)) p.selectedAvatar = 'av_panther';
+      if (!p.ownedTableThemes.includes(p.selectedTableTheme)) p.selectedTableTheme = 'emerald';
+      if (p.lastNonPhotoAvatar && !p.ownedAvatars.includes(p.lastNonPhotoAvatar)) p.lastNonPhotoAvatar = 'av_panther';
+      return before !== JSON.stringify([p.ownedAvatars, p.ownedTableThemes, p.selectedAvatar, p.selectedTableTheme]);
+    }
+
     /** Copies the account's saved fields onto this device (no upload needed afterwards). */
     copyFields(data) {
       const p = this.state.profile;
@@ -5037,6 +5147,7 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
       p.ownedTableThemes = Array.from(new Set(['emerald', ...(p.ownedTableThemes || [])]));
       if (Array.isArray(data.rewardedIds)) p.rewardedIds = Array.from(new Set([...(p.rewardedIds || []), ...data.rewardedIds])).slice(-200);
       if (keepPhoto) p.selectedAvatar = 'photo'; // your gallery photo stays on this device
+      this.dropRetiredItems();
     }
 
     /** Server copy changed and this device has nothing new: take it as-is. */
@@ -5171,8 +5282,8 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
         return { ok: true, action: 'equipped', message: 'Using your profile photo.' };
       }
       const avatar = (SH.AVATARS || []).find(a => a.id === avatarId);
-      if (!avatar) {
-        return { ok: false, message: 'Avatar not found.' };
+      if (!avatar || avatar.legacy) {
+        return { ok: false, message: avatar ? 'That avatar has been retired.' : 'Avatar not found.' };
       }
       const owned = this.state.profile.ownedAvatars.includes(avatarId);
       if (owned) {
@@ -5234,7 +5345,7 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
     /** Table colours (Shop): equip owned ones, buy others with 🦁 Coins. */
     selectOrBuyTableTheme(themeId) {
       const theme = (SH.TABLE_THEMES || []).find(t => t.id === themeId);
-      if (!theme) return { ok: false, message: 'Table colour not found.' };
+      if (!theme || theme.legacy) return { ok: false, message: theme ? 'That table has been retired.' : 'Table colour not found.' };
       const p = this.state.profile;
       if (p.ownedTableThemes.includes(themeId)) {
         p.selectedTableTheme = themeId;
@@ -5447,7 +5558,7 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
       p.ownedAvatars = p.ownedAvatars.filter(id => id !== avatarId);
       if (av.currency === 'diamonds') p.diamonds += refund;
       else p.coins += refund;
-      if (p.selectedAvatar === avatarId) p.selectedAvatar = 'free_ace';
+      if (p.selectedAvatar === avatarId) p.selectedAvatar = 'av_panther';
       this.save();
       return { ok: true, message: `Sold "${av.name}" for ${refund} ${av.currency === 'diamonds' ? '💎' : '🦁'}.` };
     }
@@ -5487,7 +5598,7 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
     setPhoto(dataUrl) {
       this.state.profile.photo = dataUrl || null;
       if (dataUrl) this.state.profile.selectedAvatar = 'photo';
-      else if (this.state.profile.selectedAvatar === 'photo') this.state.profile.selectedAvatar = 'free_ace';
+      else if (this.state.profile.selectedAvatar === 'photo') this.state.profile.selectedAvatar = 'av_panther';
       this.save();
     }
 
@@ -5742,36 +5853,41 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
    */
   const SHOP_PRICES = {
     tables: [0, 150, 300, 500, 800, 1200, 1800, 3000],
-    cards: [0, 100, 200, 350, 500, 750, 1100, 2000],
+    cards: [0, 200, 400, 600, 800, 1000, 1150, 1300, 1450, 1600, 1800, 2000, 2200, 2600, 3200],
     avatars: [0, 100, 200, 300, 450, 650, 900, 1500]
   };
   const SHOP_CATALOG = {
     tables: ['emerald', 'arena_gold', 'arena_crimson', 'arena_arctic', 'arena_purple', 'arena_inferno', 'arena_shadow', 'arena_panther'],
-    cards: ['classic', 'cd_gold', 'cd_crimson', 'cd_ocean', 'cd_purple', 'cd_silver', 'cd_shadow', 'cd_panther'],
+    cards: ['classic', 'frost', 'nebula', 'obsidian', 'imperial', 'vip', 'cd_purple', 'cd_silver', 'cd_shadow', 'cd_panther', 'cd_ocean', 'cd_crimson', 'cd_gold', 'cd_diamond', 'cd_champions'],
     avatars: ['av_panther', 'av_champion', 'av_strategist', 'av_veteran', 'av_ace', 'av_phantom', 'av_elite', 'av_legend']
   };
   const SHOP_COMING_SOON = {
     tables: ['Arena X', 'Champions Arena'],
-    cards: ['Diamond Edition', 'Champions Edition'],
+    cards: [],
     avatars: ['The Commander', 'The Legend Returns']
   };
 
   /** Card designs: one free, five sold in the Profile shop for 🦁 Coins. */
   const CARD_SKINS = [
     { id: 'classic', name: 'Classic White', price: 0, desc: 'Traditional white cards with a clean back' },
-    { id: 'cd_gold', name: 'Royal Gold', price: SHOP_PRICES.cards[1], desc: 'White faces, elegant gold-accented backs', shop: true },
-    { id: 'cd_crimson', name: 'Crimson Red', price: SHOP_PRICES.cards[2], desc: 'Deep-red card backs', shop: true },
-    { id: 'cd_ocean', name: 'Ocean Blue', price: SHOP_PRICES.cards[3], desc: 'Rich-blue card backs', shop: true },
-    { id: 'cd_purple', name: 'Royal Purple', price: SHOP_PRICES.cards[4], desc: 'Dark-purple card backs', shop: true },
-    { id: 'cd_silver', name: 'Silver Steel', price: SHOP_PRICES.cards[5], desc: 'Metallic silver card backs', shop: true },
-    { id: 'cd_shadow', name: 'Shadow Black', price: SHOP_PRICES.cards[6], desc: 'Black backs with charcoal accents', shop: true },
-    { id: 'cd_panther', name: 'Emerald Panther', price: SHOP_PRICES.cards[7], desc: 'Black & emerald backs with a spade emblem', shop: true },
+    { id: 'cd_gold', name: 'Royal Gold', price: 0, desc: 'Full gold cards with dark symbols', shop: true },
+    { id: 'cd_crimson', name: 'Crimson Red', price: 0, desc: 'Full deep-red cards', shop: true },
+    { id: 'cd_ocean', name: 'Ocean Blue', price: 0, desc: 'Full rich-blue cards', shop: true },
+    { id: 'cd_purple', name: 'Royal Purple', price: 0, desc: 'Full dark-purple cards', shop: true },
+    { id: 'cd_silver', name: 'Silver Steel', price: 0, desc: 'Full metallic-silver cards', shop: true },
+    { id: 'cd_shadow', name: 'Shadow Black', price: 0, desc: 'Full black cards with charcoal tones', shop: true },
+    { id: 'cd_diamond', name: 'Diamond Edition', price: 0, desc: 'Full sparkling diamond-blue cards', shop: true },
+    { id: 'cd_champions', name: 'Champions Edition', price: 0, desc: 'Elite black cards with gold foil & emerald fire', shop: true },
+    { id: 'cd_panther', name: 'Emerald Panther', price: 0, desc: 'Full black cards with neon-emerald symbols', shop: true },
     { id: 'frost', name: 'Frost Pearl', price: 200, desc: 'Pearl white with icy sapphire & violet' },
     { id: 'nebula', name: 'Neon Nebula', price: 400, desc: 'Deep-space purple with neon cyan & pink' },
     { id: 'obsidian', name: 'Obsidian Emerald', price: 600, desc: 'Black card with glowing emerald & coral' },
     { id: 'imperial', name: 'Imperial Gold', price: 800, desc: 'Dark shiny gold with sapphire & royal red' },
     { id: 'vip', name: 'VIP Black Gold', price: 1000, desc: 'Pure black, gold symbols & letters — VIP only' }
   ];
+
+  // Card-design prices come from SHOP_PRICES (in shop order)
+  SHOP_CATALOG.cards.forEach((id, i) => { const c = CARD_SKINS.find(x => x.id === id); if (c) c.price = SHOP_PRICES.cards[i]; });
 
   // Avatar prices also come from SHOP_PRICES (avatars.js loads first)
   if (SH.AVATARS) SHOP_CATALOG.avatars.forEach((id, i) => { const a = SH.AVATARS.find(x => x.id === id); if (a) a.price = SHOP_PRICES.avatars[i]; });
@@ -5799,6 +5915,8 @@ body[data-table-theme^="arena_"] .trick-mat { border-color: rgba(255,255,255,.18
     { id: 'platinum', name: 'Platinum VIP', price: 15, currency: 'diamonds', vip: true, desc: 'Brushed platinum with a silver glow', swatch: ['#94a3b8', '#1e293b'] },
     { id: 'blackgold', name: 'Black Gold Throne', price: 25, currency: 'diamonds', vip: true, desc: 'The ultimate: black velvet, glowing gold rail', swatch: ['#facc15', '#000000'] }
   ];
+  // Old Spades Royale tables are retired (removed from accounts; kept only so old data loads safely)
+  TABLE_THEMES.forEach(t => { if (t.id !== 'emerald' && !t.id.startsWith('arena_')) t.legacy = true; });
 
   function validateCardPlay(card, hand, currentTrick, spadesBroken) {
     if (!card) {
@@ -6430,7 +6548,7 @@ class OnlineMatch {
       team: this.numSeats === 3 ? seat : seat % 2,
       userId: s.userId || null,
       name: s.userId ? s.name : (s.name || botNames[seat] || `Bot ${seat + 1}`),
-      avatar: s.avatar || 'free_ace',
+      avatar: s.avatar || 'av_panther',
       account: s.userId ? (s.account || null) : null,
       isBot: !s.userId,
       wasHuman: Boolean(s.userId), // stays true if a human quits and a bot takes over
@@ -7044,7 +7162,7 @@ if (typeof module === 'object' && module.exports) {
       const member = {
         id,
         name: this.uniqueName(sanitizeName(name, 'Player'), id),
-        avatar: String(avatar || 'free_ace').slice(0, 40),
+        avatar: String(avatar || 'av_panther').slice(0, 40),
         account: sanitizeAccount(account),
         seat,
         ready: false,
@@ -7209,7 +7327,7 @@ if (typeof module === 'object' && module.exports) {
     }
 
     startMatch() {
-      const avatars = ['free_ace', 'free_blaze', 'free_velvet', 'free_frost'];
+      const avatars = ['av_panther', 'av_champion', 'av_strategist', 'av_veteran'];
       const seats = Array.from({ length: this.seatCount() }, (_, seat) => {
         const id = this.seatTakenBy(seat);
         const m = id ? this.members.get(id) : null;
@@ -7423,7 +7541,7 @@ if (typeof module === 'object' && module.exports) {
 
   RoomHost.restore = function (data, { deliver, onEmpty, onChange }) {
     const hostData = data.members.find(m => m.id === data.hostId);
-    const room = new RoomHost({ code: data.code, name: data.name, mode: data.mode, settings: data.settings, host: { id: data.hostId, name: hostData ? hostData.name : 'Host', avatar: hostData ? hostData.avatar : 'free_ace', account: hostData ? hostData.account : null }, deliver, onEmpty });
+    const room = new RoomHost({ code: data.code, name: data.name, mode: data.mode, settings: data.settings, host: { id: data.hostId, name: hostData ? hostData.name : 'Host', avatar: hostData ? hostData.avatar : 'av_panther', account: hostData ? hostData.account : null }, deliver, onEmpty });
     room.members.clear();
     for (const m of data.members) {
       // Guests count as disconnected until their apps reconnect (bots cover them meanwhile)
@@ -7529,7 +7647,7 @@ if (typeof module === 'object' && module.exports) {
 
   /** Your gallery photo stays on your phone; other players see a normal avatar instead. */
   function publicAvatar(id) {
-    return id === 'photo' ? 'free_ace' : id;
+    return id === 'photo' ? 'av_panther' : id;
   }
 
   function loadPrefs() {
@@ -8194,7 +8312,7 @@ if (typeof module === 'object' && module.exports) {
           break;
 
         case 'friend:incoming':
-          if (msg.fromId && msg.fromName) this.fire('friend_request', { id: msg.fromId, username: msg.fromName, avatar: msg.avatar || 'free_ace' });
+          if (msg.fromId && msg.fromName) this.fire('friend_request', { id: msg.fromId, username: msg.fromName, avatar: msg.avatar || 'av_panther' });
           break;
 
         case 'gift': {
@@ -8381,13 +8499,13 @@ if (typeof module === 'object' && module.exports) {
         };
       }
       if (s.kind === 'bot') {
-        return { ...base, role: 'bot', name: s.name || `Bot ${base.compass.split(' ')[0]}`, ready: true, avatar: s.avatar || 'free_frost', status: 'AI Bot Seat' };
+        return { ...base, role: 'bot', name: s.name || `Bot ${base.compass.split(' ')[0]}`, ready: true, avatar: s.avatar || 'av_veteran', status: 'AI Bot Seat' };
       }
       if (s.kind === 'open_or_bot') {
-        return { ...base, role: 'human_slot', name: 'Open Seat', ready: true, avatar: 'free_knight', status: 'AI Bot if no 2nd human sits here' };
+        return { ...base, role: 'human_slot', name: 'Open Seat', ready: true, avatar: 'av_phantom', status: 'AI Bot if no 2nd human sits here' };
       }
       const colour = SH.teamDisplayName(s.team);
-      return { ...base, role: 'human_slot', name: `Open Seat (${this.state.humanCountMode === 3 ? colour : `Team ${colour}`})`, ready: false, avatar: 'free_knight', status: 'Waiting for player' };
+      return { ...base, role: 'human_slot', name: `Open Seat (${this.state.humanCountMode === 3 ? colour : `Team ${colour}`})`, ready: false, avatar: 'av_phantom', status: 'Waiting for player' };
     }
 
     applySocial(msg) {
@@ -8458,10 +8576,10 @@ if (typeof module === 'object' && module.exports) {
       }
       const profile = SH.store ? SH.store.getProfile() : null;
       const name = localUsername || (profile ? profile.username : 'You');
-      const avatar = localAvatar || (profile ? profile.selectedAvatar : 'free_ace');
+      const avatar = localAvatar || (profile ? profile.selectedAvatar : 'av_panther');
       const solo = count === 3;
       const mySeat = solo ? 0 : this.state.selectedTeam === 'red' ? 1 : 0;
-      const defaults = ['free_ace', 'free_blaze', 'free_velvet', 'free_frost'];
+      const defaults = ['av_panther', 'av_champion', 'av_strategist', 'av_veteran'];
       const labels = solo ? ['South', 'West', 'East'] : COMPASS_LABELS;
 
       this.state.seats = Array.from({ length: solo ? 3 : 4 }, (_, seat) => seat).map(seat => {
@@ -8600,7 +8718,7 @@ if (typeof module === 'object' && module.exports) {
     }
 
     myProfile() {
-      const p = SH.store ? SH.store.getProfile() : { username: 'Player', selectedAvatar: 'free_ace' };
+      const p = SH.store ? SH.store.getProfile() : { username: 'Player', selectedAvatar: 'av_panther' };
       const account = this.isOnlineAccount() ? (this.prefs.username || null) : null;
       return { id: this.myRoomId(), name: p.username, avatar: publicAvatar(p.selectedAvatar), account };
     }
@@ -9235,12 +9353,12 @@ if (typeof module === 'object' && module.exports) {
 
   const OFFLINE_GAME_KEY = 'spades_royale_offline_game_v2';
   const REDEAL_COST = 350; // 🦁 to redeal only your own hand (offline, before you bid)
-  const LOADING_SCREEN_MS = 3000; // opening screen (3 seconds)
+  const LOADING_SCREEN_MS = 2000; // opening screen (2 seconds)
   // Release builds get their version stamped in by bundle.py (SPADES_APP_VERSION); 'dev' = local copy
   const APP_VERSION = 'dev'; // hidden build number (update checks)
   const DISPLAY_VERSION = 'dev'; // public version, e.g. 1.0.0
   const UPDATE_SITE = 'https://spades-arena.github.io';
-  const GAME_INTRO_MS = 5000; // cat-in-a-hat intro when a game starts
+  const GAME_INTRO_MS = 4000; // cat-in-a-hat intro when a game starts
   const SCREEN_SESSION_KEY = 'spades_royale_screen'; // where you were, for page reloads
 
   // Shown by the cat in the hat while each new game is shuffled & dealt (one at random)
@@ -9292,6 +9410,15 @@ if (typeof module === 'object' && module.exports) {
   const PASSPLAY_GAME_KEY = 'spades_royale_passplay_v2';
 
   // Escapes remote (other players') strings before they are placed into innerHTML.
+  // 💬 WhatsApp contact (messages only): pre-written openers for each kind of message
+  const WHATSAPP_NUMBER = '971508450815';
+  const WA_TEXT = {
+    inquiry: 'Hi Hadzz, I’m a user from Spades Arena. I have an inquiry:\n\n',
+    problem: 'Hi Hadzz, I’m a user from Spades Arena. There is a problem in the game:\n\n',
+    forgot: 'Hi Hadzz, I’m a user from Spades Arena. I forgot my 4-digit PIN.\nMy username is: '
+  };
+  const waLink = (kind) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WA_TEXT[kind] || WA_TEXT.inquiry)}`;
+
   const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[ch]);
@@ -9425,6 +9552,8 @@ if (typeof module === 'object' && module.exports) {
       window.addEventListener('resize', () => this.applyAutoLayout());
       this.bindGlobalNavigation();
       this.installCurrencyIcons();
+      // Spades Arena: retired Royale avatars & tables are removed from this account (synced up on next login)
+      if (SH.store.dropRetiredItems()) SH.store.save();
       this.syncHeaderHud();
 
       // 💎 +1 Diamond the first time you open the game each day
@@ -9525,6 +9654,18 @@ if (typeof module === 'object' && module.exports) {
           : (e.target && e.target.parentElement);
         if (!el || typeof el.closest !== 'function') return;
 
+        if (el.closest('[data-play-menu]')) {
+          SH.audio.uiClick();
+          if (this.currentScreen === 'game' && this.game) return; // already at the table
+          this.showPlayChooser();
+          return;
+        }
+        if (el.closest('[data-saved-games]')) {
+          SH.audio.uiClick();
+          this.showSavedGames();
+          return;
+        }
+
         if (el.closest('[data-leaderboard]')) {
           SH.audio.uiClick();
           this.showLeaderboard();
@@ -9566,11 +9707,31 @@ if (typeof module === 'object' && module.exports) {
         return this.navigateTo(target);
       }
       const online = this.isOnlineGame();
-      const message = online
-        ? 'A bot will play your seat until you come back — tap ▶ Resume on Home to return.'
-        : g.local
-          ? 'Your Pass & Play game will be paused and saved — resume it any time from Home.'
-          : 'Your game is saved — resume it any time from Home.';
+      if (!online) {
+        // Offline & Pass & Play: ask whether to keep it (saved with the date & time) or throw it away
+        const kind = g.local ? 'local' : 'offline';
+        this.showChoiceDialog({
+          title: 'Do you want to save this game?',
+          message: 'Saved games keep your cards & scores — resume any time from 💾 Saved Games.',
+          actions: [
+            { label: '💾 Yes, save & leave', tone: 'yes', onClick: () => {
+              if (!g.local) this.saveOfflineGame();
+              const at = this.markSaved(kind);
+              this.navigateTo(target);
+              this.showToast(`💾 Game saved — ${this.formatSavedAt(at)}`, 'success');
+            } },
+            { label: '🗑 No, don’t save', tone: 'no', onClick: () => {
+              if (g.local) this.deleteLocalGame(); else this.deleteOfflineGame();
+              this.markSaved(kind, null);
+              this.navigateTo(target);
+              this.showToast('Game not saved.', 'info');
+            } },
+            { label: 'Keep playing', subtle: true }
+          ]
+        });
+        return;
+      }
+      const message = 'A bot will play your seat until you come back — tap ▶ Resume on Home to return.';
       const actions = [
         {
           label: 'Yes, leave',
@@ -9720,7 +9881,7 @@ if (typeof module === 'object' && module.exports) {
           // No bottom bar on the table (full space for the game) or before you've logged in / chosen guest
           bottomNav.classList.toggle('hidden', screen === 'loading' || screen === 'login' || screen === 'game');
           bottomNav.querySelectorAll('.bnav-item').forEach(btn => {
-            btn.classList.toggle('active', btn.getAttribute('data-nav') === screen);
+            btn.classList.toggle('active', (btn.getAttribute('data-nav') || btn.getAttribute('data-nav-key')) === screen);
           });
         }
       }
@@ -9756,11 +9917,8 @@ if (typeof module === 'object' && module.exports) {
 
       if (screen === 'game') {
         if (!this.game) this.game = this.loadOfflineGame();
-        const unstartedRound1 = this.game &&
-          this.game.roundNumber === 1 &&
-          this.game.phase === 'bidding' &&
-          this.game.players[0].bid === null;
-        if (!this.game || this.game.phase === 'game_over' || forceFreshMatch || unstartedRound1) {
+        // Resuming keeps the exact same cards (even if you left before your first bid)
+        if (!this.game || this.game.phase === 'game_over' || forceFreshMatch) {
           // A brand-new game costs 🦁 2 (an unplayed first deal being re-dealt doesn't pay again)
           const isNewGame = !this.game || this.game.phase === 'game_over' || forceFreshMatch;
           const carriedFee = !isNewGame && this.game && this.game.feePaid;
@@ -9824,7 +9982,7 @@ if (typeof module === 'object' && module.exports) {
       const mode = [2, 3, 4].includes(setup.mode) ? setup.mode : 2;
       const numSeats = mode === 3 ? 3 : 4;
       const humanSeats = mode === 4 ? [0, 1, 2, 3] : mode === 3 ? [0, 1, 2] : setup.arrangement === 'rivals' ? [0, 1] : [0, 2];
-      const avatars = numSeats === 3 ? ['free_ace', 'free_blaze', 'free_frost'] : ['free_ace', 'free_blaze', 'free_velvet', 'free_frost'];
+      const avatars = numSeats === 3 ? ['av_panther', 'av_champion', 'av_veteran'] : ['av_panther', 'av_champion', 'av_strategist', 'av_veteran'];
       const seats = Array.from({ length: numSeats }, (_, seat) => seat).map(seat => {
         const idx = humanSeats.indexOf(seat);
         if (idx < 0) return { userId: null, avatar: avatars[seat] };
@@ -10179,8 +10337,8 @@ if (typeof module === 'object' && module.exports) {
     getResumableOfflineGame() {
       const g = this.game && !this.game.online ? this.game : this.loadOfflineGame();
       if (!g || g.phase === 'game_over') return null;
-      const started = g.roundNumber > 1 || g.players.some(p => p.bid !== null) || g.teamScores.some(x => x !== 0);
-      return started ? g : null;
+      // Any game you've been dealt into can be resumed — even if you left before bidding
+      return g.players.some(p => Array.isArray(p.hand) && p.hand.length) ? g : null;
     }
 
     resumeOfflineGame() {
@@ -10465,13 +10623,13 @@ if (typeof module === 'object' && module.exports) {
         teamBags: n === 3 ? [0, 0, 0] : [0, 0],
         players: n === 3 ? [
           you,
-          { seat: 1, compass: 'West', name: botNames[0], isHuman: false, team: 1, avatar: 'free_blaze', hand: [], bid: null, tricks: 0 },
-          { seat: 2, compass: 'East', name: botNames[1], isHuman: false, team: 2, avatar: 'free_frost', hand: [], bid: null, tricks: 0 }
+          { seat: 1, compass: 'West', name: botNames[0], isHuman: false, team: 1, avatar: 'av_champion', hand: [], bid: null, tricks: 0 },
+          { seat: 2, compass: 'East', name: botNames[1], isHuman: false, team: 2, avatar: 'av_veteran', hand: [], bid: null, tricks: 0 }
         ] : [
           you,
-          { seat: 1, compass: 'West', name: botNames[0], isHuman: false, team: 1, avatar: 'free_blaze', hand: [], bid: null, tricks: 0 },
-          { seat: 2, compass: 'North (Partner)', name: botNames[1], isHuman: false, team: 0, avatar: 'free_velvet', hand: [], bid: null, tricks: 0 },
-          { seat: 3, compass: 'East', name: botNames[2], isHuman: false, team: 1, avatar: 'free_frost', hand: [], bid: null, tricks: 0 }
+          { seat: 1, compass: 'West', name: botNames[0], isHuman: false, team: 1, avatar: 'av_champion', hand: [], bid: null, tricks: 0 },
+          { seat: 2, compass: 'North (Partner)', name: botNames[1], isHuman: false, team: 0, avatar: 'av_strategist', hand: [], bid: null, tricks: 0 },
+          { seat: 3, compass: 'East', name: botNames[2], isHuman: false, team: 1, avatar: 'av_veteran', hand: [], bid: null, tricks: 0 }
         ],
         phase: 'bidding',
         turnSeat: 0,
@@ -11389,7 +11547,7 @@ if (typeof module === 'object' && module.exports) {
         // Avatar next to each name (not in Pass & Play); your own seat shows your photo/avatar
         const seatAvatar = g.local ? '' : `<span class="edge-avatar">${seatIdx === 0
           ? SH.renderAvatarSVG(SH.store.getProfile().selectedAvatar, 22)
-          : SH.renderAvatarArt(p.avatar === 'photo' ? 'free_ace' : (p.avatar || 'free_ace'), 22)}</span>`;
+          : SH.renderAvatarArt(p.avatar === 'photo' ? 'av_panther' : (p.avatar || 'av_panther'), 22)}</span>`;
         const tookTrick = g.phase === 'trick_pause' && g.lastTrickWinner === seatIdx;
         return `
           <div class="table-edge-seat ${posClass} ${isTurn ? 'active-turn' : ''} ${tookTrick ? 'trick-winner-seat' : ''}" data-seat="${seatIdx}"${g.online ? ` title="${esc(p.name)}"` : ''}>
@@ -11940,42 +12098,25 @@ if (typeof module === 'object' && module.exports) {
             </div>
             <p class="field-help auth-help">
               ${mode === 'login'
-                ? 'Welcome back! Log in to play.'
-                : mode === 'reset'
-                ? '🔑 Forgot your password? Enter your username, your 4-digit recovery PIN and a new password.'
-                : 'New here? Pick a username (2–18 letters, numbers, _ - .), a password (6+ characters) and a 4-digit recovery PIN. You start with 🦁 50 Coins and 💎 5 Diamonds.'}
+                ? 'Welcome back! Log in with your username and 4-digit PIN.'
+                : 'New here? Pick a username (2–18 letters, numbers, _ - .) and any 4-digit PIN. You start with 🦁 50 Coins and 💎 5 Diamonds.'}
             </p>
             <form id="auth-form" class="auth-form" autocomplete="on">
               <label for="auth-username">Username</label>
               <input id="auth-username" type="text" name="username" maxlength="18" autocomplete="username"
                 autocapitalize="none" spellcheck="false" required value="${esc(net.savedUsername || (mode === 'register' ? SH.store.getProfile().username : ''))}" />
-              ${mode === 'reset' ? `
-                <label for="auth-pin">Recovery PIN</label>
-                <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="4 numbers" required />
-              ` : ''}
-              ${mode === 'register' ? `
-                <div class="segmented-control auth-cred-type" role="group" aria-label="Sign in with">
-                  <button type="button" class="seg-btn ${this.registerWithCode ? '' : 'active'}" data-cred-type="password">Password</button>
-                  <button type="button" class="seg-btn ${this.registerWithCode ? 'active' : ''}" data-cred-type="code">4-digit code</button>
-                </div>` : ''}
-              <label for="auth-password">${mode === 'reset' ? 'New Password' : mode === 'login' ? 'Password or 4-digit code' : this.registerWithCode ? '4-digit login code' : 'Password'}</label>
-              <input id="auth-password" type="password" name="password" maxlength="128"
-                ${mode === 'register' && this.registerWithCode ? 'inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="e.g. 7391"' : ''}
-                autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}" required />
-              ${mode !== 'login' ? `
-                <label for="auth-password2">Confirm ${mode === 'reset' ? 'New Password' : this.registerWithCode && mode === 'register' ? 'Code' : 'Password'}</label>
-                <input id="auth-password2" type="password" maxlength="128" autocomplete="new-password" required />
-              ` : ''}
-              ${mode === 'register' ? `
-                <label for="auth-pin">Recovery PIN <small>(any 4 numbers — not an app lock)</small></label>
-                <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="e.g. 4821" required />
-                <p class="field-help">Remember it! If you ever forget your password, this PIN lets you make a new one.</p>
-              ` : ''}
+              <label for="auth-password">${mode === 'login' ? '4-digit PIN' : 'Choose a 4-digit PIN'}</label>
+              <div class="pw-wrap">
+                <input id="auth-password" type="password" name="password"
+                  ${mode === 'register' ? 'inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="e.g. 7391"' : 'maxlength="128" placeholder="••••"'}
+                  autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}" required />
+                <button type="button" class="pw-eye" data-pw-eye="auth-password" aria-label="Show PIN" title="Show / hide">👁</button>
+              </div>
+              ${mode === 'register' ? '<p class="field-help">Any 4 numbers are fine. Remember it — it’s how you log in on every device.</p>' : ''}
               <button type="submit" class="btn-primary auth-submit" ${net.authBusy ? 'disabled' : ''}>
-                ${net.authBusy ? 'Please wait…' : mode === 'login' ? 'Log In' : mode === 'reset' ? 'Set New Password & Log In' : 'Create Account'}
+                ${net.authBusy ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Create Account'}
               </button>
-              ${mode === 'login' ? '<button type="button" class="auth-link" data-auth-mode="reset">Forgot password?</button>' : ''}
-              ${mode === 'reset' ? '<button type="button" class="auth-link" data-auth-mode="login">← Back to Log In</button>' : ''}
+              ${mode === 'login' ? `<a class="auth-link" href="${waLink('forgot')}" target="_blank" rel="noopener">Forgot your PIN? WhatsApp us</a>` : ''}
             </form>
           `}
         </div>
@@ -11989,10 +12130,14 @@ if (typeof module === 'object' && module.exports) {
       // Never keep typed passwords around between renders of a different tab
       mount.querySelectorAll('input[type="password"]').forEach(el => { if (net.authBusy) el.value = ''; });
 
-      mount.querySelectorAll('[data-cred-type]').forEach(btn => btn.addEventListener('click', () => {
-        SH.audio.uiClick();
-        this.registerWithCode = btn.getAttribute('data-cred-type') === 'code';
-        this.renderLoginScreen();
+      mount.querySelectorAll('[data-pw-eye]').forEach(btn => btn.addEventListener('click', () => {
+        const input = mount.querySelector(`#${btn.getAttribute('data-pw-eye')}`);
+        if (!input) return;
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.textContent = show ? '🙈' : '👁';
+        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        input.focus();
       }));
       mount.querySelectorAll('[data-auth-mode]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -12009,28 +12154,14 @@ if (typeof module === 'object' && module.exports) {
           e.preventDefault();
           SH.audio.uiClick();
           const username = mount.querySelector('#auth-username').value;
-          const password = mount.querySelector('#auth-password').value;
-          const pinEl = mount.querySelector('#auth-pin');
-          const pin = pinEl ? pinEl.value.trim() : '';
-          if (mode === 'register' || mode === 'reset') {
-            const confirm = mount.querySelector('#auth-password2').value;
-            if (password !== confirm) {
-              net.authAlert = { type: 'error', title: 'Passwords Don’t Match', detail: 'Please type the same password in both fields.' };
+          const password = mount.querySelector('#auth-password').value.trim();
+          if (mode === 'register') {
+            if (!/^\d{4}$/.test(password)) {
+              net.authAlert = { type: 'error', title: 'PIN Must Be 4 Numbers', detail: 'Type exactly 4 numbers, like 7391.' };
               this.renderLoginScreen();
               return;
             }
-            if (!/^\d{4}$/.test(pin)) {
-              net.authAlert = { type: 'error', title: 'PIN Must Be 4 Numbers', detail: 'Type exactly 4 numbers, like 4821.' };
-              this.renderLoginScreen();
-              return;
-            }
-            if (mode === 'register' && this.registerWithCode && !/^\d{4}$/.test(password)) {
-              net.authAlert = { type: 'error', title: 'Login Code Must Be 4 Numbers', detail: 'Type exactly 4 numbers, like 7391. (A password is safer — a code is just quicker.)' };
-              this.renderLoginScreen();
-              return;
-            }
-            if (mode === 'reset') adapter.resetPassword(username, pin, password);
-            else adapter.register(username, password, pin, Boolean(this.registerWithCode));
+            adapter.register(username, password, '', true);
           } else {
             adapter.login(username, password);
           }
@@ -12778,7 +12909,7 @@ if (typeof module === 'object' && module.exports) {
       else action = `<button type="button" class="btn-yes" data-pc-add>👥 Add Friend</button>`;
       overlay.innerHTML = `
         <div class="choice-card player-card" role="dialog" aria-modal="true" aria-label="${esc(name)}">
-          <div class="player-card-avatar">${SH.renderAvatarArt(p.avatar === 'photo' ? 'free_ace' : (p.avatar || 'free_ace'), 72)}</div>
+          <div class="player-card-avatar">${SH.renderAvatarArt(p.avatar === 'photo' ? 'av_panther' : (p.avatar || 'av_panther'), 72)}</div>
           <h3>${esc(name)}</h3>
           ${account && account.toLowerCase() !== name.toLowerCase() ? `<p>@${esc(account)}</p>` : ''}
           <div class="choice-actions">
@@ -12810,7 +12941,7 @@ if (typeof module === 'object' && module.exports) {
       pop.setAttribute('data-from', id);
       pop.setAttribute('role', 'alertdialog');
       pop.innerHTML = `
-        <span class="frp-avatar">${SH.renderAvatarArt(avatar === 'photo' ? 'free_ace' : (avatar || 'free_ace'), 36)}</span>
+        <span class="frp-avatar">${SH.renderAvatarArt(avatar === 'photo' ? 'av_panther' : (avatar || 'av_panther'), 36)}</span>
         <span class="frp-text"><strong>${esc(username)}</strong> wants to be your friend</span>
         <button type="button" class="frp-btn frp-yes" data-frp="yes" aria-label="Accept">✓</button>
         <button type="button" class="frp-btn frp-no" data-frp="no" aria-label="Decline">✗</button>
@@ -12882,6 +13013,115 @@ if (typeof module === 'object' && module.exports) {
         document.body.appendChild(el);
         setTimeout(() => el.remove(), 1050); // quick: ~1 second
       }, 30);
+    }
+
+    /** ♠ Table button: pick how to play (with a red ✕ to close). */
+    showPlayChooser() {
+      if (typeof document === 'undefined') return;
+      const host = document.querySelector('.android-device-shell') || document.body;
+      host.querySelectorAll('.play-chooser-overlay').forEach(el => el.remove());
+      const saved = this.savedGamesList().length;
+      const opt = (key, icon, title, sub) => `<button type="button" class="pc-opt" data-pc="${key}"><span class="pc-ico">${icon}</span><span class="pc-txt"><strong>${title}</strong><small>${sub}</small></span><span class="pc-go">›</span></button>`;
+      const overlay = document.createElement('div');
+      overlay.className = 'choice-overlay play-chooser-overlay';
+      overlay.innerHTML = `
+        <div class="choice-card play-chooser" role="dialog" aria-modal="true" aria-label="Choose a game">
+          <div class="pc-head"><h3>♠ PLAY</h3><button type="button" class="pc-close" data-pc="close" aria-label="Close">✕</button></div>
+          ${opt('4', '♠', '4-Player Offline', 'You & a bot partner vs 2 bots')}
+          ${opt('3', '3♠', '3-Player Offline', 'Every player for themselves')}
+          ${opt('pass', '👥', 'Pass &amp; Play', '2–4 friends on one device')}
+          ${opt('online', '🌐', 'Multiplayer', 'Play friends online with a room code')}
+          ${opt('saved', '💾', 'View Saved Games', saved ? `${saved} unfinished game${saved > 1 ? 's' : ''}` : 'No saved games yet')}
+        </div>`;
+      overlay.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-pc]');
+        if (!b && e.target !== overlay) return;
+        const k = b ? b.getAttribute('data-pc') : 'close';
+        SH.audio.uiClick();
+        overlay.remove();
+        if (k === '4' || k === '3') {
+          this.pendingOfflineSeats = Number(k);
+          if (this.offerResumeChoices()) return;
+          this.navigateTo('game', true);
+        } else if (k === 'pass') this.navigateTo('passplay');
+        else if (k === 'online') this.navigateTo('multiplayer');
+        else if (k === 'saved') this.showSavedGames();
+      });
+      host.appendChild(overlay);
+    }
+
+    /** When each saved game was saved (shown in Saved Games). */
+    markSaved(kind, at = Date.now()) {
+      let map = {};
+      try { map = JSON.parse(localStorage.getItem('spades_arena_saved_at') || '{}') || {}; } catch (e) { map = {}; }
+      if (at) map[kind] = at; else delete map[kind];
+      try { localStorage.setItem('spades_arena_saved_at', JSON.stringify(map)); } catch (e) { /* ignore */ }
+      return at;
+    }
+
+    savedAt(kind) {
+      try { return (JSON.parse(localStorage.getItem('spades_arena_saved_at') || '{}') || {})[kind] || null; } catch (e) { return null; }
+    }
+
+    formatSavedAt(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      return `${d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}, ${d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    /** Every unfinished game on this device (offline, Pass & Play, online). */
+    savedGamesList() {
+      const out = [];
+      const off = this.getResumableOfflineGame();
+      const when = (k) => (this.savedAt(k) ? ` · 💾 ${this.formatSavedAt(this.savedAt(k))}` : '');
+      if (off) out.push({ kind: 'offline', title: (off.numSeats || 4) === 3 ? '3-Player Offline' : '4-Player Offline', name: off.gameName || '', info: `Round ${off.roundNumber} · Scores ${off.teamScores.join(' – ')}${when('offline')}` });
+      const loc = this.getResumableLocalGame();
+      if (loc) out.push({ kind: 'local', title: 'Pass & Play', name: loc.name || '', info: `${(loc.names || []).join(', ')} · Round ${loc.roundNumber}${when('local')}` });
+      const am = SH.networkAdapter.state.activeMatch;
+      if (am) out.push({ kind: 'online', title: 'Online Match', name: am.roomName || '', info: `Round ${am.roundNumber} · You ${am.myScore} – ${am.foeScore}` });
+      return out;
+    }
+
+    /** 💾 Saved games: resume or delete. */
+    showSavedGames() {
+      if (typeof document === 'undefined') return;
+      const host = document.querySelector('.android-device-shell') || document.body;
+      host.querySelectorAll('.play-chooser-overlay').forEach(el => el.remove());
+      const list = this.savedGamesList();
+      const overlay = document.createElement('div');
+      overlay.className = 'choice-overlay play-chooser-overlay';
+      overlay.innerHTML = `
+        <div class="choice-card play-chooser" role="dialog" aria-modal="true" aria-label="Saved games">
+          <div class="pc-head"><h3>💾 SAVED GAMES</h3><button type="button" class="pc-close" data-sg="close" aria-label="Close">✕</button></div>
+          ${list.length ? list.map(g => `
+            <div class="sg-row">
+              <div class="sg-info"><strong>${esc(g.title)}${g.name ? ` · “${esc(g.name)}”` : ''}</strong><small>${esc(g.info)}</small></div>
+              <button type="button" class="btn-primary btn-sm" data-sg="resume:${g.kind}">▶ Resume</button>
+              ${g.kind === 'online' ? '' : `<button type="button" class="btn-no btn-sm sg-del" data-sg="delete:${g.kind}" aria-label="Delete">🗑</button>`}
+            </div>`).join('') : '<p class="field-help">No saved games. When you leave a game it’s saved here automatically.</p>'}
+        </div>`;
+      overlay.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-sg]');
+        if (!b && e.target !== overlay) return;
+        const [act, kind] = (b ? b.getAttribute('data-sg') : 'close').split(':');
+        SH.audio.uiClick();
+        if (act === 'close') { overlay.remove(); return; }
+        if (act === 'resume') {
+          overlay.remove();
+          if (kind === 'offline') this.resumeOfflineGame();
+          else if (kind === 'local') this.resumeLocalGame();
+          else this.resumeOnlineMatch();
+          return;
+        }
+        if (act === 'delete') {
+          if (kind === 'offline') this.deleteOfflineGame(); else this.deleteLocalGame();
+          this.markSaved(kind, null);
+          this.showToast('Saved game deleted.', 'info');
+          if (this.currentScreen === 'menu') this.renderMenuResume();
+          this.showSavedGames();
+        }
+      });
+      host.appendChild(overlay);
     }
 
     rematchReadyCount() {
@@ -12982,7 +13222,7 @@ if (typeof module === 'object' && module.exports) {
             ${rows.map((r, i) => `
               <li class="lb-row ${r.me ? 'me' : ''}">
                 <span class="lb-rank">${medal(i)}</span>
-                <span class="lb-avatar">${SH.renderAvatarArt(r.avatar === 'photo' ? 'free_ace' : (r.avatar || 'free_ace'), 30)}</span>
+                <span class="lb-avatar">${SH.renderAvatarArt(r.avatar === 'photo' ? 'av_panther' : (r.avatar || 'av_panther'), 30)}</span>
                 <span class="lb-name">${esc(r.username)}${r.me ? ' <small>(you)</small>' : ''}</span>
                 <span class="lb-wins"><strong>${r.gamesWon}</strong> win${r.gamesWon === 1 ? '' : 's'}<small>${r.gamesPlayed ? ` · ${Math.round((r.gamesWon / r.gamesPlayed) * 100)}%` : ''}</small></span>
               </li>`).join('')}
@@ -13093,20 +13333,14 @@ if (typeof module === 'object' && module.exports) {
 
         ${online ? `
         <div class="mp-card security-card">
-          <div class="section-head"><h3>🔐 Password &amp; Recovery PIN</h3><span>${SH.networkAdapter.state.me && SH.networkAdapter.state.me.hasPin ? '✅ PIN set' : '⚠️ No PIN yet'}</span></div>
-          ${SH.networkAdapter.state.me && !SH.networkAdapter.state.me.hasPin ? '<p class="field-help pin-warning">Set a 4-digit recovery PIN so you can reset your password if you ever forget it.</p>' : ''}
-          <form id="pin-form" class="security-form" autocomplete="off">
-            <strong>${SH.networkAdapter.state.me && SH.networkAdapter.state.me.hasPin ? 'Change' : 'Set'} recovery PIN</strong>
-            <input id="pin-new" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="New 4-digit PIN" required />
-            <input id="pin-password" type="password" maxlength="128" placeholder="Your password" autocomplete="current-password" required />
-            <button type="submit" class="btn-primary btn-sm">Save PIN</button>
-          </form>
+          <div class="section-head"><h3>🔐 Your PIN</h3><span>Log in with your username + 4-digit PIN</span></div>
           <form id="password-form" class="security-form" autocomplete="off">
-            <strong>Change password</strong>
-            <input id="pw-old" type="password" maxlength="128" placeholder="Current password" autocomplete="current-password" required />
-            <input id="pw-new" type="password" maxlength="128" placeholder="New password (6+ characters)" autocomplete="new-password" required />
-            <button type="submit" class="btn-primary btn-sm">Change password</button>
+            <strong>Change PIN</strong>
+            <input id="pw-old" type="password" maxlength="128" placeholder="Current PIN (or old password)" autocomplete="current-password" required />
+            <input id="pw-new" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="New 4-digit PIN" autocomplete="new-password" required />
+            <button type="submit" class="btn-primary btn-sm">Change PIN</button>
           </form>
+          <p class="field-help">Forgot it? <a href="${waLink('forgot')}" target="_blank" rel="noopener">WhatsApp us</a> and we’ll help.</p>
         </div>` : ''}
 
         <div class="mp-card">
@@ -13258,8 +13492,8 @@ if (typeof module === 'object' && module.exports) {
         pwForm.addEventListener('submit', (e) => {
           e.preventDefault();
           SH.audio.uiClick();
-          const next = mount.querySelector('#pw-new').value;
-          if (next.length < 6) { this.showToast('New passwords must be at least 6 characters.', 'error'); return; }
+          const next = mount.querySelector('#pw-new').value.trim();
+          if (!/^\d{4}$/.test(next)) { this.showToast('Your new PIN must be exactly 4 numbers.', 'error'); return; }
           if (SH.networkAdapter.changePassword(mount.querySelector('#pw-old').value, next)) {
             mount.querySelector('#pw-old').value = '';
             mount.querySelector('#pw-new').value = '';
@@ -13786,6 +14020,16 @@ if (typeof module === 'object' && module.exports) {
               <p>${savedCount ? `${savedCount} saved game${savedCount > 1 ? 's' : ''} — resume or rename ${savedCount > 1 ? 'them' : 'it'} from Home.` : 'Nothing saved right now.'}</p>
             </div>
             <button type="button" class="btn-secondary btn-sm" id="delete-saved-games-btn" ${savedCount ? '' : 'disabled'}>🗑 Delete All</button>
+          </div>
+        </div>
+
+        <div class="settings-card settings-section settings-contact">
+          <h3>💬 Contact us on WhatsApp</h3>
+          <p class="field-help">Messages only — +971 50 845 0815. Pick what it’s about and the message is written for you:</p>
+          <div class="wa-options">
+            <a class="whatsapp-btn" href="${waLink('inquiry')}" target="_blank" rel="noopener">💬 Inquiry</a>
+            <a class="whatsapp-btn" href="${waLink('problem')}" target="_blank" rel="noopener">⚠️ Problem in the game</a>
+            <a class="whatsapp-btn" href="${waLink('forgot')}" target="_blank" rel="noopener">🔑 I forgot my PIN</a>
           </div>
         </div>
 

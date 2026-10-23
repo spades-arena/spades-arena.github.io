@@ -153,7 +153,7 @@
         out.coins = real.coins;
         out.diamonds = real.diamonds;
       }
-      out.selectedAvatar = p.selectedAvatar === 'photo' ? (p.lastNonPhotoAvatar || 'free_ace') : p.selectedAvatar;
+      out.selectedAvatar = p.selectedAvatar === 'photo' ? (p.lastNonPhotoAvatar || 'av_panther') : p.selectedAvatar;
       out.rewardedIds = (p.rewardedIds || []).slice(-60);
       return out;
     }
@@ -177,6 +177,20 @@
       try { this.save(); } finally { this.applyingRemote = false; }
     }
 
+    /** Removes retired Spades Royale avatars & tables from this account and resets anything equipped from them. */
+    dropRetiredItems() {
+      if (!SH.AVATARS || !SH.TABLE_THEMES) return false; // item lists not loaded yet — never strip anything early
+      const p = this.state.profile;
+      const live = (list, defs) => (list || []).filter(id => { const d = (defs || []).find(x => x.id === id); return d && !d.legacy; });
+      const before = JSON.stringify([p.ownedAvatars, p.ownedTableThemes, p.selectedAvatar, p.selectedTableTheme]);
+      p.ownedAvatars = Array.from(new Set([...getDefaultFreeIds(), ...live(p.ownedAvatars, SH.AVATARS)]));
+      p.ownedTableThemes = Array.from(new Set(['emerald', ...live(p.ownedTableThemes, SH.TABLE_THEMES)]));
+      if (p.selectedAvatar !== 'photo' && !p.ownedAvatars.includes(p.selectedAvatar)) p.selectedAvatar = 'av_panther';
+      if (!p.ownedTableThemes.includes(p.selectedTableTheme)) p.selectedTableTheme = 'emerald';
+      if (p.lastNonPhotoAvatar && !p.ownedAvatars.includes(p.lastNonPhotoAvatar)) p.lastNonPhotoAvatar = 'av_panther';
+      return before !== JSON.stringify([p.ownedAvatars, p.ownedTableThemes, p.selectedAvatar, p.selectedTableTheme]);
+    }
+
     /** Copies the account's saved fields onto this device (no upload needed afterwards). */
     copyFields(data) {
       const p = this.state.profile;
@@ -191,6 +205,7 @@
       p.ownedTableThemes = Array.from(new Set(['emerald', ...(p.ownedTableThemes || [])]));
       if (Array.isArray(data.rewardedIds)) p.rewardedIds = Array.from(new Set([...(p.rewardedIds || []), ...data.rewardedIds])).slice(-200);
       if (keepPhoto) p.selectedAvatar = 'photo'; // your gallery photo stays on this device
+      this.dropRetiredItems();
     }
 
     /** Server copy changed and this device has nothing new: take it as-is. */
@@ -325,8 +340,8 @@
         return { ok: true, action: 'equipped', message: 'Using your profile photo.' };
       }
       const avatar = (SH.AVATARS || []).find(a => a.id === avatarId);
-      if (!avatar) {
-        return { ok: false, message: 'Avatar not found.' };
+      if (!avatar || avatar.legacy) {
+        return { ok: false, message: avatar ? 'That avatar has been retired.' : 'Avatar not found.' };
       }
       const owned = this.state.profile.ownedAvatars.includes(avatarId);
       if (owned) {
@@ -388,7 +403,7 @@
     /** Table colours (Shop): equip owned ones, buy others with 🦁 Coins. */
     selectOrBuyTableTheme(themeId) {
       const theme = (SH.TABLE_THEMES || []).find(t => t.id === themeId);
-      if (!theme) return { ok: false, message: 'Table colour not found.' };
+      if (!theme || theme.legacy) return { ok: false, message: theme ? 'That table has been retired.' : 'Table colour not found.' };
       const p = this.state.profile;
       if (p.ownedTableThemes.includes(themeId)) {
         p.selectedTableTheme = themeId;
@@ -601,7 +616,7 @@
       p.ownedAvatars = p.ownedAvatars.filter(id => id !== avatarId);
       if (av.currency === 'diamonds') p.diamonds += refund;
       else p.coins += refund;
-      if (p.selectedAvatar === avatarId) p.selectedAvatar = 'free_ace';
+      if (p.selectedAvatar === avatarId) p.selectedAvatar = 'av_panther';
       this.save();
       return { ok: true, message: `Sold "${av.name}" for ${refund} ${av.currency === 'diamonds' ? '💎' : '🦁'}.` };
     }
@@ -641,7 +656,7 @@
     setPhoto(dataUrl) {
       this.state.profile.photo = dataUrl || null;
       if (dataUrl) this.state.profile.selectedAvatar = 'photo';
-      else if (this.state.profile.selectedAvatar === 'photo') this.state.profile.selectedAvatar = 'free_ace';
+      else if (this.state.profile.selectedAvatar === 'photo') this.state.profile.selectedAvatar = 'av_panther';
       this.save();
     }
 

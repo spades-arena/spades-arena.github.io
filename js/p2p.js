@@ -130,7 +130,7 @@
       const member = {
         id,
         name: this.uniqueName(sanitizeName(name, 'Player'), id),
-        avatar: String(avatar || 'free_ace').slice(0, 40),
+        avatar: String(avatar || 'av_panther').slice(0, 40),
         account: sanitizeAccount(account),
         seat,
         ready: false,
@@ -295,7 +295,7 @@
     }
 
     startMatch() {
-      const avatars = ['free_ace', 'free_blaze', 'free_velvet', 'free_frost'];
+      const avatars = ['av_panther', 'av_champion', 'av_strategist', 'av_veteran'];
       const seats = Array.from({ length: this.seatCount() }, (_, seat) => {
         const id = this.seatTakenBy(seat);
         const m = id ? this.members.get(id) : null;
@@ -509,7 +509,7 @@
 
   RoomHost.restore = function (data, { deliver, onEmpty, onChange }) {
     const hostData = data.members.find(m => m.id === data.hostId);
-    const room = new RoomHost({ code: data.code, name: data.name, mode: data.mode, settings: data.settings, host: { id: data.hostId, name: hostData ? hostData.name : 'Host', avatar: hostData ? hostData.avatar : 'free_ace', account: hostData ? hostData.account : null }, deliver, onEmpty });
+    const room = new RoomHost({ code: data.code, name: data.name, mode: data.mode, settings: data.settings, host: { id: data.hostId, name: hostData ? hostData.name : 'Host', avatar: hostData ? hostData.avatar : 'av_panther', account: hostData ? hostData.account : null }, deliver, onEmpty });
     room.members.clear();
     for (const m of data.members) {
       // Guests count as disconnected until their apps reconnect (bots cover them meanwhile)

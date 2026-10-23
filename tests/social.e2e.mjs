@@ -39,8 +39,7 @@ async function register(page, name) {
   await page.$eval('[data-auth-mode="register"]', el => el.click());
   await page.evaluate((n) => {
     document.querySelector('#auth-username').value = n;
-    document.querySelector('#auth-password').value = 'lion123';
-    document.querySelector('#auth-password2').value = 'lion123'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
+    document.querySelector('#auth-password').value = '1234'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
     document.querySelector('.auth-submit').click();
   }, name);
   await waitScreen(page, 'screen-menu');
@@ -141,7 +140,7 @@ try {
   await A.waitForFunction(() => SpadesHadzz.networkAdapter.isOnlineReady(), { timeout: 8000 });
   await A.evaluate(() => {
     const app = window.spadesApp;
-    app.game = { online: true, numSeats: 4, players: [{ name: 'Ali', avatar: 'free_ace' }, { name: 'Bea', avatar: 'free_wave', account: 'Bea', wasHuman: true, isBot: false }, { name: 'Bot', isBot: true }, { name: 'Bot', isBot: true }] };
+    app.game = { online: true, numSeats: 4, players: [{ name: 'Ali', avatar: 'av_panther' }, { name: 'Bea', avatar: 'av_ace', account: 'Bea', wasHuman: true, isBot: false }, { name: 'Bot', isBot: true }, { name: 'Bot', isBot: true }] };
     app.showSeatPlayerCard(1);
   });
   const card = await A.$eval('.player-card', el => ({ name: el.querySelector('h3').textContent, add: Boolean(el.querySelector('[data-pc-add]')) }));
@@ -187,7 +186,7 @@ try {
   const hud = await C.$eval('#app-topbar [data-hud-coins]', el => el.textContent);
   const hudD = await C.$eval('#app-topbar [data-hud-diamonds]', el => el.textContent);
   ok(hud === '∞' && hudD === '∞', `owner account shows unlimited Coins ${hud} and Diamonds ${hudD}`);
-  const bought = await C.evaluate(() => SpadesHadzz.store.selectOrBuyAvatar('myth_cat').ok && SpadesHadzz.store.selectOrBuyAvatar('dia_icedragon').ok);
+  const bought = await C.evaluate(() => SpadesHadzz.store.selectOrBuyAvatar('av_legend').ok && SpadesHadzz.store.selectOrBuyCardSkin('cd_gold').ok);
   const after = await prof(C);
   ok(bought && after.coins === 1000000000 && after.diamonds === 1000000000, 'buying the priciest items never runs the owner out');
   await C.evaluate(() => window.spadesApp.signOut());
@@ -199,8 +198,7 @@ try {
   });
   await C.evaluate(() => {
     document.querySelector('#auth-username').value = 'OWNERTEST';
-    document.querySelector('#auth-password').value = 'anything1';
-    const p2 = document.querySelector('#auth-password2'); if (p2) p2.value = 'anything1'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
+    document.querySelector('#auth-password').value = 'anything1'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
     document.querySelector('.auth-submit').click();
   });
   await sleep(1200);

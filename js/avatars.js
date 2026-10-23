@@ -62,7 +62,7 @@
   ];
 
   function renderAvatarSVG(avatarId, size = 56) {
-    const item = AVATARS.find(a => a.id === avatarId) || AVATARS[0];
+    const item = AVATARS.find(a => a.id === avatarId) || AVATARS.find(a => a.id === 'free_ace') || AVATARS[0];
     const isLeg = item.tier === 'legendary';
     const isMythic = item.tier === 'mythic';
     const isDiamond = item.tier === 'diamond';
@@ -316,6 +316,9 @@
    * Any avatar, including the player's own gallery photo ('photo' → their saved picture,
    * shown only on their own device; other players see their chosen fallback).
    */
+  // Old Spades Royale avatars are retired: not sold, not owned, not equippable (kept only to draw old profiles)
+  AVATARS.forEach(a => { if (!a.arena) { a.legacy = true; if (a.tier === 'free') a.tier = 'legacy_free'; } });
+
   // Realistic portrait avatars: shown as a round photo (falls back to the drawn style if the image is missing)
   const AVATAR_BY_ID = new Map(AVATARS.map(a => [a.id, a]));
   function renderImageAvatar(av, size) {
@@ -331,7 +334,7 @@
       if (url && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(url)) {
         return `<img class="avatar-photo" src="${url}" width="${size}" height="${size}" alt="" style="width:${size}px;height:${size}px"/>`;
       }
-      return renderAvatarSVG('free_ace', size);
+      return renderAvatar('av_panther', size);
     }
     return renderAvatarSVG(avatarId, size);
   }

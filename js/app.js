@@ -8,12 +8,12 @@
 
   const OFFLINE_GAME_KEY = 'spades_royale_offline_game_v2';
   const REDEAL_COST = 350; // 🦁 to redeal only your own hand (offline, before you bid)
-  const LOADING_SCREEN_MS = 3000; // opening screen (3 seconds)
+  const LOADING_SCREEN_MS = 2000; // opening screen (2 seconds)
   // Release builds get their version stamped in by bundle.py (SPADES_APP_VERSION); 'dev' = local copy
   const APP_VERSION = 'dev'; // hidden build number (update checks)
   const DISPLAY_VERSION = 'dev'; // public version, e.g. 1.0.0
   const UPDATE_SITE = 'https://spades-arena.github.io';
-  const GAME_INTRO_MS = 5000; // cat-in-a-hat intro when a game starts
+  const GAME_INTRO_MS = 4000; // cat-in-a-hat intro when a game starts
   const SCREEN_SESSION_KEY = 'spades_royale_screen'; // where you were, for page reloads
 
   // Shown by the cat in the hat while each new game is shuffled & dealt (one at random)
@@ -65,6 +65,15 @@
   const PASSPLAY_GAME_KEY = 'spades_royale_passplay_v2';
 
   // Escapes remote (other players') strings before they are placed into innerHTML.
+  // 💬 WhatsApp contact (messages only): pre-written openers for each kind of message
+  const WHATSAPP_NUMBER = '971508450815';
+  const WA_TEXT = {
+    inquiry: 'Hi Hadzz, I’m a user from Spades Arena. I have an inquiry:\n\n',
+    problem: 'Hi Hadzz, I’m a user from Spades Arena. There is a problem in the game:\n\n',
+    forgot: 'Hi Hadzz, I’m a user from Spades Arena. I forgot my 4-digit PIN.\nMy username is: '
+  };
+  const waLink = (kind) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WA_TEXT[kind] || WA_TEXT.inquiry)}`;
+
   const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[ch]);
@@ -198,6 +207,8 @@
       window.addEventListener('resize', () => this.applyAutoLayout());
       this.bindGlobalNavigation();
       this.installCurrencyIcons();
+      // Spades Arena: retired Royale avatars & tables are removed from this account (synced up on next login)
+      if (SH.store.dropRetiredItems()) SH.store.save();
       this.syncHeaderHud();
 
       // 💎 +1 Diamond the first time you open the game each day
@@ -298,6 +309,18 @@
           : (e.target && e.target.parentElement);
         if (!el || typeof el.closest !== 'function') return;
 
+        if (el.closest('[data-play-menu]')) {
+          SH.audio.uiClick();
+          if (this.currentScreen === 'game' && this.game) return; // already at the table
+          this.showPlayChooser();
+          return;
+        }
+        if (el.closest('[data-saved-games]')) {
+          SH.audio.uiClick();
+          this.showSavedGames();
+          return;
+        }
+
         if (el.closest('[data-leaderboard]')) {
           SH.audio.uiClick();
           this.showLeaderboard();
@@ -339,11 +362,31 @@
         return this.navigateTo(target);
       }
       const online = this.isOnlineGame();
-      const message = online
-        ? 'A bot will play your seat until you come back — tap ▶ Resume on Home to return.'
-        : g.local
-          ? 'Your Pass & Play game will be paused and saved — resume it any time from Home.'
-          : 'Your game is saved — resume it any time from Home.';
+      if (!online) {
+        // Offline & Pass & Play: ask whether to keep it (saved with the date & time) or throw it away
+        const kind = g.local ? 'local' : 'offline';
+        this.showChoiceDialog({
+          title: 'Do you want to save this game?',
+          message: 'Saved games keep your cards & scores — resume any time from 💾 Saved Games.',
+          actions: [
+            { label: '💾 Yes, save & leave', tone: 'yes', onClick: () => {
+              if (!g.local) this.saveOfflineGame();
+              const at = this.markSaved(kind);
+              this.navigateTo(target);
+              this.showToast(`💾 Game saved — ${this.formatSavedAt(at)}`, 'success');
+            } },
+            { label: '🗑 No, don’t save', tone: 'no', onClick: () => {
+              if (g.local) this.deleteLocalGame(); else this.deleteOfflineGame();
+              this.markSaved(kind, null);
+              this.navigateTo(target);
+              this.showToast('Game not saved.', 'info');
+            } },
+            { label: 'Keep playing', subtle: true }
+          ]
+        });
+        return;
+      }
+      const message = 'A bot will play your seat until you come back — tap ▶ Resume on Home to return.';
       const actions = [
         {
           label: 'Yes, leave',
@@ -493,7 +536,7 @@
           // No bottom bar on the table (full space for the game) or before you've logged in / chosen guest
           bottomNav.classList.toggle('hidden', screen === 'loading' || screen === 'login' || screen === 'game');
           bottomNav.querySelectorAll('.bnav-item').forEach(btn => {
-            btn.classList.toggle('active', btn.getAttribute('data-nav') === screen);
+            btn.classList.toggle('active', (btn.getAttribute('data-nav') || btn.getAttribute('data-nav-key')) === screen);
           });
         }
       }
@@ -529,11 +572,8 @@
 
       if (screen === 'game') {
         if (!this.game) this.game = this.loadOfflineGame();
-        const unstartedRound1 = this.game &&
-          this.game.roundNumber === 1 &&
-          this.game.phase === 'bidding' &&
-          this.game.players[0].bid === null;
-        if (!this.game || this.game.phase === 'game_over' || forceFreshMatch || unstartedRound1) {
+        // Resuming keeps the exact same cards (even if you left before your first bid)
+        if (!this.game || this.game.phase === 'game_over' || forceFreshMatch) {
           // A brand-new game costs 🦁 2 (an unplayed first deal being re-dealt doesn't pay again)
           const isNewGame = !this.game || this.game.phase === 'game_over' || forceFreshMatch;
           const carriedFee = !isNewGame && this.game && this.game.feePaid;
@@ -597,7 +637,7 @@
       const mode = [2, 3, 4].includes(setup.mode) ? setup.mode : 2;
       const numSeats = mode === 3 ? 3 : 4;
       const humanSeats = mode === 4 ? [0, 1, 2, 3] : mode === 3 ? [0, 1, 2] : setup.arrangement === 'rivals' ? [0, 1] : [0, 2];
-      const avatars = numSeats === 3 ? ['free_ace', 'free_blaze', 'free_frost'] : ['free_ace', 'free_blaze', 'free_velvet', 'free_frost'];
+      const avatars = numSeats === 3 ? ['av_panther', 'av_champion', 'av_veteran'] : ['av_panther', 'av_champion', 'av_strategist', 'av_veteran'];
       const seats = Array.from({ length: numSeats }, (_, seat) => seat).map(seat => {
         const idx = humanSeats.indexOf(seat);
         if (idx < 0) return { userId: null, avatar: avatars[seat] };
@@ -952,8 +992,8 @@
     getResumableOfflineGame() {
       const g = this.game && !this.game.online ? this.game : this.loadOfflineGame();
       if (!g || g.phase === 'game_over') return null;
-      const started = g.roundNumber > 1 || g.players.some(p => p.bid !== null) || g.teamScores.some(x => x !== 0);
-      return started ? g : null;
+      // Any game you've been dealt into can be resumed — even if you left before bidding
+      return g.players.some(p => Array.isArray(p.hand) && p.hand.length) ? g : null;
     }
 
     resumeOfflineGame() {
@@ -1238,13 +1278,13 @@
         teamBags: n === 3 ? [0, 0, 0] : [0, 0],
         players: n === 3 ? [
           you,
-          { seat: 1, compass: 'West', name: botNames[0], isHuman: false, team: 1, avatar: 'free_blaze', hand: [], bid: null, tricks: 0 },
-          { seat: 2, compass: 'East', name: botNames[1], isHuman: false, team: 2, avatar: 'free_frost', hand: [], bid: null, tricks: 0 }
+          { seat: 1, compass: 'West', name: botNames[0], isHuman: false, team: 1, avatar: 'av_champion', hand: [], bid: null, tricks: 0 },
+          { seat: 2, compass: 'East', name: botNames[1], isHuman: false, team: 2, avatar: 'av_veteran', hand: [], bid: null, tricks: 0 }
         ] : [
           you,
-          { seat: 1, compass: 'West', name: botNames[0], isHuman: false, team: 1, avatar: 'free_blaze', hand: [], bid: null, tricks: 0 },
-          { seat: 2, compass: 'North (Partner)', name: botNames[1], isHuman: false, team: 0, avatar: 'free_velvet', hand: [], bid: null, tricks: 0 },
-          { seat: 3, compass: 'East', name: botNames[2], isHuman: false, team: 1, avatar: 'free_frost', hand: [], bid: null, tricks: 0 }
+          { seat: 1, compass: 'West', name: botNames[0], isHuman: false, team: 1, avatar: 'av_champion', hand: [], bid: null, tricks: 0 },
+          { seat: 2, compass: 'North (Partner)', name: botNames[1], isHuman: false, team: 0, avatar: 'av_strategist', hand: [], bid: null, tricks: 0 },
+          { seat: 3, compass: 'East', name: botNames[2], isHuman: false, team: 1, avatar: 'av_veteran', hand: [], bid: null, tricks: 0 }
         ],
         phase: 'bidding',
         turnSeat: 0,
@@ -2162,7 +2202,7 @@
         // Avatar next to each name (not in Pass & Play); your own seat shows your photo/avatar
         const seatAvatar = g.local ? '' : `<span class="edge-avatar">${seatIdx === 0
           ? SH.renderAvatarSVG(SH.store.getProfile().selectedAvatar, 22)
-          : SH.renderAvatarArt(p.avatar === 'photo' ? 'free_ace' : (p.avatar || 'free_ace'), 22)}</span>`;
+          : SH.renderAvatarArt(p.avatar === 'photo' ? 'av_panther' : (p.avatar || 'av_panther'), 22)}</span>`;
         const tookTrick = g.phase === 'trick_pause' && g.lastTrickWinner === seatIdx;
         return `
           <div class="table-edge-seat ${posClass} ${isTurn ? 'active-turn' : ''} ${tookTrick ? 'trick-winner-seat' : ''}" data-seat="${seatIdx}"${g.online ? ` title="${esc(p.name)}"` : ''}>
@@ -2713,42 +2753,25 @@
             </div>
             <p class="field-help auth-help">
               ${mode === 'login'
-                ? 'Welcome back! Log in to play.'
-                : mode === 'reset'
-                ? '🔑 Forgot your password? Enter your username, your 4-digit recovery PIN and a new password.'
-                : 'New here? Pick a username (2–18 letters, numbers, _ - .), a password (6+ characters) and a 4-digit recovery PIN. You start with 🦁 50 Coins and 💎 5 Diamonds.'}
+                ? 'Welcome back! Log in with your username and 4-digit PIN.'
+                : 'New here? Pick a username (2–18 letters, numbers, _ - .) and any 4-digit PIN. You start with 🦁 50 Coins and 💎 5 Diamonds.'}
             </p>
             <form id="auth-form" class="auth-form" autocomplete="on">
               <label for="auth-username">Username</label>
               <input id="auth-username" type="text" name="username" maxlength="18" autocomplete="username"
                 autocapitalize="none" spellcheck="false" required value="${esc(net.savedUsername || (mode === 'register' ? SH.store.getProfile().username : ''))}" />
-              ${mode === 'reset' ? `
-                <label for="auth-pin">Recovery PIN</label>
-                <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="4 numbers" required />
-              ` : ''}
-              ${mode === 'register' ? `
-                <div class="segmented-control auth-cred-type" role="group" aria-label="Sign in with">
-                  <button type="button" class="seg-btn ${this.registerWithCode ? '' : 'active'}" data-cred-type="password">Password</button>
-                  <button type="button" class="seg-btn ${this.registerWithCode ? 'active' : ''}" data-cred-type="code">4-digit code</button>
-                </div>` : ''}
-              <label for="auth-password">${mode === 'reset' ? 'New Password' : mode === 'login' ? 'Password or 4-digit code' : this.registerWithCode ? '4-digit login code' : 'Password'}</label>
-              <input id="auth-password" type="password" name="password" maxlength="128"
-                ${mode === 'register' && this.registerWithCode ? 'inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="e.g. 7391"' : ''}
-                autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}" required />
-              ${mode !== 'login' ? `
-                <label for="auth-password2">Confirm ${mode === 'reset' ? 'New Password' : this.registerWithCode && mode === 'register' ? 'Code' : 'Password'}</label>
-                <input id="auth-password2" type="password" maxlength="128" autocomplete="new-password" required />
-              ` : ''}
-              ${mode === 'register' ? `
-                <label for="auth-pin">Recovery PIN <small>(any 4 numbers — not an app lock)</small></label>
-                <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="e.g. 4821" required />
-                <p class="field-help">Remember it! If you ever forget your password, this PIN lets you make a new one.</p>
-              ` : ''}
+              <label for="auth-password">${mode === 'login' ? '4-digit PIN' : 'Choose a 4-digit PIN'}</label>
+              <div class="pw-wrap">
+                <input id="auth-password" type="password" name="password"
+                  ${mode === 'register' ? 'inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="e.g. 7391"' : 'maxlength="128" placeholder="••••"'}
+                  autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}" required />
+                <button type="button" class="pw-eye" data-pw-eye="auth-password" aria-label="Show PIN" title="Show / hide">👁</button>
+              </div>
+              ${mode === 'register' ? '<p class="field-help">Any 4 numbers are fine. Remember it — it’s how you log in on every device.</p>' : ''}
               <button type="submit" class="btn-primary auth-submit" ${net.authBusy ? 'disabled' : ''}>
-                ${net.authBusy ? 'Please wait…' : mode === 'login' ? 'Log In' : mode === 'reset' ? 'Set New Password & Log In' : 'Create Account'}
+                ${net.authBusy ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Create Account'}
               </button>
-              ${mode === 'login' ? '<button type="button" class="auth-link" data-auth-mode="reset">Forgot password?</button>' : ''}
-              ${mode === 'reset' ? '<button type="button" class="auth-link" data-auth-mode="login">← Back to Log In</button>' : ''}
+              ${mode === 'login' ? `<a class="auth-link" href="${waLink('forgot')}" target="_blank" rel="noopener">Forgot your PIN? WhatsApp us</a>` : ''}
             </form>
           `}
         </div>
@@ -2762,10 +2785,14 @@
       // Never keep typed passwords around between renders of a different tab
       mount.querySelectorAll('input[type="password"]').forEach(el => { if (net.authBusy) el.value = ''; });
 
-      mount.querySelectorAll('[data-cred-type]').forEach(btn => btn.addEventListener('click', () => {
-        SH.audio.uiClick();
-        this.registerWithCode = btn.getAttribute('data-cred-type') === 'code';
-        this.renderLoginScreen();
+      mount.querySelectorAll('[data-pw-eye]').forEach(btn => btn.addEventListener('click', () => {
+        const input = mount.querySelector(`#${btn.getAttribute('data-pw-eye')}`);
+        if (!input) return;
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.textContent = show ? '🙈' : '👁';
+        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        input.focus();
       }));
       mount.querySelectorAll('[data-auth-mode]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2782,28 +2809,14 @@
           e.preventDefault();
           SH.audio.uiClick();
           const username = mount.querySelector('#auth-username').value;
-          const password = mount.querySelector('#auth-password').value;
-          const pinEl = mount.querySelector('#auth-pin');
-          const pin = pinEl ? pinEl.value.trim() : '';
-          if (mode === 'register' || mode === 'reset') {
-            const confirm = mount.querySelector('#auth-password2').value;
-            if (password !== confirm) {
-              net.authAlert = { type: 'error', title: 'Passwords Don’t Match', detail: 'Please type the same password in both fields.' };
+          const password = mount.querySelector('#auth-password').value.trim();
+          if (mode === 'register') {
+            if (!/^\d{4}$/.test(password)) {
+              net.authAlert = { type: 'error', title: 'PIN Must Be 4 Numbers', detail: 'Type exactly 4 numbers, like 7391.' };
               this.renderLoginScreen();
               return;
             }
-            if (!/^\d{4}$/.test(pin)) {
-              net.authAlert = { type: 'error', title: 'PIN Must Be 4 Numbers', detail: 'Type exactly 4 numbers, like 4821.' };
-              this.renderLoginScreen();
-              return;
-            }
-            if (mode === 'register' && this.registerWithCode && !/^\d{4}$/.test(password)) {
-              net.authAlert = { type: 'error', title: 'Login Code Must Be 4 Numbers', detail: 'Type exactly 4 numbers, like 7391. (A password is safer — a code is just quicker.)' };
-              this.renderLoginScreen();
-              return;
-            }
-            if (mode === 'reset') adapter.resetPassword(username, pin, password);
-            else adapter.register(username, password, pin, Boolean(this.registerWithCode));
+            adapter.register(username, password, '', true);
           } else {
             adapter.login(username, password);
           }
@@ -3551,7 +3564,7 @@
       else action = `<button type="button" class="btn-yes" data-pc-add>👥 Add Friend</button>`;
       overlay.innerHTML = `
         <div class="choice-card player-card" role="dialog" aria-modal="true" aria-label="${esc(name)}">
-          <div class="player-card-avatar">${SH.renderAvatarArt(p.avatar === 'photo' ? 'free_ace' : (p.avatar || 'free_ace'), 72)}</div>
+          <div class="player-card-avatar">${SH.renderAvatarArt(p.avatar === 'photo' ? 'av_panther' : (p.avatar || 'av_panther'), 72)}</div>
           <h3>${esc(name)}</h3>
           ${account && account.toLowerCase() !== name.toLowerCase() ? `<p>@${esc(account)}</p>` : ''}
           <div class="choice-actions">
@@ -3583,7 +3596,7 @@
       pop.setAttribute('data-from', id);
       pop.setAttribute('role', 'alertdialog');
       pop.innerHTML = `
-        <span class="frp-avatar">${SH.renderAvatarArt(avatar === 'photo' ? 'free_ace' : (avatar || 'free_ace'), 36)}</span>
+        <span class="frp-avatar">${SH.renderAvatarArt(avatar === 'photo' ? 'av_panther' : (avatar || 'av_panther'), 36)}</span>
         <span class="frp-text"><strong>${esc(username)}</strong> wants to be your friend</span>
         <button type="button" class="frp-btn frp-yes" data-frp="yes" aria-label="Accept">✓</button>
         <button type="button" class="frp-btn frp-no" data-frp="no" aria-label="Decline">✗</button>
@@ -3655,6 +3668,115 @@
         document.body.appendChild(el);
         setTimeout(() => el.remove(), 1050); // quick: ~1 second
       }, 30);
+    }
+
+    /** ♠ Table button: pick how to play (with a red ✕ to close). */
+    showPlayChooser() {
+      if (typeof document === 'undefined') return;
+      const host = document.querySelector('.android-device-shell') || document.body;
+      host.querySelectorAll('.play-chooser-overlay').forEach(el => el.remove());
+      const saved = this.savedGamesList().length;
+      const opt = (key, icon, title, sub) => `<button type="button" class="pc-opt" data-pc="${key}"><span class="pc-ico">${icon}</span><span class="pc-txt"><strong>${title}</strong><small>${sub}</small></span><span class="pc-go">›</span></button>`;
+      const overlay = document.createElement('div');
+      overlay.className = 'choice-overlay play-chooser-overlay';
+      overlay.innerHTML = `
+        <div class="choice-card play-chooser" role="dialog" aria-modal="true" aria-label="Choose a game">
+          <div class="pc-head"><h3>♠ PLAY</h3><button type="button" class="pc-close" data-pc="close" aria-label="Close">✕</button></div>
+          ${opt('4', '♠', '4-Player Offline', 'You & a bot partner vs 2 bots')}
+          ${opt('3', '3♠', '3-Player Offline', 'Every player for themselves')}
+          ${opt('pass', '👥', 'Pass &amp; Play', '2–4 friends on one device')}
+          ${opt('online', '🌐', 'Multiplayer', 'Play friends online with a room code')}
+          ${opt('saved', '💾', 'View Saved Games', saved ? `${saved} unfinished game${saved > 1 ? 's' : ''}` : 'No saved games yet')}
+        </div>`;
+      overlay.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-pc]');
+        if (!b && e.target !== overlay) return;
+        const k = b ? b.getAttribute('data-pc') : 'close';
+        SH.audio.uiClick();
+        overlay.remove();
+        if (k === '4' || k === '3') {
+          this.pendingOfflineSeats = Number(k);
+          if (this.offerResumeChoices()) return;
+          this.navigateTo('game', true);
+        } else if (k === 'pass') this.navigateTo('passplay');
+        else if (k === 'online') this.navigateTo('multiplayer');
+        else if (k === 'saved') this.showSavedGames();
+      });
+      host.appendChild(overlay);
+    }
+
+    /** When each saved game was saved (shown in Saved Games). */
+    markSaved(kind, at = Date.now()) {
+      let map = {};
+      try { map = JSON.parse(localStorage.getItem('spades_arena_saved_at') || '{}') || {}; } catch (e) { map = {}; }
+      if (at) map[kind] = at; else delete map[kind];
+      try { localStorage.setItem('spades_arena_saved_at', JSON.stringify(map)); } catch (e) { /* ignore */ }
+      return at;
+    }
+
+    savedAt(kind) {
+      try { return (JSON.parse(localStorage.getItem('spades_arena_saved_at') || '{}') || {})[kind] || null; } catch (e) { return null; }
+    }
+
+    formatSavedAt(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      return `${d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}, ${d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    /** Every unfinished game on this device (offline, Pass & Play, online). */
+    savedGamesList() {
+      const out = [];
+      const off = this.getResumableOfflineGame();
+      const when = (k) => (this.savedAt(k) ? ` · 💾 ${this.formatSavedAt(this.savedAt(k))}` : '');
+      if (off) out.push({ kind: 'offline', title: (off.numSeats || 4) === 3 ? '3-Player Offline' : '4-Player Offline', name: off.gameName || '', info: `Round ${off.roundNumber} · Scores ${off.teamScores.join(' – ')}${when('offline')}` });
+      const loc = this.getResumableLocalGame();
+      if (loc) out.push({ kind: 'local', title: 'Pass & Play', name: loc.name || '', info: `${(loc.names || []).join(', ')} · Round ${loc.roundNumber}${when('local')}` });
+      const am = SH.networkAdapter.state.activeMatch;
+      if (am) out.push({ kind: 'online', title: 'Online Match', name: am.roomName || '', info: `Round ${am.roundNumber} · You ${am.myScore} – ${am.foeScore}` });
+      return out;
+    }
+
+    /** 💾 Saved games: resume or delete. */
+    showSavedGames() {
+      if (typeof document === 'undefined') return;
+      const host = document.querySelector('.android-device-shell') || document.body;
+      host.querySelectorAll('.play-chooser-overlay').forEach(el => el.remove());
+      const list = this.savedGamesList();
+      const overlay = document.createElement('div');
+      overlay.className = 'choice-overlay play-chooser-overlay';
+      overlay.innerHTML = `
+        <div class="choice-card play-chooser" role="dialog" aria-modal="true" aria-label="Saved games">
+          <div class="pc-head"><h3>💾 SAVED GAMES</h3><button type="button" class="pc-close" data-sg="close" aria-label="Close">✕</button></div>
+          ${list.length ? list.map(g => `
+            <div class="sg-row">
+              <div class="sg-info"><strong>${esc(g.title)}${g.name ? ` · “${esc(g.name)}”` : ''}</strong><small>${esc(g.info)}</small></div>
+              <button type="button" class="btn-primary btn-sm" data-sg="resume:${g.kind}">▶ Resume</button>
+              ${g.kind === 'online' ? '' : `<button type="button" class="btn-no btn-sm sg-del" data-sg="delete:${g.kind}" aria-label="Delete">🗑</button>`}
+            </div>`).join('') : '<p class="field-help">No saved games. When you leave a game it’s saved here automatically.</p>'}
+        </div>`;
+      overlay.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-sg]');
+        if (!b && e.target !== overlay) return;
+        const [act, kind] = (b ? b.getAttribute('data-sg') : 'close').split(':');
+        SH.audio.uiClick();
+        if (act === 'close') { overlay.remove(); return; }
+        if (act === 'resume') {
+          overlay.remove();
+          if (kind === 'offline') this.resumeOfflineGame();
+          else if (kind === 'local') this.resumeLocalGame();
+          else this.resumeOnlineMatch();
+          return;
+        }
+        if (act === 'delete') {
+          if (kind === 'offline') this.deleteOfflineGame(); else this.deleteLocalGame();
+          this.markSaved(kind, null);
+          this.showToast('Saved game deleted.', 'info');
+          if (this.currentScreen === 'menu') this.renderMenuResume();
+          this.showSavedGames();
+        }
+      });
+      host.appendChild(overlay);
     }
 
     rematchReadyCount() {
@@ -3755,7 +3877,7 @@
             ${rows.map((r, i) => `
               <li class="lb-row ${r.me ? 'me' : ''}">
                 <span class="lb-rank">${medal(i)}</span>
-                <span class="lb-avatar">${SH.renderAvatarArt(r.avatar === 'photo' ? 'free_ace' : (r.avatar || 'free_ace'), 30)}</span>
+                <span class="lb-avatar">${SH.renderAvatarArt(r.avatar === 'photo' ? 'av_panther' : (r.avatar || 'av_panther'), 30)}</span>
                 <span class="lb-name">${esc(r.username)}${r.me ? ' <small>(you)</small>' : ''}</span>
                 <span class="lb-wins"><strong>${r.gamesWon}</strong> win${r.gamesWon === 1 ? '' : 's'}<small>${r.gamesPlayed ? ` · ${Math.round((r.gamesWon / r.gamesPlayed) * 100)}%` : ''}</small></span>
               </li>`).join('')}
@@ -3866,20 +3988,14 @@
 
         ${online ? `
         <div class="mp-card security-card">
-          <div class="section-head"><h3>🔐 Password &amp; Recovery PIN</h3><span>${SH.networkAdapter.state.me && SH.networkAdapter.state.me.hasPin ? '✅ PIN set' : '⚠️ No PIN yet'}</span></div>
-          ${SH.networkAdapter.state.me && !SH.networkAdapter.state.me.hasPin ? '<p class="field-help pin-warning">Set a 4-digit recovery PIN so you can reset your password if you ever forget it.</p>' : ''}
-          <form id="pin-form" class="security-form" autocomplete="off">
-            <strong>${SH.networkAdapter.state.me && SH.networkAdapter.state.me.hasPin ? 'Change' : 'Set'} recovery PIN</strong>
-            <input id="pin-new" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="New 4-digit PIN" required />
-            <input id="pin-password" type="password" maxlength="128" placeholder="Your password" autocomplete="current-password" required />
-            <button type="submit" class="btn-primary btn-sm">Save PIN</button>
-          </form>
+          <div class="section-head"><h3>🔐 Your PIN</h3><span>Log in with your username + 4-digit PIN</span></div>
           <form id="password-form" class="security-form" autocomplete="off">
-            <strong>Change password</strong>
-            <input id="pw-old" type="password" maxlength="128" placeholder="Current password" autocomplete="current-password" required />
-            <input id="pw-new" type="password" maxlength="128" placeholder="New password (6+ characters)" autocomplete="new-password" required />
-            <button type="submit" class="btn-primary btn-sm">Change password</button>
+            <strong>Change PIN</strong>
+            <input id="pw-old" type="password" maxlength="128" placeholder="Current PIN (or old password)" autocomplete="current-password" required />
+            <input id="pw-new" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="New 4-digit PIN" autocomplete="new-password" required />
+            <button type="submit" class="btn-primary btn-sm">Change PIN</button>
           </form>
+          <p class="field-help">Forgot it? <a href="${waLink('forgot')}" target="_blank" rel="noopener">WhatsApp us</a> and we’ll help.</p>
         </div>` : ''}
 
         <div class="mp-card">
@@ -4031,8 +4147,8 @@
         pwForm.addEventListener('submit', (e) => {
           e.preventDefault();
           SH.audio.uiClick();
-          const next = mount.querySelector('#pw-new').value;
-          if (next.length < 6) { this.showToast('New passwords must be at least 6 characters.', 'error'); return; }
+          const next = mount.querySelector('#pw-new').value.trim();
+          if (!/^\d{4}$/.test(next)) { this.showToast('Your new PIN must be exactly 4 numbers.', 'error'); return; }
           if (SH.networkAdapter.changePassword(mount.querySelector('#pw-old').value, next)) {
             mount.querySelector('#pw-old').value = '';
             mount.querySelector('#pw-new').value = '';
@@ -4559,6 +4675,16 @@
               <p>${savedCount ? `${savedCount} saved game${savedCount > 1 ? 's' : ''} — resume or rename ${savedCount > 1 ? 'them' : 'it'} from Home.` : 'Nothing saved right now.'}</p>
             </div>
             <button type="button" class="btn-secondary btn-sm" id="delete-saved-games-btn" ${savedCount ? '' : 'disabled'}>🗑 Delete All</button>
+          </div>
+        </div>
+
+        <div class="settings-card settings-section settings-contact">
+          <h3>💬 Contact us on WhatsApp</h3>
+          <p class="field-help">Messages only — +971 50 845 0815. Pick what it’s about and the message is written for you:</p>
+          <div class="wa-options">
+            <a class="whatsapp-btn" href="${waLink('inquiry')}" target="_blank" rel="noopener">💬 Inquiry</a>
+            <a class="whatsapp-btn" href="${waLink('problem')}" target="_blank" rel="noopener">⚠️ Problem in the game</a>
+            <a class="whatsapp-btn" href="${waLink('forgot')}" target="_blank" rel="noopener">🔑 I forgot my PIN</a>
           </div>
         </div>
 

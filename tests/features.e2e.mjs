@@ -59,8 +59,7 @@ async function register(page, name) {
   await page.$eval('[data-auth-mode="register"]', el => el.click());
   await page.evaluate((n) => {
     document.querySelector('#auth-username').value = n;
-    document.querySelector('#auth-password').value = 'lion123';
-    document.querySelector('#auth-password2').value = 'lion123'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
+    document.querySelector('#auth-password').value = '1234'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
     document.querySelector('.auth-submit').click();
   }, name);
   await waitScreen(page, 'screen-menu');
@@ -107,13 +106,15 @@ try {
     const SH = SpadesHadzz;
     return ['tables', 'cards', 'avatars'].map(k => ({ k, ids: SH.SHOP_CATALOG[k].length, soon: SH.SHOP_COMING_SOON[k].length, prices: SH.SHOP_PRICES[k] }));
   });
-  ok(cat.every(c => c.ids === 8 && c.soon === 2), '24 items + 6 Coming Soon slots in the catalogue');
-  ok(cat.every(c => c.prices[0] === 0 && c.prices.slice(1).every((p, i) => p > c.prices[i]) && c.prices[7] === Math.max(...c.prices)), `item 1 free, items 2–8 rise, item 8 most expensive (${cat.map(c => c.prices.join('/')).join(' | ')})`);
+  ok(cat.map(c => c.ids).join() === '8,15,8' && cat.map(c => c.soon).join() === '2,0,2' && cat.every(c => c.prices.length === c.ids), '8 tables + 15 card designs (incl. Diamond & Champions) + 8 avatars');
+  ok(cat.every(c => c.prices[0] === 0 && c.prices.slice(1).every((p, i) => p > c.prices[i]) && c.prices[c.prices.length - 1] === Math.max(...c.prices)), `item 1 free, prices rise, last item most expensive (${cat.map(c => c.prices.join('/')).join(' | ')})`);
   await A.evaluate(() => window.spadesApp.navigateTo('shop'));
   await waitScreen(A, 'screen-shop');
   await A.waitForSelector('.arena-cat');
   const layout = await A.evaluate(() => [...document.querySelectorAll('.arena-cat')].map(c => ({ items: c.querySelectorAll('.arena-item:not(.locked)').length, locked: c.querySelectorAll('.arena-item.locked').length, free: /FREE/.test(c.querySelector('.arena-item .ai-price').textContent), lockedBtn: [...c.querySelectorAll('.arena-item.locked button')].every(b => b.disabled) })));
-  ok(layout.length === 3 && layout.every(l => l.items === 8 && l.locked === 2 && l.free && l.lockedBtn), 'shop shows 3 sections, each 8 items + 2 locked COMING SOON (first one FREE)');
+  ok(layout.length === 3 && layout.map(l => l.items).join() === '8,15,8' && layout.map(l => l.locked).join() === '2,0,2' && layout.every(l => l.free && l.lockedBtn), 'shop shows 3 sections, each + 2 locked COMING SOON (first one FREE)');
+  const retired = await A.evaluate(() => [SpadesHadzz.store.selectOrBuyAvatar('myth_cat').ok, SpadesHadzz.store.selectOrBuyTableTheme('galaxy').ok, document.querySelectorAll('[data-shop-item^="avatar:free_"],[data-shop-item^="table:galaxy"]').length]);
+  ok(retired.join() === 'false,false,0', 'old Spades Royale avatars & tables can’t be bought or equipped and aren’t in the shop');
   ok(await A.$$eval('[data-shop-buy], [data-shop-equip], [data-shop-unequip]', b => b.every(x => !x.closest('.locked'))), 'Coming Soon slots have no buy/equip buttons');
   await A.evaluate(() => { SpadesHadzz.store.credit({ lions: 1000 }); });
   const c0 = (await prof(A)).coins;
@@ -125,15 +126,15 @@ try {
   ok(c1 === c0 - 800 && await A.evaluate(() => document.body.getAttribute('data-table-theme')) === 'arena_purple', `bought Midnight Purple for 🦁 800 (${c0} → ${c1}) and it's equipped`);
   ok(!(await A.$('[data-shop-buy^="table:arena_purple"]')) && await A.evaluate((c) => SpadesHadzz.store.selectOrBuyTableTheme('arena_purple').action === 'equipped' && SpadesHadzz.store.getProfile().coins === c, c1), 'owning it means no Buy button and no second charge');
   await A.evaluate(() => SpadesHadzz.store.selectOrBuyCardSkin('cd_panther') && 0);
-  ok((await prof(A)).coins === c1, 'can’t buy Emerald Panther cards (🦁 2,000) without enough Coins — nothing taken');
-  await A.evaluate(() => { SpadesHadzz.store.credit({ lions: 100 }); SpadesHadzz.store.selectOrBuyCardSkin('cd_gold'); });
+  ok((await prof(A)).coins === c1, 'can’t buy Emerald Panther cards (🦁 1,600) without enough Coins — nothing taken');
+  await A.evaluate(() => { SpadesHadzz.store.credit({ lions: 2200 }); SpadesHadzz.store.selectOrBuyCardSkin('cd_gold'); });
   await shot(A, '02-arena-shop');
   await A.evaluate(() => window.spadesApp.navigateTo('game', true));
   await waitScreen(A, 'screen-game');
   await A.waitForSelector('.felt-arena', { timeout: 8000 });
   ok(/58, 26, 102/.test(await A.$eval('.felt-arena', el => getComputedStyle(el).backgroundImage)), 'the game table is now Midnight Purple');
   await sleep(4500);
-  ok(await A.evaluate(() => getComputedStyle(document.querySelector('.hand-card')).getPropertyValue('--card-frame-line').trim() === '#d4a52c'), 'Royal Gold card theme shows on the cards in the game');
+  ok(await A.evaluate(() => /gradient/.test(getComputedStyle(document.querySelector('.hand-card')).backgroundImage) && getComputedStyle(document.querySelector('.hand-card')).getPropertyValue('--card-edge').trim() === '#b07d00'), 'Royal Gold full-gold cards show in the game');
   await shot(A, '03-purple-table');
   await A.evaluate(() => { window.spadesApp.game = null; window.spadesApp.navigateTo('shop'); });
   await waitScreen(A, 'screen-shop');

@@ -519,12 +519,12 @@ function setPassword(user, password) {
 }
 
 /** Counts a failed password / PIN attempt; too many locks the username for a while. Returns true if locked. */
-function noteAuthFailure(key, strict = false) {
+function noteAuthFailure(key, strict = false, lockMs = 0) {
   const max = strict ? 5 : LOGIN_MAX_FAILS;
   const fails = loginFailures.get(key);
   const f = fails && fails.lockedUntil <= Date.now() && fails.count >= max ? { count: 0, lockedUntil: 0 } : (fails || { count: 0, lockedUntil: 0 });
   f.count += 1;
-  if (f.count >= max) f.lockedUntil = Date.now() + (strict ? 15 * 60 * 1000 : LOGIN_LOCK_MS);
+  if (f.count >= max) f.lockedUntil = Date.now() + (lockMs || (strict ? 15 * 60 * 1000 : LOGIN_LOCK_MS));
   loginFailures.set(key, f);
 }
 
@@ -587,7 +587,7 @@ function handleRegister(conn, msg) {
     passwordSalt: salt,
     passwordHash: hashPassword(password, salt),
     sessions: [],
-    avatar: String(msg.avatar || 'free_ace').slice(0, 40),
+    avatar: String(msg.avatar || 'av_panther').slice(0, 40),
     friends: [],
     incoming: [],
     outgoing: [],
@@ -613,7 +613,8 @@ function handleLogin(conn, msg) {
   }
   const user = getUser(usernameIndex.get(key));
   if (!user || typeof msg.password !== 'string' || !passwordMatches(user, msg.password)) {
-    noteAuthFailure(key, Boolean(user && user.codeLogin)); // 4-digit-code accounts lock after 5 wrong tries (15 min)
+    // 4-digit PIN accounts lock after 5 wrong tries (15 min); the owner account locks for 6 hours
+    noteAuthFailure(key, Boolean(user && user.codeLogin), user && user.unlimited ? 6 * 60 * 60 * 1000 : 0);
     return sendError(conn, 'bad_credentials', 'Incorrect username, password or code.', 'auth');
   }
   loginFailures.delete(key);
@@ -767,12 +768,14 @@ const handlers = {
       noteAuthFailure(key);
       return reply(false, 'Your current password is wrong.');
     }
-    if (typeof msg.newPassword !== 'string' || msg.newPassword.length < PASSWORD_MIN || msg.newPassword.length > 128) {
-      return reply(false, `New passwords must be at least ${PASSWORD_MIN} characters.`);
+    const newIsPin = PIN_RE.test(String(msg.newPassword || ''));
+    if (typeof msg.newPassword !== 'string' || (!newIsPin && (msg.newPassword.length < PASSWORD_MIN || msg.newPassword.length > 128))) {
+      return reply(false, 'Your new PIN must be exactly 4 numbers.');
     }
     setPassword(user, msg.newPassword);
+    user.codeLogin = newIsPin; // 4-digit PIN accounts get the stricter lockout
     saveDbSoon();
-    reply(true, '🔑 Password changed.');
+    reply(true, newIsPin ? '🔑 PIN changed — log in with your new 4-digit PIN.' : '🔑 Password changed.');
   },
 
   'account:set_pin'(conn, msg) {

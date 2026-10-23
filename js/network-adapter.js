@@ -70,7 +70,7 @@
 
   /** Your gallery photo stays on your phone; other players see a normal avatar instead. */
   function publicAvatar(id) {
-    return id === 'photo' ? 'free_ace' : id;
+    return id === 'photo' ? 'av_panther' : id;
   }
 
   function loadPrefs() {
@@ -735,7 +735,7 @@
           break;
 
         case 'friend:incoming':
-          if (msg.fromId && msg.fromName) this.fire('friend_request', { id: msg.fromId, username: msg.fromName, avatar: msg.avatar || 'free_ace' });
+          if (msg.fromId && msg.fromName) this.fire('friend_request', { id: msg.fromId, username: msg.fromName, avatar: msg.avatar || 'av_panther' });
           break;
 
         case 'gift': {
@@ -922,13 +922,13 @@
         };
       }
       if (s.kind === 'bot') {
-        return { ...base, role: 'bot', name: s.name || `Bot ${base.compass.split(' ')[0]}`, ready: true, avatar: s.avatar || 'free_frost', status: 'AI Bot Seat' };
+        return { ...base, role: 'bot', name: s.name || `Bot ${base.compass.split(' ')[0]}`, ready: true, avatar: s.avatar || 'av_veteran', status: 'AI Bot Seat' };
       }
       if (s.kind === 'open_or_bot') {
-        return { ...base, role: 'human_slot', name: 'Open Seat', ready: true, avatar: 'free_knight', status: 'AI Bot if no 2nd human sits here' };
+        return { ...base, role: 'human_slot', name: 'Open Seat', ready: true, avatar: 'av_phantom', status: 'AI Bot if no 2nd human sits here' };
       }
       const colour = SH.teamDisplayName(s.team);
-      return { ...base, role: 'human_slot', name: `Open Seat (${this.state.humanCountMode === 3 ? colour : `Team ${colour}`})`, ready: false, avatar: 'free_knight', status: 'Waiting for player' };
+      return { ...base, role: 'human_slot', name: `Open Seat (${this.state.humanCountMode === 3 ? colour : `Team ${colour}`})`, ready: false, avatar: 'av_phantom', status: 'Waiting for player' };
     }
 
     applySocial(msg) {
@@ -999,10 +999,10 @@
       }
       const profile = SH.store ? SH.store.getProfile() : null;
       const name = localUsername || (profile ? profile.username : 'You');
-      const avatar = localAvatar || (profile ? profile.selectedAvatar : 'free_ace');
+      const avatar = localAvatar || (profile ? profile.selectedAvatar : 'av_panther');
       const solo = count === 3;
       const mySeat = solo ? 0 : this.state.selectedTeam === 'red' ? 1 : 0;
-      const defaults = ['free_ace', 'free_blaze', 'free_velvet', 'free_frost'];
+      const defaults = ['av_panther', 'av_champion', 'av_strategist', 'av_veteran'];
       const labels = solo ? ['South', 'West', 'East'] : COMPASS_LABELS;
 
       this.state.seats = Array.from({ length: solo ? 3 : 4 }, (_, seat) => seat).map(seat => {
@@ -1141,7 +1141,7 @@
     }
 
     myProfile() {
-      const p = SH.store ? SH.store.getProfile() : { username: 'Player', selectedAvatar: 'free_ace' };
+      const p = SH.store ? SH.store.getProfile() : { username: 'Player', selectedAvatar: 'av_panther' };
       const account = this.isOnlineAccount() ? (this.prefs.username || null) : null;
       return { id: this.myRoomId(), name: p.username, avatar: publicAvatar(p.selectedAvatar), account };
     }

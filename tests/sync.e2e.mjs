@@ -39,14 +39,13 @@ async function openDevice(label, ctx) {
 const waitScreen = (p, id, timeout = 12000) => p.waitForFunction(i => document.querySelector('.screen-view.active')?.id === i, { timeout }, id);
 const prof = (p) => p.evaluate(() => { const x = SpadesHadzz.store.getProfile(); return { coins: x.coins, diamonds: x.diamonds, avatars: x.ownedAvatars.length, skins: [...x.ownedCardSkins].sort().join(','), themes: [...x.ownedTableThemes].sort().join(','), dirty: x.syncDirty }; });
 const waitClean = (p) => p.waitForFunction(() => SpadesHadzz.store.getProfile().syncDirty === false, { timeout: 8000 });
-async function auth(page, mode, name, pw = 'lion123') {
+async function auth(page, mode, name, pw = '1234') {
   await page.goto(BASE);
   await waitScreen(page, 'screen-login');
   await page.$eval(`[data-auth-mode="${mode}"]`, el => el.click());
   await page.evaluate((n, w) => {
     document.querySelector('#auth-username').value = n;
-    document.querySelector('#auth-password').value = w;
-    const p2 = document.querySelector('#auth-password2'); if (p2) p2.value = w; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
+    document.querySelector('#auth-password').value = w; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
     document.querySelector('.auth-submit').click();
   }, name, pw);
   await waitScreen(page, 'screen-menu');
@@ -61,20 +60,20 @@ try {
   await auth(laptop, 'register', 'Hadz2');
   await laptop.evaluate(() => {
     const st = SpadesHadzz.store;
-    st.credit({ lions: 1000, diamonds: 20 });
-    st.selectOrBuyAvatar('free_panda');
+    st.credit({ lions: 1100, diamonds: 20 });
+    st.selectOrBuyAvatar('av_champion');
     st.selectOrBuyCardSkin('frost');
-    st.selectOrBuyTableTheme('royal');
-    st.selectOrBuyTableTheme('galaxy');
+    st.selectOrBuyTableTheme('arena_gold');
+    st.selectOrBuyTableTheme('arena_crimson');
   });
   await waitClean(laptop);
   const L1 = await prof(laptop);
-  ok(L1.coins === 1050 - 30 - 200 - 150 && L1.diamonds === 25 - 5, `laptop bought avatar, Frost cards, Royal Blue & Galaxy (🦁 ${L1.coins}, 💎 ${L1.diamonds})`);
+  ok(L1.coins === 1150 - 100 - 200 - 150 - 300 && L1.diamonds === 25, `laptop bought avatar, Frost cards, Royal Gold & Crimson Arena tables (🦁 ${L1.coins}, 💎 ${L1.diamonds})`);
 
   // 2) Tablet: log in to the same account → everything is there
   const tablet = await openDevice('tablet');
   await auth(tablet, 'login', 'hadz2');
-  await tablet.waitForFunction(() => SpadesHadzz.store.getProfile().ownedTableThemes.includes('galaxy'), { timeout: 8000 });
+  await tablet.waitForFunction(() => SpadesHadzz.store.getProfile().ownedTableThemes.includes('arena_crimson'), { timeout: 8000 });
   const T1 = await prof(tablet);
   ok(T1.coins === L1.coins && T1.diamonds === L1.diamonds && T1.skins === L1.skins && T1.themes === L1.themes && T1.avatars === L1.avatars,
     `tablet sees the laptop's purchases: 🦁 ${T1.coins}, 💎 ${T1.diamonds}, cards ${T1.skins}, tables ${T1.themes}`);
@@ -92,16 +91,16 @@ try {
     net.ws.close();
   });
   await sleep(300);
-  await laptop.evaluate(() => { SpadesHadzz.store.credit({ lions: 100, diamonds: 1 }); SpadesHadzz.store.selectOrBuyTableTheme('velvet'); }); // +100 −250, +1 💎
-  await tablet.evaluate(() => { SpadesHadzz.store.credit({ lions: 500 }); SpadesHadzz.store.selectOrBuyTableTheme('marble'); }); // +500 −400
+  await laptop.evaluate(() => { SpadesHadzz.store.credit({ lions: 500, diamonds: 1 }); SpadesHadzz.store.selectOrBuyTableTheme('arena_arctic'); }); // +500 −500, +1 💎
+  await tablet.evaluate(() => { SpadesHadzz.store.credit({ lions: 800 }); SpadesHadzz.store.selectOrBuyTableTheme('arena_purple'); }); // +800 −800
   await waitClean(tablet);
   await laptop.evaluate(() => { const net = SpadesHadzz.networkAdapter; delete net.connect; delete net.reconnectNow; delete net.scheduleReconnect; net.connect(); });
   await waitClean(laptop);
-  await tablet.waitForFunction(() => SpadesHadzz.store.getProfile().ownedTableThemes.includes('velvet'), { timeout: 8000 });
+  await tablet.waitForFunction(() => SpadesHadzz.store.getProfile().ownedTableThemes.includes('arena_arctic'), { timeout: 8000 });
   const L3 = await prof(laptop);
   const T3 = await prof(tablet);
-  const expect = L2.coins + 100 - 250 + 500 - 400;
-  ok(L3.coins === expect && T3.coins === expect && L3.diamonds === L2.diamonds + 1 && T3.diamonds === L3.diamonds && L3.themes === T3.themes && /marble/.test(L3.themes) && /velvet/.test(L3.themes),
+  const expect = L2.coins + 500 - 500 + 800 - 800;
+  ok(L3.coins === expect && T3.coins === expect && L3.diamonds === L2.diamonds + 1 && T3.diamonds === L3.diamonds && L3.themes === T3.themes && /arena_purple/.test(L3.themes) && /arena_arctic/.test(L3.themes),
     `offline changes merged: both devices 🦁 ${L3.coins}/${T3.coins} (expected ${expect}), 💎 ${L3.diamonds}, tables ${L3.themes}`);
 
   // 5) A device that played before syncing existed keeps its purchases too (first sync merges)
@@ -109,14 +108,14 @@ try {
   await oldPhone.goto(BASE);
   await oldPhone.evaluate(() => {
     const st = SpadesHadzz.store; const p = st.getProfile();
-    p.ownedAvatars.push('leg_oracle'); p.coins = 5000; delete p.syncedAccount; st.save();
+    p.ownedAvatars.push('av_elite'); p.coins = 5000; delete p.syncedAccount; st.save();
   });
   await auth(oldPhone, 'login', 'Hadz2');
-  await oldPhone.waitForFunction(() => SpadesHadzz.store.getProfile().ownedTableThemes.includes('marble'), { timeout: 8000 });
+  await oldPhone.waitForFunction(() => SpadesHadzz.store.getProfile().ownedTableThemes.includes('arena_purple'), { timeout: 8000 });
   await waitClean(oldPhone);
-  await laptop.waitForFunction(() => SpadesHadzz.store.getProfile().ownedAvatars.includes('leg_oracle'), { timeout: 8000 });
+  await laptop.waitForFunction(() => SpadesHadzz.store.getProfile().ownedAvatars.includes('av_elite'), { timeout: 8000 });
   const O = await prof(oldPhone);
-  ok(O.coins === 5000 && (await prof(laptop)).coins === 5000, `old phone's items & bigger balance kept and shared (🦁 ${O.coins} everywhere, Nil Seer avatar on the laptop)`);
+  ok(O.coins === 5000 && (await prof(laptop)).coins === 5000, `old phone's items & bigger balance kept and shared (🦁 ${O.coins} everywhere, Elite avatar on the laptop)`);
 
   // 6) Another account on the same device starts fresh — it doesn't get Hadz2's stuff
   await oldPhone.evaluate(() => window.spadesApp.signOut());
@@ -156,60 +155,16 @@ try {
   const log = await laptop.evaluate(() => window.spadesApp.chatLog.map(m => `${m.name}: ${m.text}`));
   ok(sent && log.length === 1 && /You: hello bots/.test(log[0]), `bots stay quiet: chat = ${JSON.stringify(log)}`);
 
-  // 9) 🔑 Forgot password → recovery PIN; change password & PIN in Profile
+  // 9) 🔑 PIN accounts: change PIN in Profile
   const pinDev = await openDevice('pinUser');
-  await auth(pinDev, 'register', 'PinUser'); // signs up with PIN 1234
-  await pinDev.evaluate(() => window.spadesApp.signOut());
-  await waitScreen(pinDev, 'screen-login');
-  const tryReset = async (pin, pw) => {
-    await pinDev.$eval('[data-auth-mode="login"]', el => el.click());
-    await pinDev.$eval('[data-auth-mode="reset"]', el => el.click());
-    await pinDev.evaluate((n, pin, pw) => {
-      document.querySelector('#auth-username').value = n;
-      document.querySelector('#auth-pin').value = pin;
-      document.querySelector('#auth-password').value = pw;
-      document.querySelector('#auth-password2').value = pw;
-      document.querySelector('.auth-submit').click();
-    }, 'pinuser', pin, pw);
-    await sleep(1200);
-  };
-  await tryReset('9999', 'newpass1');
-  const wrongPin = await pinDev.evaluate(() => [document.querySelector('.screen-view.active').id, document.querySelector('#screen-login').innerText]);
-  ok(wrongPin[0] === 'screen-login' && /Wrong username or PIN/.test(wrongPin[1]), 'wrong PIN is refused');
-  await tryReset('1234', 'newpass1');
-  await waitScreen(pinDev, 'screen-menu');
-  ok(true, 'forgot password: right PIN + new password logs you straight in');
-  await pinDev.evaluate(() => window.spadesApp.signOut());
-  await auth(pinDev, 'login', 'PinUser', 'newpass1');
-  ok(true, 'the new password works');
+  await auth(pinDev, 'register', 'PinUser');
   await pinDev.evaluate(() => window.spadesApp.navigateTo('profile'));
   await waitScreen(pinDev, 'screen-profile');
-  ok(/PIN set/.test(await pinDev.$eval('.security-card', el => el.textContent)), 'Profile shows the PIN is set');
-  await pinDev.evaluate(() => {
-    document.querySelector('#pw-old').value = 'newpass1';
-    document.querySelector('#pw-new').value = 'secret99';
-    document.querySelector('#password-form').requestSubmit();
-  });
-  await pinDev.waitForFunction(() => /Password changed/.test(document.querySelector('#app-toast').textContent), { timeout: 6000 });
-  await pinDev.evaluate(() => {
-    document.querySelector('#pin-new').value = '0007';
-    document.querySelector('#pin-password').value = 'wrongpw';
-    document.querySelector('#pin-form').requestSubmit();
-  });
-  await pinDev.waitForFunction(() => /password is wrong/.test(document.querySelector('#app-toast').textContent), { timeout: 6000 });
-  await pinDev.evaluate(() => {
-    document.querySelector('#pin-new').value = '0007';
-    document.querySelector('#pin-password').value = 'secret99';
-    document.querySelector('#pin-form').requestSubmit();
-  });
-  await pinDev.waitForFunction(() => /PIN saved/.test(document.querySelector('#app-toast').textContent), { timeout: 6000 });
-  ok(true, 'changed password in Profile; PIN change needs the right password; new PIN 0007 saved');
+  await pinDev.evaluate(() => { document.querySelector('#pw-old').value = '1234'; document.querySelector('#pw-new').value = '9595'; document.querySelector('#password-form').requestSubmit(); });
+  await pinDev.waitForFunction(() => /PIN changed/.test(document.querySelector('#app-toast').textContent), { timeout: 6000 });
   await pinDev.evaluate(() => window.spadesApp.signOut());
-  await waitScreen(pinDev, 'screen-login');
-  await tryReset('0007', 'final123');
-  await waitScreen(pinDev, 'screen-menu');
-  ok(true, 'reset works with the new PIN (0007 — any 4 numbers allowed)');
-  await pinDev.screenshot({ path: path.join(OUT, 'pin-menu.png') });
+  await auth(pinDev, 'login', 'PinUser', '9595');
+  ok(true, 'changed PIN to 9595 and logged in with it');
 
   ok(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(' | ')}` : ''}`);
 } catch (e) {

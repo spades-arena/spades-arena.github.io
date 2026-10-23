@@ -59,7 +59,7 @@ try {
   await shot(A, '01-loading');
   await waitScreen(A, 'screen-login', 9000);
   const loadMs = Date.now() - t0;
-  ok(loadMs >= 2800 && loadMs < 4500, `opening screen lasts 3 seconds (${(loadMs / 1000).toFixed(1)}s) and can't be skipped`);
+  ok(loadMs >= 1800 && loadMs < 3500, `opening screen lasts 2 seconds (${(loadMs / 1000).toFixed(1)}s) and can't be skipped`);
 
   // 2) Login is mandatory and the login page has no other buttons
   const login = await A.evaluate(() => ({
@@ -72,7 +72,7 @@ try {
   await A.evaluate(() => window.spadesApp.navigateTo('menu'));
   ok(await screen(A) === 'screen-login', 'cannot open the app without logging in');
   await tap(A, '[data-auth-mode="register"]');
-  await A.evaluate(() => { document.querySelector('#auth-username').value = 'Ali'; document.querySelector('#auth-password').value = 'lion123'; document.querySelector('#auth-password2').value = 'lion123'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; } document.querySelector('.auth-submit').click(); });
+  await A.evaluate(() => { document.querySelector('#auth-username').value = 'Ali'; document.querySelector('#auth-password').value = '1234'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; } document.querySelector('.auth-submit').click(); });
   await waitScreen(A, 'screen-menu');
   const fresh = await prof(A);
   ok(fresh.coins === 50 && fresh.diamonds === 5, `new account starts with 🦁 ${fresh.coins} and 💎 ${fresh.diamonds}`);
@@ -84,7 +84,7 @@ try {
     gift: Boolean(document.querySelector('#app-topbar [data-nav="gift"]')),
     avatar: Boolean(document.querySelector('#app-topbar .hud-avatar-btn[data-nav="profile"]')),
     sig: Boolean(document.querySelector('#app-topbar .hadzz-signature')),
-    navItems: [...document.querySelectorAll('#android-bottom-nav .bnav-item')].map(b => b.dataset.nav)
+    navItems: [...document.querySelectorAll('#android-bottom-nav .bnav-item')].map(b => b.dataset.nav || b.dataset.navKey)
   }));
   ok(!bars.difficulty && bars.gift && bars.avatar && bars.sig, 'top bar: 🎁 Gift button, your avatar opens Profile, small signature');
   ok(!bars.navItems.includes('profile') && bars.navItems.join() === 'menu,game,multiplayer,friends,shop,settings', `bottom bar has SHOP right before Settings: ${bars.navItems.join(', ')}`);
@@ -99,13 +99,13 @@ try {
 
   // 5) Shop: buy, not-enough → soft chime, Profile: sell for half price, photo, name
   const grid = await A.evaluate(() => [...document.querySelectorAll('.arena-cat')].map(c => `${c.querySelectorAll('.arena-item:not(.locked)').length}+${c.querySelectorAll('.arena-item.locked').length}`).join(' '));
-  ok(grid === '8+2 8+2 8+2', `shop: 3 categories × 8 items + 2 Coming Soon (${grid})`);
-  await A.evaluate(() => { SpadesHadzz.store.credit({ lions: 80 }); });
+  ok(grid === '8+2 15+0 8+2', `shop: 8 tables (+2 soon), 15 card designs, 8 avatars (+2 soon) (${grid})`);
+  await A.evaluate(() => { SpadesHadzz.store.credit({ lions: 2180 }); });
   await A.waitForSelector('[data-shop-buy^="card:cd_gold"]');
   await tap(A, '[data-shop-buy^="card:cd_gold"]');
   await yes(A);
   await sleep(200);
-  ok((await prof(A)).coins === 30 && await A.evaluate(() => SpadesHadzz.store.getProfile().selectedCardSkin === 'cd_gold'), 'bought & equipped Royal Gold cards for 100 🦁 (130 → 30)');
+  ok((await prof(A)).coins === 30 && await A.evaluate(() => SpadesHadzz.store.getProfile().selectedCardSkin === 'cd_gold'), 'bought & equipped Royal Gold cards for 2,200 🦁 (2,230 → 30)');
   const chime = await A.evaluate(() => {
     let soft = 0; const o = SpadesHadzz.audio.notEnoughFunds; SpadesHadzz.audio.notEnoughFunds = () => { soft++; };
     document.querySelector('[data-shop-buy^="avatar:av_legend"]').click();
@@ -118,7 +118,7 @@ try {
   await tap(A, '[data-sell-skin="cd_gold"]');
   await yes(A);
   await sleep(200);
-  ok((await prof(A)).coins === 80, 'sold it back for half price (+50 🦁)');
+  ok((await prof(A)).coins === 1130, 'sold it back for half price (+1,100 🦁)');
   const png = path.join(OUT, 'me.png');
   fs.writeFileSync(png, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEklEQVR4nGP4z8CAFWEXHbQEAA/jB/l8IqiyAAAAAElFTkSuQmCC', 'base64'));
   const input = await A.$('#photo-input');
@@ -134,11 +134,11 @@ try {
   await tap(A, '#android-bottom-nav [data-nav="menu"]');
   await tap(A, '.menu-tile[data-offline-seats="4"]');
   await waitScreen(A, 'screen-game');
-  ok((await prof(A)).coins === 78, 'starting a game costs 🦁 2 (80 → 78)');
+  ok((await prof(A)).coins === 1128, 'starting a game costs 🦁 2 (1,130 → 1,128)');
   ok(await A.evaluate(() => Boolean(document.querySelector('.game-intro .hadzz-signature')) && /Made by Hadzz/i.test(document.querySelector('.game-intro').textContent)), 'game-start intro shows the gold signature + Made by Hadzz');
   const i0 = Date.now();
   await A.waitForFunction(() => !document.querySelector('.game-intro'), { timeout: 8000 });
-  ok(Date.now() - i0 >= 4000, `game intro lasts ~5 seconds (${((Date.now() - i0) / 1000 + 0.3).toFixed(1)}s)`);
+  ok(Date.now() - i0 >= 3000, `game intro lasts ~4 seconds (${((Date.now() - i0) / 1000 + 0.3).toFixed(1)}s)`);
   const table = await A.evaluate(() => ({ avatars: document.querySelectorAll('.table-edge-seat .edge-avatar').length, badge: document.querySelector('.rcb-top').textContent.trim(), photo: Boolean(document.querySelector('.seat-south .edge-avatar img')) }));
   ok(table.avatars === 4 && table.photo && table.badge === 'Round 1', `table: avatars next to every name (yours = your photo), badge "${table.badge}"`);
 

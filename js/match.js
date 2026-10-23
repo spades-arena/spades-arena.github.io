@@ -77,7 +77,7 @@ class OnlineMatch {
       team: this.numSeats === 3 ? seat : seat % 2,
       userId: s.userId || null,
       name: s.userId ? s.name : (s.name || botNames[seat] || `Bot ${seat + 1}`),
-      avatar: s.avatar || 'free_ace',
+      avatar: s.avatar || 'av_panther',
       account: s.userId ? (s.account || null) : null,
       isBot: !s.userId,
       wasHuman: Boolean(s.userId), // stays true if a human quits and a bot takes over
