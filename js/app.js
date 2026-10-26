@@ -3127,7 +3127,7 @@
                     <button type="button" class="btn-secondary" id="mp-start-match-btn">▶ Start Match</button>
                   ` : ''}
                 </div>
-                <p class="field-help">Send the code to your friends (WhatsApp, SMS…) — they open Spades Arena, tap Lobby and enter it. The match starts once all ${room.capacity} players are Ready.</p>
+                <p class="field-help">Send the code to your friends (WhatsApp, SMS…) — they open Spades Arena, tap Lobby and enter it. The match starts once all ${room.capacity} players are Ready${net.isHost ? ', or tap ▶ Start Match any time — bots fill the empty seats' : ''}.</p>
               `}
               <button type="button" class="btn-secondary btn-sm" id="mp-leave-room-btn">${playing ? '🏳 Quit Match' : '🚪 Leave Room'}</button>
             ` : `
@@ -3145,15 +3145,16 @@
               <form class="join-code-form" id="mp-join-form">
                 <label for="mp-code-input">Join by Room Code:</label>
                 <div class="input-row">
+                  <span class="code-prefix">HDZ-</span>
                   <input
                     id="mp-code-input"
                     type="text"
-                    maxlength="10"
+                    maxlength="4"
                     autocomplete="off"
                     autocapitalize="characters"
                     spellcheck="false"
-                    placeholder="e.g. HDZ-7K2P"
-                    value="${esc(net.joinCodeInput)}"
+                    placeholder="7K2P"
+                    value="${esc(String(net.joinCodeInput || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^HDZ/, '').slice(0, 4))}"
                   />
                   <button type="submit" class="btn-secondary">Join Room</button>
                 </div>
@@ -3330,13 +3331,30 @@
         });
       }
 
+      const codeInput = mount.querySelector('#mp-code-input');
+      if (codeInput) {
+        // Only the last 4 letters are typed; a pasted full code (HDZ-7K2P) is trimmed to them
+        codeInput.addEventListener('input', () => {
+          const clean = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+          codeInput.value = (clean.length > 4 && clean.startsWith('HDZ') ? clean.slice(3) : clean).slice(0, 4);
+        });
+        codeInput.addEventListener('paste', (e) => {
+          const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+          const clean = text.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^HDZ/, '');
+          if (!clean) return;
+          e.preventDefault();
+          codeInput.value = clean.slice(0, 4);
+        });
+      }
+
       const joinForm = mount.querySelector('#mp-join-form');
       if (joinForm) {
         joinForm.addEventListener('submit', (e) => {
           e.preventDefault();
           SH.audio.uiClick();
           const input = mount.querySelector('#mp-code-input');
-          adapter.joinRoomByCode(input ? input.value : '');
+          const typed = input ? input.value.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
+          adapter.joinRoomByCode(typed.length > 4 && typed.startsWith('HDZ') ? typed : `HDZ-${typed}`);
         });
       }
 

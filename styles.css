@@ -1412,6 +1412,21 @@ body[data-device-frame="phone"] .rules-grid {
   font-size: 0.85rem;
 }
 
+.input-row .code-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 0.15rem 0 0.2rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-main);
+}
+
+#mp-code-input {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+
 .edge-state-toolbar {
   margin-top: 0.7rem;
   padding-top: 0.55rem;

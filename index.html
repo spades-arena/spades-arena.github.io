@@ -1426,6 +1426,21 @@ body[data-device-frame="phone"] .rules-grid {
   font-size: 0.85rem;
 }
 
+.input-row .code-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 0.15rem 0 0.2rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-main);
+}
+
+#mp-code-input {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+
 .edge-state-toolbar {
   margin-top: 0.7rem;
   padding-top: 0.55rem;
@@ -7436,11 +7451,7 @@ if (typeof module === 'object' && module.exports) {
         case 'room:start': {
           if (!isHost) return this.error(id, 'not_host', 'Only the room host can start the match.');
           if (this.status !== 'lobby') return this.error(id, 'in_progress', 'The match has already started.');
-          if (this.members.size !== this.mode) {
-            return this.error(id, 'not_ready', `Waiting for players: ${this.members.size}/${this.mode} have joined. Share the code with your friends!`);
-          }
-          const waiting = [...this.members.values()].filter(x => !x.ready || !x.connected).map(x => x.name);
-          if (waiting.length) return this.error(id, 'not_ready', `Waiting for ${waiting.join(', ')} to mark Ready.`);
+          // The host can start any time: everyone who joined plays, bots take the empty seats
           this.startMatch();
           break;
         }
@@ -12472,7 +12483,7 @@ if (typeof module === 'object' && module.exports) {
                     <button type="button" class="btn-secondary" id="mp-start-match-btn">▶ Start Match</button>
                   ` : ''}
                 </div>
-                <p class="field-help">Send the code to your friends (WhatsApp, SMS…) — they open Spades Arena, tap Lobby and enter it. The match starts once all ${room.capacity} players are Ready.</p>
+                <p class="field-help">Send the code to your friends (WhatsApp, SMS…) — they open Spades Arena, tap Lobby and enter it. The match starts once all ${room.capacity} players are Ready${net.isHost ? ', or tap ▶ Start Match any time — bots fill the empty seats' : ''}.</p>
               `}
               <button type="button" class="btn-secondary btn-sm" id="mp-leave-room-btn">${playing ? '🏳 Quit Match' : '🚪 Leave Room'}</button>
             ` : `
@@ -12490,15 +12501,16 @@ if (typeof module === 'object' && module.exports) {
               <form class="join-code-form" id="mp-join-form">
                 <label for="mp-code-input">Join by Room Code:</label>
                 <div class="input-row">
+                  <span class="code-prefix">HDZ-</span>
                   <input
                     id="mp-code-input"
                     type="text"
-                    maxlength="10"
+                    maxlength="4"
                     autocomplete="off"
                     autocapitalize="characters"
                     spellcheck="false"
-                    placeholder="e.g. HDZ-7K2P"
-                    value="${esc(net.joinCodeInput)}"
+                    placeholder="7K2P"
+                    value="${esc(String(net.joinCodeInput || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^HDZ/, '').slice(0, 4))}"
                   />
                   <button type="submit" class="btn-secondary">Join Room</button>
                 </div>
@@ -12675,13 +12687,30 @@ if (typeof module === 'object' && module.exports) {
         });
       }
 
+      const codeInput = mount.querySelector('#mp-code-input');
+      if (codeInput) {
+        // Only the last 4 letters are typed; a pasted full code (HDZ-7K2P) is trimmed to them
+        codeInput.addEventListener('input', () => {
+          const clean = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+          codeInput.value = (clean.length > 4 && clean.startsWith('HDZ') ? clean.slice(3) : clean).slice(0, 4);
+        });
+        codeInput.addEventListener('paste', (e) => {
+          const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+          const clean = text.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^HDZ/, '');
+          if (!clean) return;
+          e.preventDefault();
+          codeInput.value = clean.slice(0, 4);
+        });
+      }
+
       const joinForm = mount.querySelector('#mp-join-form');
       if (joinForm) {
         joinForm.addEventListener('submit', (e) => {
           e.preventDefault();
           SH.audio.uiClick();
           const input = mount.querySelector('#mp-code-input');
-          adapter.joinRoomByCode(input ? input.value : '');
+          const typed = input ? input.value.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
+          adapter.joinRoomByCode(typed.length > 4 && typed.startsWith('HDZ') ? typed : `HDZ-${typed}`);
         });
       }
 

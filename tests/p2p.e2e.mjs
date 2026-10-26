@@ -6,11 +6,16 @@ import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
 
 const ROOT = process.argv[2] || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), 'spades-p2p-'));
-const APP = pathToFileURL(path.join(ROOT, 'index.html')).href;
+// A local accounts server only for logging in; the rooms themselves are peer-to-peer
+const PORT = 20400 + Math.floor(Math.random() * 300);
+const APP = `http://127.0.0.1:${PORT}/`;
+const server = spawn(process.execPath, [path.join(ROOT, 'server/server.js')], { env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', DATA_DIR: fs.mkdtempSync(path.join(OUT, 'data-')) }, stdio: 'ignore' });
+await new Promise(r => setTimeout(r, 1200));
 let failures = 0;
 const ok = (c, l) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${l}`); if (!c) failures++; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -34,7 +39,7 @@ async function phone(label, name) {
   await page.evaluate(() => document.querySelector('[data-auth-mode="register"]').click());
   await page.evaluate((n) => {
     document.querySelector('#auth-username').value = n;
-    document.querySelector('#auth-password').value = 'secret1'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
+    document.querySelector('#auth-password').value = '1234'; { const __pin = document.querySelector('#auth-pin'); if (__pin) __pin.value = '1234'; }
     document.querySelector('.auth-submit').click();
   }, name);
   await page.waitForFunction(() => document.querySelector('.screen-view.active')?.id === 'screen-menu', { timeout: 8000 });
@@ -68,13 +73,14 @@ try {
 
   // Invalid code from another phone
   const B = await phone('Bilal (PK)', 'Bilal');
-  await B.$eval('#mp-code-input', el => { el.value = 'HDZ-ZZZZ'; });
+  await B.$eval('#mp-code-input', el => { el.value = 'ZZZZ'; });
   await tap(B, '#mp-join-form button[type="submit"]');
   await B.waitForFunction(() => /No room found with code HDZ-ZZZZ/.test(document.querySelector('.state-alert')?.textContent || ''), { timeout: 25000 });
   ok(true, 'unknown code → "No room found" error');
 
   // Bilal joins with the code (lowercase, no dash)
-  await B.$eval('#mp-code-input', (el, c) => { el.value = c; }, code.toLowerCase().replace('-', ''));
+  await B.$eval('#mp-code-input', el => { el.value = ''; });
+  await B.type('#mp-code-input', code.slice(4).toLowerCase());
   await tap(B, '#mp-join-form button[type="submit"]');
   await B.waitForSelector('.room-code-value', { timeout: 25000 });
   await A.waitForFunction(() => [...document.querySelectorAll('.slot-name')].some(e => e.textContent.includes('Bilal')), { timeout: 10000 });
@@ -200,6 +206,7 @@ try {
 } finally {
   ok(errors.length === 0, `no page errors${errors.length ? ': ' + errors.join(' || ') : ''}`);
   await browser.close();
+  server.kill();
   console.log(`Screenshots: ${OUT}`);
   console.log(failures ? `${failures} FAILURE(S)` : 'ALL P2P TESTS PASSED');
   process.exit(failures ? 1 : 0);

@@ -404,11 +404,7 @@
         case 'room:start': {
           if (!isHost) return this.error(id, 'not_host', 'Only the room host can start the match.');
           if (this.status !== 'lobby') return this.error(id, 'in_progress', 'The match has already started.');
-          if (this.members.size !== this.mode) {
-            return this.error(id, 'not_ready', `Waiting for players: ${this.members.size}/${this.mode} have joined. Share the code with your friends!`);
-          }
-          const waiting = [...this.members.values()].filter(x => !x.ready || !x.connected).map(x => x.name);
-          if (waiting.length) return this.error(id, 'not_ready', `Waiting for ${waiting.join(', ')} to mark Ready.`);
+          // The host can start any time: everyone who joined plays, bots take the empty seats
           this.startMatch();
           break;
         }
