@@ -183,3 +183,10 @@
 - **TODO:** the 7 shop avatars still show the placeholder.
   - Everygen has no subscription.
   - The DiceBear "lorelei" CC0 ones were tried, but the user said "later".
+
+## 26 Oct 2026 — multiplayer fixes
+- **Start Match:** the host can start any time. Everyone who joined plays and bots take the empty seats. Before, it needed all seats filled and everyone Ready, so it seemed to do nothing.
+- **Room code box:** shows a fixed `HDZ-`, so players type only the last 4 letters. Pasting a full code still works.
+- **Render** was running pre-v1.0.1 server code (PIN sign-ups failed); the user redeployed it on 26 Oct and PIN sign-up is confirmed working. New sign-ups with a 4-digit PIN got "Password Too Short". Fix: Render → spades-royale → **Manual Deploy → Deploy latest commit**. The Deploy Hook is still not set up.
+- `tests/p2p.e2e.mjs` now starts its own local login server, so it no longer depends on Render.
+- Node and gh are in `~/.spades-tools/` (see the memory notes); the system has no `node` on PATH.
